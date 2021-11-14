@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"goalgotrade/barfeed"
-	"goalgotrade/broker"
 	"goalgotrade/common"
 	"goalgotrade/core"
 	lg "goalgotrade/logger"
@@ -16,14 +14,14 @@ type Strategy interface {
 	OnStart() error
 	OnIdle() error
 	OnFinish() error
-	OnOrderUpdated(order broker.Order) error
+	OnOrderUpdated(order common.Order) error
 	OnBars(datetime time.Time, bars map[string]common.Bar) error
 
 	GetBarsProcessedEvent() common.Event
-	GetBroker() broker.Broker
+	GetBroker() common.Broker
 
-	RegisterPositionOrder(position Position, order broker.Order) error
-	UnregisterPositionOrder(position Position, order broker.Order) error
+	RegisterPositionOrder(position Position, order common.Order) error
+	UnregisterPositionOrder(position Position, order common.Order) error
 	UnregisterPosition(position Position) error
 
 	Run() error
@@ -32,15 +30,15 @@ type Strategy interface {
 type baseStrategy struct {
 	mu         sync.RWMutex
 	dispatcher common.Dispatcher
-	broker     broker.Broker
-	barfeed    barfeed.BarFeed
+	broker     common.Broker
+	barfeed    common.BarFeed
 
 	barsProcessedEvent common.Event
 	orderToPosition    map[uint64]Position
 	activePositions    []Position
 }
 
-func NewBaseStrategy(bf barfeed.BarFeed, bk broker.Broker) *baseStrategy {
+func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
 	s := &baseStrategy{
 		dispatcher:         core.NewDispatcher(),
 		barfeed:            bf,
@@ -76,7 +74,7 @@ func (s *baseStrategy) OnIdle() error {
 	return nil
 }
 
-func (s *baseStrategy) OnOrderUpdated(order broker.Order) error {
+func (s *baseStrategy) OnOrderUpdated(order common.Order) error {
 	return nil
 }
 
@@ -88,7 +86,7 @@ func (s *baseStrategy) OnBars(bars []common.Bar) error {
 	return nil
 }
 
-func (s *baseStrategy) RegisterPositionOrder(position Position, order broker.Order) error {
+func (s *baseStrategy) RegisterPositionOrder(position Position, order common.Order) error {
 	if !order.IsActive() {
 		return fmt.Errorf("registering an inactive order")
 	}
@@ -107,7 +105,7 @@ func (s *baseStrategy) RegisterPositionOrder(position Position, order broker.Ord
 	return nil
 }
 
-func (s *baseStrategy) UnregisterPositionOrder(position Position, order broker.Order) error {
+func (s *baseStrategy) UnregisterPositionOrder(position Position, order common.Order) error {
 	if _, ok := s.orderToPosition[order.GetId()]; ok {
 		delete(s.orderToPosition, order.GetId())
 	} else {
@@ -140,8 +138,8 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 		panic(msg)
 	}
 	// bk := args[0].(broker.Broker)
-	orderEvent := args[1].(*broker.OrderEvent)
-	order := orderEvent.GetOrder()
+	orderEvent := args[1].(*common.OrderEvent)
+	order := orderEvent.Order
 	s.OnOrderUpdated(order)
 
 	if pos, ok := s.orderToPosition[order.GetId()]; ok {
@@ -193,7 +191,7 @@ func (s *baseStrategy) GetBarsProcessedEvent() common.Event {
 	return s.barsProcessedEvent
 }
 
-func (s *baseStrategy) GetBroker() broker.Broker {
+func (s *baseStrategy) GetBroker() common.Broker {
 	return s.broker
 }
 

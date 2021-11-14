@@ -34,8 +34,8 @@ func (s *DefaultSubject) Dispatch() (bool, error) {
 	return true, nil
 }
 
-func (s *DefaultSubject) PeekDateTime() time.Time {
-	return time.Now()
+func (s *DefaultSubject) PeekDateTime() *time.Time {
+	return nil
 }
 
 func (s *DefaultSubject) GetDispatchPriority() int {

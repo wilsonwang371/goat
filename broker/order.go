@@ -2,40 +2,17 @@ package broker
 
 import (
 	"fmt"
+	"goalgotrade/common"
 )
 
-type Order interface {
-	GetId() uint64
-	IsActive() bool
-	IsFilled() bool
-	GetExecutionInfo() OrderExecutionInfo
-	AddExecutionInfo(info OrderExecutionInfo) error
-
-	GetRemaining() int
-
-	SwitchState(newState OrderState) error
+var ValidTransitions = map[common.OrderState][]common.OrderState{
+	common.OrderState_INITIAL:          {common.OrderState_SUBMITTED, common.OrderState_CANCELED},
+	common.OrderState_SUBMITTED:        {common.OrderState_ACCEPTED, common.OrderState_CANCELED},
+	common.OrderState_ACCEPTED:         {common.OrderState_PARTIALLY_FILLED, common.OrderState_FILLED, common.OrderState_CANCELED},
+	common.OrderState_PARTIALLY_FILLED: {common.OrderState_PARTIALLY_FILLED, common.OrderState_FILLED, common.OrderState_CANCELED},
 }
 
-type OrderState int
-
-const (
-	OS_UNKNOWN          OrderState = iota
-	OS_INITIAL                     // Initial state.
-	OS_SUBMITTED                   // Order has been submitted.
-	OS_ACCEPTED                    // Order has been acknowledged by the broker.
-	OS_CANCELED                    // Order has been canceled.
-	OS_PARTIALLY_FILLED            // Order has been partially filled.
-	OS_FILLED                      // Order has been completely filled.
-)
-
-var ValidTransitions = map[OrderState][]OrderState{
-	OS_INITIAL:          {OS_SUBMITTED, OS_CANCELED},
-	OS_SUBMITTED:        {OS_ACCEPTED, OS_CANCELED},
-	OS_ACCEPTED:         {OS_PARTIALLY_FILLED, OS_FILLED, OS_CANCELED},
-	OS_PARTIALLY_FILLED: {OS_PARTIALLY_FILLED, OS_FILLED, OS_CANCELED},
-}
-
-func IsValidTransitions(from, to OrderState) bool {
+func IsValidTransitions(from, to common.OrderState) bool {
 	if l, ok := ValidTransitions[from]; ok {
 		for _, v := range l {
 			if v == to {
@@ -48,14 +25,14 @@ func IsValidTransitions(from, to OrderState) bool {
 
 type order struct {
 	id            uint64
-	state         OrderState
-	executionInfo OrderExecutionInfo
+	state         common.OrderState
+	executionInfo common.OrderExecutionInfo
 
 	quantity int
 	filled   int
 }
 
-func NewOrder() Order {
+func NewOrder() common.Order {
 	return &order{}
 }
 
@@ -64,14 +41,14 @@ func (o *order) GetId() uint64 {
 }
 
 func (o *order) IsActive() bool {
-	return o.state == OS_CANCELED || o.state == OS_FILLED
+	return o.state == common.OrderState_CANCELED || o.state == common.OrderState_FILLED
 }
 
 func (o *order) IsFilled() bool {
-	return o.state == OS_FILLED
+	return o.state == common.OrderState_FILLED
 }
 
-func (o *order) GetExecutionInfo() OrderExecutionInfo {
+func (o *order) GetExecutionInfo() common.OrderExecutionInfo {
 	return o.executionInfo
 }
 
@@ -79,7 +56,7 @@ func (o *order) GetRemaining() int {
 	return o.quantity - o.filled
 }
 
-func (o *order) AddExecutionInfo(info OrderExecutionInfo) error {
+func (o *order) AddExecutionInfo(info common.OrderExecutionInfo) error {
 	if info.Quantity > o.GetRemaining() {
 		return fmt.Errorf("invalid fill size")
 	}
@@ -87,7 +64,7 @@ func (o *order) AddExecutionInfo(info OrderExecutionInfo) error {
 	return nil
 }
 
-func (o *order) SwitchState(newState OrderState) error {
+func (o *order) SwitchState(newState common.OrderState) error {
 	if IsValidTransitions(o.state, newState) {
 		o.state = newState
 		return nil

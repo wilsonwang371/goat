@@ -83,9 +83,9 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 			eof = false
 			t := v.PeekDateTime()
 			if smallestDateTime == nil {
-				smallestDateTime = &t
-			} else if smallestDateTime.After(t) {
-				smallestDateTime = &t
+				smallestDateTime = t
+			} else if smallestDateTime.After(*t) {
+				smallestDateTime = t
 			}
 		}
 	}

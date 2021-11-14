@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"time"
 
-	"goalgotrade/broker"
+	"goalgotrade/common"
 )
 
 type Position interface {
-	OnOrderEvent(orderEvent *broker.OrderEvent) error
+	OnOrderEvent(orderEvent *common.OrderEvent) error
 	IsOpen() bool
 
-	GetEntryOrder() broker.Order
+	GetEntryOrder() common.Order
 	EntryActive() bool
 	EntryFilled() bool
 	SetEntryDateTime(datetime time.Time)
 
-	GetExitOrder() broker.Order
+	GetExitOrder() common.Order
 	ExitActive() bool
 	ExitFilled() bool
 	SetExitDateTime(datetime time.Time)
@@ -26,8 +26,8 @@ type Position interface {
 }
 
 type PositionState interface {
-	CanSubmitOrder(position Position, order broker.Order) bool
-	OnOrderEvent(position Position, orderEvent *broker.OrderEvent) error
+	CanSubmitOrder(position Position, order common.Order) bool
+	OnOrderEvent(position Position, orderEvent *common.OrderEvent) error
 	OnEnter(position Position) error
 	IsOpen(position Position) bool
 	Exit(position Position, stopPrice, limitPrice float64, goodTillCanceled bool) error
@@ -44,11 +44,11 @@ const (
 type position struct {
 	state PositionState
 
-	entryOrder broker.Order
-	exitOrder  broker.Order
+	entryOrder common.Order
+	exitOrder  common.Order
 
-	entryDateTime time.Time
-	exitDateTime  time.Time
+	entryDateTime *time.Time
+	exitDateTime  *time.Time
 
 	strategy Strategy
 	shares   int
@@ -60,7 +60,7 @@ func NewPosition(strategy Strategy) Position {
 	}
 }
 
-func (p *position) OnOrderEvent(orderEvent *broker.OrderEvent) error {
+func (p *position) OnOrderEvent(orderEvent *common.OrderEvent) error {
 	return nil
 }
 
@@ -84,20 +84,22 @@ func (p *position) ExitFilled() bool {
 	return p.exitOrder != nil && p.exitOrder.IsFilled()
 }
 
-func (p *position) GetEntryOrder() broker.Order {
+func (p *position) GetEntryOrder() common.Order {
 	return p.entryOrder
 }
 
-func (p *position) GetExitOrder() broker.Order {
+func (p *position) GetExitOrder() common.Order {
 	return p.exitOrder
 }
 
 func (p *position) SetEntryDateTime(datetime time.Time) {
-	p.entryDateTime = datetime
+	tmptime := datetime
+	p.entryDateTime = &tmptime
 }
 
 func (p *position) SetExitDateTime(datetime time.Time) {
-	p.exitDateTime = datetime
+	tmptime := datetime
+	p.exitDateTime = &tmptime
 }
 
 func (p *position) GetStrategy() Strategy {
@@ -128,14 +130,14 @@ func NewPositionState(stateType PositionStateType) PositionState {
 type WaitingEntryState struct {
 }
 
-func (w *WaitingEntryState) CanSubmitOrder(position Position, order broker.Order) bool {
+func (w *WaitingEntryState) CanSubmitOrder(position Position, order common.Order) bool {
 	if position.EntryActive() {
 		return false
 	}
 	return true
 }
 
-func (w *WaitingEntryState) OnOrderEvent(position Position, orderEvent *broker.OrderEvent) error {
+func (w *WaitingEntryState) OnOrderEvent(position Position, orderEvent *common.OrderEvent) error {
 	// TODO: implement me
 	return nil
 }
@@ -162,11 +164,11 @@ func (w *WaitingEntryState) Exit(position Position, stopPrice, limitPrice float6
 type OpenState struct {
 }
 
-func (o *OpenState) CanSubmitOrder(position Position, order broker.Order) bool {
+func (o *OpenState) CanSubmitOrder(position Position, order common.Order) bool {
 	return true
 }
 
-func (o *OpenState) OnOrderEvent(position Position, orderEvent *broker.OrderEvent) error {
+func (o *OpenState) OnOrderEvent(position Position, orderEvent *common.OrderEvent) error {
 	// TODO: Implement me
 	return nil
 }
@@ -203,11 +205,11 @@ func (o *OpenState) Exit(pos Position, stopPrice, limitPrice float64, goodTillCa
 type ClosedState struct {
 }
 
-func (c *ClosedState) CanSubmitOrder(position Position, order broker.Order) bool {
+func (c *ClosedState) CanSubmitOrder(position Position, order common.Order) bool {
 	return false
 }
 
-func (c *ClosedState) OnOrderEvent(position Position, orderEvent *broker.OrderEvent) error {
+func (c *ClosedState) OnOrderEvent(position Position, orderEvent *common.OrderEvent) error {
 	return nil
 }
 

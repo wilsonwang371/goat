@@ -5,18 +5,12 @@ import (
 	"goalgotrade/core"
 )
 
-type BarFeed interface {
-	common.Subject
-	GetNewValueEvent() common.Event
-	GetCurrentBars() []common.Bar
-}
-
 type barFeed struct {
 	*core.DefaultSubject
 	event common.Event
 }
 
-func (b *barFeed) NewBarFeed() *barFeed {
+func (b *barFeed) NewBarFeed() common.BarFeed {
 	return &barFeed{
 		DefaultSubject: core.NewDefaultSubject(),
 		event:          core.NewEvent(),
@@ -28,5 +22,6 @@ func (b *barFeed) GetNewValueEvent() common.Event {
 }
 
 func (b *barFeed) GetCurrentBars() []common.Bar {
+	// TODO: Implement me
 	return nil
 }

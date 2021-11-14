@@ -1,6 +1,8 @@
 package common
 
-import "time"
+import (
+	"time"
+)
 
 type Dispatcher interface {
 	AddSubject(subject Subject) error
@@ -26,7 +28,7 @@ type Subject interface {
 	Join() error
 	Eof() bool
 	Dispatch() (bool, error)
-	PeekDateTime() time.Time
+	PeekDateTime() *time.Time
 
 	GetDispatchPriority() int
 	SetDispatchPriority(priority int)
@@ -34,19 +36,51 @@ type Subject interface {
 	OnDispatcherRegistered(dispatcher Dispatcher) error
 }
 
-type EventHandler func(args ...interface{}) error
+type Broker interface {
+	Subject
+	GetOrderUpdatedEvent() Event
+	NotifyOrderEvent(orderEvent *OrderEvent)
+	CancelOrder(order Order) error
+}
+
+type Order interface {
+	GetId() uint64
+	IsActive() bool
+	IsFilled() bool
+	GetExecutionInfo() OrderExecutionInfo
+	AddExecutionInfo(info OrderExecutionInfo) error
+
+	GetRemaining() int
+
+	SwitchState(newState OrderState) error
+}
 
 type Bar interface {
 	SetUseAdjustedValue(useAdjusted bool) error
 	GetUseAdjValue() bool
 
-	GetDateTime() time.Time
+	GetDateTime() *time.Time
 	Open(adjusted bool) float64
 	High(adjusted bool) float64
 	Low(adjusted bool) float64
 	Close(adjusted bool) float64
 	Volume() int
 	AdjClose() float64
-	Frequency() float64
+	Frequency() Frequency
 	Price() float64
+}
+
+type Bars interface {
+	GetDateTime() *time.Time
+	GetInstruments() []string
+	GetBar(instrument string) Bar
+	GetFrequencies() []Frequency
+
+	AddBar(instrument string, bar Bar) error
+}
+
+type BarFeed interface {
+	Subject
+	GetNewValueEvent() Event
+	GetCurrentBars() []Bar
 }
