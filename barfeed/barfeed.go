@@ -10,7 +10,7 @@ type barFeed struct {
 	event common.Event
 }
 
-func (b *barFeed) NewBarFeed() common.BarFeed {
+func NewBarFeed() common.BarFeed {
 	return &barFeed{
 		DefaultSubject: core.NewDefaultSubject(),
 		event:          core.NewEvent(),

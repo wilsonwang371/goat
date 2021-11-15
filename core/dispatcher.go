@@ -23,7 +23,7 @@ type dispatcher struct {
 func NewDispatcher() common.Dispatcher {
 	return &dispatcher{
 		subjects:        []common.Subject{},
-		stopc:           make(chan struct{}),
+		stopc:           make(chan struct{}, 1),
 		currentDateTime: nil,
 		startEvent:      NewEvent(),
 		idleEvent:       NewEvent(),
@@ -92,7 +92,6 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 
 	if !eof {
 		d.currentDateTime = smallestDateTime
-
 		for _, v := range d.subjects {
 			done, err := v.Dispatch()
 			if err != nil {
