@@ -106,12 +106,15 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 }
 
 func (d *dispatcher) Run() error {
+	d.mu.RLock()
 	for _, v := range d.subjects {
 		if err := v.Start(); err != nil {
 			d.cleanup()
+			d.mu.RUnlock()
 			return err
 		}
 	}
+	d.mu.RUnlock()
 
 	d.startEvent.Emit()
 
@@ -122,7 +125,9 @@ func (d *dispatcher) Run() error {
 			return nil
 		default:
 		}
+		d.mu.RLock()
 		eof, eventDispatched := d.dispatch()
+		d.mu.RUnlock()
 		if eof {
 			d.stopc <- struct{}{}
 		} else if eventDispatched {
