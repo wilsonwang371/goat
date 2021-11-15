@@ -77,6 +77,7 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 	eof = true
 	eventsDispatched = false
 	var smallestDateTime *time.Time = nil
+	wg := sync.WaitGroup{}
 
 	for _, v := range d.subjects {
 		if !v.Eof() {
@@ -93,14 +94,19 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 	if !eof {
 		d.currentDateTime = smallestDateTime
 		for _, v := range d.subjects {
-			done, err := v.Dispatch()
-			if err != nil {
-				lg.Logger.Error("subject dispatch failed", zap.Error(err))
-			}
-			if done {
-				eventsDispatched = true
-			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				done, err := v.Dispatch()
+				if err != nil {
+					lg.Logger.Error("subject dispatch failed", zap.Error(err))
+				}
+				if done {
+					eventsDispatched = true
+				}
+			}()
 		}
+		wg.Wait()
 	}
 	return
 }
