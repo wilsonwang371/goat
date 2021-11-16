@@ -26,7 +26,7 @@ func (s *DefaultSubject) Join() error {
 }
 
 func (s *DefaultSubject) Eof() bool {
-	return true
+	panic("not implemented")
 }
 
 func (s *DefaultSubject) Dispatch() (bool, error) {

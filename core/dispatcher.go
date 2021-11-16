@@ -95,16 +95,16 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 		d.currentDateTime = smallestDateTime
 		for _, v := range d.subjects {
 			wg.Add(1)
-			go func() {
+			go func(sub common.Subject) {
 				defer wg.Done()
-				done, err := v.Dispatch()
+				done, err := sub.Dispatch()
 				if err != nil {
 					lg.Logger.Error("subject dispatch failed", zap.Error(err))
 				}
 				if done {
 					eventsDispatched = true
 				}
-			}()
+			}(v)
 		}
 		wg.Wait()
 	}

@@ -2,26 +2,20 @@ package barfeed
 
 import (
 	"goalgotrade/common"
-	"goalgotrade/core"
+	"goalgotrade/feed"
 )
 
-type barFeed struct {
-	*core.DefaultSubject
-	event common.Event
+type baseBarFeed struct {
+	*feed.BaseFeed
 }
 
-func NewBarFeed() common.BarFeed {
-	return &barFeed{
-		DefaultSubject: core.NewDefaultSubject(),
-		event:          core.NewEvent(),
+func NewBaseBarFeed(maxlen int) common.BarFeed {
+	return &baseBarFeed{
+		BaseFeed: feed.NewBaseFeed(maxlen),
 	}
 }
 
-func (b *barFeed) GetNewValueEvent() common.Event {
-	return b.event
-}
-
-func (b *barFeed) GetCurrentBars() []common.Bar {
+func (b *baseBarFeed) GetCurrentBars() []common.Bar {
 	// TODO: Implement me
 	return nil
 }

@@ -47,7 +47,7 @@ func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
 	s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
 		return s.onOrderEvent(args)
 	})
-	s.barfeed.GetNewValueEvent().Subscribe(func(args ...interface{}) error {
+	s.barfeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
 		return s.onBars(args)
 	})
 

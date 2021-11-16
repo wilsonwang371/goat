@@ -71,8 +71,24 @@ type Bars interface {
 	AddBar(instrument string, bar Bar) error
 }
 
-type BarFeed interface {
+type Feed interface {
 	Subject
-	GetNewValueEvent() Event
+	CreateDataSeries(key string, maxlen int) DataSeries
+	GetNextValues() (*time.Time, Bars, Frequency, error)
+	GetNextValuesAndUpdateDS() (*time.Time, Bars, Frequency, error)
+	RegisterDataSeries(key string, freq Frequency) error
+	GetNewValuesEvent() Event
+	Reset()
+}
+
+type BarFeed interface {
+	Feed
 	GetCurrentBars() []Bar
+}
+
+type DataSeries interface {
+	GetValueAbsolute(pos int) float64
+	Len() int
+	GetDateTimes() []*time.Time
+	AppendWithDateTime(datetime time.Time, value Bar)
 }
