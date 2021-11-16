@@ -111,13 +111,14 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 	return
 }
 
-func (d *dispatcher) Run() error {
+func (d *dispatcher) mainDispatchLoop() {
 	d.mu.RLock()
 	for _, v := range d.subjects {
 		if err := v.Start(); err != nil {
 			d.cleanup()
 			d.mu.RUnlock()
-			return err
+			lg.Logger.Error("error starting subjects", zap.Error(err))
+			panic(err)
 		}
 	}
 	d.mu.RUnlock()
@@ -128,7 +129,7 @@ func (d *dispatcher) Run() error {
 		select {
 		case <-d.stopc:
 			d.currentDateTime = nil
-			return nil
+			return
 		default:
 		}
 		d.mu.RLock()
@@ -140,4 +141,13 @@ func (d *dispatcher) Run() error {
 			d.idleEvent.Emit()
 		}
 	}
+}
+
+func (d *dispatcher) Run() (<-chan struct{}, error) {
+	ch := make(chan struct{}, 1)
+	go func() {
+		d.mainDispatchLoop()
+		ch <- struct{}{}
+	}()
+	return ch, nil
 }

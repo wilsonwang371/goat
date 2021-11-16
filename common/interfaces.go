@@ -13,7 +13,7 @@ type Dispatcher interface {
 	GetCurrentDateTime() *time.Time
 
 	Stop() error
-	Run() error
+	Run() (<-chan struct{}, error)
 }
 
 type Event interface {

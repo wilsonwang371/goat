@@ -11,5 +11,9 @@ func TestStrategyBasics(t *testing.T) {
 	f := barfeed.NewBarFeed()
 	b := broker.NewBroker()
 	s := strategy.NewBaseStrategy(f, b)
-	s.Run()
+	ch, err := s.Run()
+	if err != nil {
+		panic(err)
+	}
+	<- ch
 }

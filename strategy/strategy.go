@@ -24,7 +24,7 @@ type Strategy interface {
 	UnregisterPositionOrder(position Position, order common.Order) error
 	UnregisterPosition(position Position) error
 
-	Run() error
+	Run() (<-chan struct{}, error)
 }
 
 type baseStrategy struct {
@@ -168,19 +168,22 @@ func (s *baseStrategy) onBars(args ...interface{}) error {
 	return nil
 }
 
-func (s *baseStrategy) Run() error {
-	s.dispatcher.Run()
+func (s *baseStrategy) Run() (<-chan struct{}, error) {
+	ch, err := s.dispatcher.Run()
+	if err != nil {
+		return ch, err
+	}
 
 	currentBars := s.barfeed.GetCurrentBars()
 
 	if len(currentBars) != 0 {
 		if err := s.OnFinish(currentBars); err != nil {
-			return err
+			return ch, err
 		}
 	} else {
 		lg.Logger.Error("Feed was empty")
 	}
-	return nil
+	return ch, nil
 }
 
 func (s *baseStrategy) Stop() error {
