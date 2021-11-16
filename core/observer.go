@@ -1,9 +1,8 @@
 package core
 
 import (
-	"time"
-
 	"goalgotrade/common"
+	"time"
 )
 
 type DefaultSubject struct {

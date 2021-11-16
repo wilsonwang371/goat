@@ -7,11 +7,9 @@ import (
 type Dispatcher interface {
 	AddSubject(subject Subject) error
 	GetSubjects() []Subject
-
 	GetStartEvent() Event
 	GetIdleEvent() Event
 	GetCurrentDateTime() *time.Time
-
 	Stop() error
 	Run() (<-chan struct{}, error)
 }
@@ -29,10 +27,8 @@ type Subject interface {
 	Eof() bool
 	Dispatch() (bool, error)
 	PeekDateTime() *time.Time
-
 	GetDispatchPriority() int
 	SetDispatchPriority(priority int)
-
 	OnDispatcherRegistered(dispatcher Dispatcher) error
 }
 
@@ -49,16 +45,13 @@ type Order interface {
 	IsFilled() bool
 	GetExecutionInfo() OrderExecutionInfo
 	AddExecutionInfo(info OrderExecutionInfo) error
-
 	GetRemaining() int
-
 	SwitchState(newState OrderState) error
 }
 
 type Bar interface {
 	SetUseAdjustedValue(useAdjusted bool) error
 	GetUseAdjValue() bool
-
 	GetDateTime() *time.Time
 	Open(adjusted bool) float64
 	High(adjusted bool) float64
@@ -75,7 +68,6 @@ type Bars interface {
 	GetInstruments() []string
 	GetBar(instrument string) Bar
 	GetFrequencies() []Frequency
-
 	AddBar(instrument string, bar Bar) error
 }
 

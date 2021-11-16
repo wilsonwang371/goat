@@ -2,11 +2,11 @@ package strategy
 
 import (
 	"fmt"
+	"goalgotrade/common"
+	"goalgotrade/core"
 	"sync"
 	"time"
 
-	"goalgotrade/common"
-	"goalgotrade/core"
 	lg "goalgotrade/logger"
 )
 
@@ -16,14 +16,11 @@ type Strategy interface {
 	OnFinish() error
 	OnOrderUpdated(order common.Order) error
 	OnBars(datetime time.Time, bars map[string]common.Bar) error
-
 	GetBarsProcessedEvent() common.Event
 	GetBroker() common.Broker
-
 	RegisterPositionOrder(position Position, order common.Order) error
 	UnregisterPositionOrder(position Position, order common.Order) error
 	UnregisterPosition(position Position) error
-
 	Run() (<-chan struct{}, error)
 }
 

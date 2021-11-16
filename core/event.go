@@ -2,10 +2,9 @@ package core
 
 import (
 	"fmt"
+	"goalgotrade/common"
 	"reflect"
 	"sync"
-
-	"goalgotrade/common"
 )
 
 type event struct {

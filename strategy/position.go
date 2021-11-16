@@ -2,25 +2,21 @@ package strategy
 
 import (
 	"fmt"
-	"time"
-
 	"goalgotrade/common"
+	"time"
 )
 
 type Position interface {
 	OnOrderEvent(orderEvent *common.OrderEvent) error
 	IsOpen() bool
-
 	GetEntryOrder() common.Order
 	EntryActive() bool
 	EntryFilled() bool
 	SetEntryDateTime(datetime time.Time)
-
 	GetExitOrder() common.Order
 	ExitActive() bool
 	ExitFilled() bool
 	SetExitDateTime(datetime time.Time)
-
 	GetShares() int
 	GetStrategy() Strategy
 }
@@ -127,8 +123,7 @@ func NewPositionState(stateType PositionStateType) PositionState {
 	return nil
 }
 
-type WaitingEntryState struct {
-}
+type WaitingEntryState struct{}
 
 func (w *WaitingEntryState) CanSubmitOrder(position Position, order common.Order) bool {
 	if position.EntryActive() {
@@ -161,8 +156,7 @@ func (w *WaitingEntryState) Exit(position Position, stopPrice, limitPrice float6
 	return nil
 }
 
-type OpenState struct {
-}
+type OpenState struct{}
 
 func (o *OpenState) CanSubmitOrder(position Position, order common.Order) bool {
 	return true
@@ -202,8 +196,7 @@ func (o *OpenState) Exit(pos Position, stopPrice, limitPrice float64, goodTillCa
 	return nil
 }
 
-type ClosedState struct {
-}
+type ClosedState struct{}
 
 func (c *ClosedState) CanSubmitOrder(position Position, order common.Order) bool {
 	return false

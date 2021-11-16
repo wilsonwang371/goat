@@ -1,10 +1,10 @@
 package core
 
 import (
+	"goalgotrade/common"
 	"sync"
 	"time"
 
-	"goalgotrade/common"
 	lg "goalgotrade/logger"
 
 	"go.uber.org/zap"
@@ -111,6 +111,15 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 	return
 }
 
+func (d *dispatcher) Run() (<-chan struct{}, error) {
+	ch := make(chan struct{}, 1)
+	go func() {
+		d.mainDispatchLoop()
+		ch <- struct{}{}
+	}()
+	return ch, nil
+}
+
 func (d *dispatcher) mainDispatchLoop() {
 	d.mu.RLock()
 	for _, v := range d.subjects {
@@ -141,13 +150,4 @@ func (d *dispatcher) mainDispatchLoop() {
 			d.idleEvent.Emit()
 		}
 	}
-}
-
-func (d *dispatcher) Run() (<-chan struct{}, error) {
-	ch := make(chan struct{}, 1)
-	go func() {
-		d.mainDispatchLoop()
-		ch <- struct{}{}
-	}()
-	return ch, nil
 }

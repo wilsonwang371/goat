@@ -2,10 +2,9 @@ package broker
 
 import (
 	"fmt"
-	"time"
-
 	"goalgotrade/common"
 	"goalgotrade/core"
+	"time"
 )
 
 type broker struct {

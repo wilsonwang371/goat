@@ -15,5 +15,5 @@ func TestStrategyBasics(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	<- ch
+	<-ch
 }

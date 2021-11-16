@@ -1,4 +1,3 @@
 package feed
 
-type Feed interface {
-}
+type Feed interface{}
