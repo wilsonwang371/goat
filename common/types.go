@@ -1,6 +1,10 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/go-gota/gota/series"
+)
 
 type OrderExecutionInfo struct {
 	Price      float64
@@ -29,3 +33,5 @@ type OrderEventType int
 type OrderState int
 
 type EventHandler func(args ...interface{}) error
+
+type DataSeriesType series.Type

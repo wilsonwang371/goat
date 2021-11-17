@@ -2,6 +2,8 @@ package common
 
 import (
 	"time"
+
+	"github.com/go-gota/gota/series"
 )
 
 type Dispatcher interface {
@@ -73,22 +75,16 @@ type Bars interface {
 
 type Feed interface {
 	Subject
-	CreateDataSeries(key string, maxlen int) DataSeries
+	CreateDataSeries(key string, maxlen int) *series.Series
 	GetNextValues() (*time.Time, Bars, Frequency, error)
 	GetNextValuesAndUpdateDS() (*time.Time, Bars, Frequency, error)
 	RegisterDataSeries(key string, freq Frequency) error
 	GetNewValuesEvent() Event
 	Reset()
+	GetKeys() []string
 }
 
 type BarFeed interface {
 	Feed
 	GetCurrentBars() []Bar
-}
-
-type DataSeries interface {
-	GetValueAbsolute(pos int) float64
-	Len() int
-	GetDateTimes() []*time.Time
-	AppendWithDateTime(datetime time.Time, value Bar)
 }

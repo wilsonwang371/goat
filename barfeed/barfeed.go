@@ -3,15 +3,17 @@ package barfeed
 import (
 	"goalgotrade/common"
 	"goalgotrade/feed"
+
+	"github.com/go-gota/gota/series"
 )
 
 type baseBarFeed struct {
 	*feed.BaseFeed
 }
 
-func NewBaseBarFeed(maxlen int) common.BarFeed {
+func NewBaseBarFeed(stype series.Type, maxlen int) common.BarFeed {
 	return &baseBarFeed{
-		BaseFeed: feed.NewBaseFeed(maxlen),
+		BaseFeed: feed.NewBaseFeed(stype, maxlen),
 	}
 }
 
