@@ -75,11 +75,11 @@ func (s *baseStrategy) OnOrderUpdated(order common.Order) error {
 	return nil
 }
 
-func (s *baseStrategy) OnFinish(bars []common.Bar) error {
+func (s *baseStrategy) OnFinish(bars common.Bars) error {
 	return nil
 }
 
-func (s *baseStrategy) OnBars(bars []common.Bar) error {
+func (s *baseStrategy) OnBars(bars common.Bars) error {
 	return nil
 }
 
@@ -159,7 +159,7 @@ func (s *baseStrategy) onBars(args ...interface{}) error {
 		lg.Logger.Error(msg)
 		panic(msg)
 	}
-	bars := args[0].([]common.Bar)
+	bars := args[0].(common.Bars)
 	s.OnBars(bars)
 	s.barsProcessedEvent.Emit(bars)
 	return nil
@@ -173,7 +173,7 @@ func (s *baseStrategy) Run() (<-chan struct{}, error) {
 
 	currentBars := s.barfeed.GetCurrentBars()
 
-	if len(currentBars) != 0 {
+	if currentBars != nil {
 		if err := s.OnFinish(currentBars); err != nil {
 			return ch, err
 		}
