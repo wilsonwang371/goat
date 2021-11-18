@@ -86,5 +86,16 @@ type Feed interface {
 
 type BarFeed interface {
 	Feed
-	GetCurrentBars() []Bar
+	GetCurrentBars() Bars
+	GetLastBar() Bar
+	GetNextBars() Bars
+
+	GetCurrentDateTime() *time.Time
+	BarsHaveAdjClose() bool
+	GetFrequencies() []Frequency
+
+	GetDefaultInstrument() string
+	GetRegisteredInstruments() []string
+	RegisterInstrument(instrument string, freq Frequency) error
+	GetDataSeries(instrument string, freq Frequency) *series.Series
 }
