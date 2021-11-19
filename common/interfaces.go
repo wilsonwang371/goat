@@ -55,10 +55,10 @@ type Bar interface {
 	SetUseAdjustedValue(useAdjusted bool) error
 	GetUseAdjValue() bool
 	GetDateTime() *time.Time
-	Open(adjusted bool) float64
-	High(adjusted bool) float64
-	Low(adjusted bool) float64
-	Close(adjusted bool) float64
+	Open() float64
+	High() float64
+	Low() float64
+	Close() float64
 	Volume() int
 	AdjClose() float64
 	Frequency() Frequency
@@ -75,13 +75,14 @@ type Bars interface {
 
 type Feed interface {
 	Subject
-	CreateDataSeries(key string, maxlen int) *series.Series
+	CreateDataSeries(key string, maxlen int) BarDataSeries
 	GetNextValues() (*time.Time, Bars, Frequency, error)
 	GetNextValuesAndUpdateDS() (*time.Time, Bars, Frequency, error)
 	RegisterDataSeries(key string, freq Frequency) error
 	GetNewValuesEvent() Event
 	Reset()
 	GetKeys() []string
+	GetMaxLen() int
 }
 
 type BarFeed interface {
@@ -96,4 +97,17 @@ type BarFeed interface {
 	GetRegisteredInstruments() []string
 	RegisterInstrument(instrument string, freq Frequency) error
 	GetDataSeries(instrument string, freq Frequency) *series.Series
+}
+
+type BarDataSeries interface {
+	Append(bar Bar) error
+	AppendWithDateTime(datetime time.Time, bar Bar) error
+	OpenDS() *series.Series
+	HighDS() *series.Series
+	LowDS() *series.Series
+	CloseDS() *series.Series
+	AdjCloseDS() *series.Series
+	VolumeDS() *series.Series
+	PriceDS() *series.Series
+	ExtraDS() map[string]series.Series
 }

@@ -14,16 +14,16 @@ const (
 	// * **Frequency.MONTH**: The bar summarizes the trading activity during 1 month.
 
 	// It is important for frequency values to get bigger for bigger windows.
-	RESET    Frequency = -99
-	TRADE    Frequency = -1
-	REALTIME Frequency = 0
-	SECOND   Frequency = 1
-	MINUTE   Frequency = 60
-	HOUR     Frequency = 60 * 60
-	HOUR_4   Frequency = 60 * 60 * 4
-	DAY      Frequency = 24 * 60 * 60
-	WEEK     Frequency = 24 * 60 * 60 * 7
-	MONTH    Frequency = 24 * 60 * 60 * 31
+	Frequency_RESET    Frequency = -99
+	Frequency_TRADE    Frequency = -1
+	Frequency_REALTIME Frequency = 0
+	Frequency_SECOND   Frequency = 1
+	Frequency_MINUTE   Frequency = 60
+	Frequency_HOUR     Frequency = 60 * 60
+	Frequency_HOUR_4   Frequency = 60 * 60 * 4
+	Frequency_DAY      Frequency = 24 * 60 * 60
+	Frequency_WEEK     Frequency = 24 * 60 * 60 * 7
+	Frequency_MONTH    Frequency = 24 * 60 * 60 * 31
 )
 
 const (

@@ -1,13 +1,10 @@
 package feed
 
 import (
-	"fmt"
 	"goalgotrade/common"
 	"goalgotrade/core"
 	lg "goalgotrade/logger"
 	"time"
-
-	"github.com/go-gota/gota/series"
 )
 
 type regDs struct {
@@ -18,32 +15,34 @@ type regDs struct {
 type BaseFeed struct {
 	*core.DefaultSubject
 	event        common.Event
-	stype        series.Type
-	dataseries   map[string]map[common.Frequency]*series.Series
+	dataseries   map[string]map[common.Frequency]common.BarDataSeries
 	registeredDs []regDs
 	maxlen       int
 }
 
-func NewBaseFeed(stype series.Type, maxlen int) *BaseFeed {
+func NewBaseFeed(maxlen int) *BaseFeed {
 	return &BaseFeed{
 		DefaultSubject: core.NewDefaultSubject(),
 		event:          core.NewEvent(),
-		stype:          stype,
-		dataseries:     map[string]map[common.Frequency]*series.Series{},
+		dataseries:     map[string]map[common.Frequency]common.BarDataSeries{},
 		maxlen:         maxlen,
 	}
 }
 
+func (b *BaseFeed) GetMaxLen() int {
+	return b.maxlen
+}
+
 func (b *BaseFeed) Reset() {
-	b.dataseries = make(map[string]map[common.Frequency]*series.Series)
+	b.dataseries = make(map[string]map[common.Frequency]common.BarDataSeries)
 	for _, v := range b.registeredDs {
 		b.RegisterDataSeries(v.key, v.freq)
 	}
 }
 
-func (b *BaseFeed) CreateDataSeries(key string, maxlen int) *series.Series {
-	ret := series.New(nil, b.stype, fmt.Sprintf("series-%s", key))
-	return &ret
+func (b *BaseFeed) CreateDataSeries(key string, maxlen int) common.BarDataSeries {
+	lg.Logger.Error("not implemented")
+	panic("not implemented")
 }
 
 func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, common.Frequency, error) {
@@ -57,7 +56,7 @@ func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, common.F
 		keys := values.GetInstruments()
 		for _, k := range keys {
 			if v, ok := b.dataseries[k]; !ok {
-				b.dataseries[k] = make(map[common.Frequency]*series.Series)
+				b.dataseries[k] = make(map[common.Frequency]common.BarDataSeries)
 			} else {
 				if v2, ok2 := v[freq]; ok2 {
 					v2.Append(values.GetBar(k))
@@ -72,7 +71,7 @@ func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, common.F
 
 func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
 	if _, ok := b.dataseries[key]; !ok {
-		b.dataseries[key] = map[common.Frequency]*series.Series{}
+		b.dataseries[key] = map[common.Frequency]common.BarDataSeries{}
 	}
 	if _, ok := b.dataseries[key][freq]; !ok {
 		b.dataseries[key][freq] = b.CreateDataSeries(key, b.maxlen)

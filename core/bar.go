@@ -118,29 +118,29 @@ func (b *basicBar) GetDateTime() *time.Time {
 	return b.datetime
 }
 
-func (b *basicBar) Open(adjusted bool) float64 {
+func (b *basicBar) Open() float64 {
 	if b.useAdjustedValue {
 		return b.adjClose * b.open / b.close
 	}
 	return b.open
 }
 
-func (b *basicBar) High(adjusted bool) float64 {
+func (b *basicBar) High() float64 {
 	if b.useAdjustedValue {
 		return b.adjClose * b.high / b.close
 	}
 	return b.high
 }
 
-func (b *basicBar) Low(adjusted bool) float64 {
+func (b *basicBar) Low() float64 {
 	if b.useAdjustedValue {
 		return b.adjClose * b.low / b.close
 	}
 	return b.low
 }
 
-func (b *basicBar) Close(adjusted bool) float64 {
-	if adjusted {
+func (b *basicBar) Close() float64 {
+	if b.useAdjustedValue {
 		return b.adjClose
 	}
 	return b.open
