@@ -1,7 +1,7 @@
 package test
 
 import (
-	"goalgotrade/barfeed"
+	"goalgotrade/feed/barfeed"
 	"goalgotrade/broker"
 	"goalgotrade/strategy"
 	"testing"
