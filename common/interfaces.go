@@ -76,8 +76,8 @@ type Bars interface {
 type Feed interface {
 	Subject
 	CreateDataSeries(key string, maxlen int) BarDataSeries
-	GetNextValues() (*time.Time, Bars, Frequency, error)
-	GetNextValuesAndUpdateDS() (*time.Time, Bars, Frequency, error)
+	GetNextValues() (*time.Time, Bars, []Frequency, error)
+	GetNextValuesAndUpdateDS() (*time.Time, Bars, []Frequency, error)
 	RegisterDataSeries(key string, freq Frequency) error
 	GetNewValuesEvent() Event
 	Reset()
@@ -88,7 +88,7 @@ type Feed interface {
 type BarFeed interface {
 	Feed
 	GetCurrentBars() Bars
-	GetLastBar() Bar
+	GetLastBar(instrument string) Bar
 	GetNextBars() Bars
 	GetCurrentDateTime() *time.Time
 	BarsHaveAdjClose() bool

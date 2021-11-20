@@ -45,28 +45,30 @@ func (b *BaseFeed) CreateDataSeries(key string, maxlen int) common.BarDataSeries
 	panic("not implemented")
 }
 
-func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, common.Frequency, error) {
+func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency, error) {
 	lg.Logger.Error("not implemented")
 	panic("not implemented")
 }
 
-func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, common.Frequency, error) {
-	datetime, values, freq, err := b.GetNextValues()
+func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
+	datetime, values, freqs, err := b.GetNextValues()
 	if err != nil || datetime == nil {
 		keys := values.GetInstruments()
 		for _, k := range keys {
 			if v, ok := b.dataseries[k]; !ok {
 				b.dataseries[k] = make(map[common.Frequency]common.BarDataSeries)
 			} else {
-				if v2, ok2 := v[freq]; ok2 {
-					v2.Append(values.GetBar(k))
-				} else {
-					b.dataseries[k][freq] = b.CreateDataSeries(k, b.maxlen)
+				for _, freq := range freqs {
+					if v2, ok2 := v[freq]; ok2 {
+						v2.Append(values.GetBar(k))
+					} else {
+						b.dataseries[k][freq] = b.CreateDataSeries(k, b.maxlen)
+					}
 				}
 			}
 		}
 	}
-	return datetime, values, freq, err
+	return datetime, values, freqs, err
 }
 
 func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
