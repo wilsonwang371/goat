@@ -1,7 +1,10 @@
 package barfeed
 
 import (
+	"fmt"
 	"goalgotrade/common"
+	"goalgotrade/core"
+	"sort"
 	"time"
 
 	"github.com/go-gota/gota/series"
@@ -13,53 +16,110 @@ type MemBarFeed interface {
 
 type memBarFeed struct {
 	baseBarFeed
+	started         bool
+	bars            common.Bars
+	nextIdx         map[string]int
+	currentDateTime *time.Time
 }
 
 func NewMemBarFeed(freqs []common.Frequency, stype series.Type, maxlen int) MemBarFeed {
 	barfeed := NewBaseBarFeed(freqs, stype, maxlen)
 	return &memBarFeed{
 		baseBarFeed: *barfeed,
+		bars:        core.NewBars(),
+		nextIdx:     map[string]int{},
 	}
 }
 
 func (m *memBarFeed) Reset() {
-	// TODO: implement me
-	panic("implement me")
+	m.nextIdx = map[string]int{}
+	for _, instrument := range m.bars.GetInstruments() {
+		m.nextIdx[instrument] = 0
+	}
+	m.currentDateTime = nil
+	m.baseBarFeed.Reset()
 }
 
 func (m *memBarFeed) GetCurrentDateTime() *time.Time {
-	// TODO: implement me
-	panic("implement me")
+	return m.currentDateTime
 }
 
 func (m *memBarFeed) Start() error {
-	// TODO: implement me
-	panic("implement me")
+	m.baseBarFeed.Start()
+	m.started = true
+	return nil
 }
 
 func (m *memBarFeed) Stop() error {
-	// TODO: implement me
-	panic("implement me")
+	// do nothing
+	return nil
 }
 
 func (m *memBarFeed) Join() error {
-	// TODO: implement me
-	panic("implement me")
+	// do nothing
+	return nil
 }
 
-func (m *memBarFeed) AddBarsFromSequence() error {
-	// TODO: implement me
-	panic("implement me")
+func (m *memBarFeed) AddBarListFromSequence(instrument string, barlist []common.Bar) error {
+	if m.started {
+		return fmt.Errorf("can't add more bars once you started consuming bars")
+	}
+
+	if _, ok := m.nextIdx[instrument]; !ok {
+		m.nextIdx[instrument] = 0
+	}
+
+	m.bars.AddBarList(instrument, barlist)
+	newbarlist := m.bars.GetBarList(instrument)
+	if len(newbarlist) > 1 {
+		sort.SliceStable(newbarlist, func(i, j int) bool {
+			return newbarlist[i].GetDateTime().Before(*newbarlist[j].GetDateTime())
+		})
+	}
+	allfreqs := map[common.Frequency]bool{}
+	for _, v := range barlist {
+		if _, ok := allfreqs[v.Frequency()]; !ok {
+			allfreqs[v.Frequency()] = true
+		}
+	}
+	for freq := range allfreqs {
+		m.RegisterInstrument(instrument, freq)
+	}
+	return nil
 }
 
 func (m *memBarFeed) Eof() bool {
-	// TODO: implement me
-	panic("implement me")
+	ret := true
+	for _, instrument := range m.bars.GetInstruments() {
+		barlist := m.bars.GetBarList(instrument)
+		if m.nextIdx[instrument] < len(barlist) {
+			ret = false
+			break
+		}
+	}
+	return ret
 }
 
 func (m *memBarFeed) PeekDateTime() *time.Time {
-	// TODO: implement me
-	panic("implement me")
+	var resultDateTime *time.Time
+
+	for _, instrument := range m.bars.GetInstruments() {
+		nextIdx := m.nextIdx[instrument]
+		barlist := m.bars.GetBarList(instrument)
+		if nextIdx < len(barlist) {
+			dateTime := barlist[nextIdx].GetDateTime()
+			if resultDateTime == nil {
+				if dateTime != nil {
+					resultDateTime = dateTime
+				}
+			} else {
+				if dateTime != nil && dateTime.Before(*resultDateTime) {
+					resultDateTime = dateTime
+				}
+			}
+		}
+	}
+	return resultDateTime
 }
 
 func (m *memBarFeed) GetNextBars() common.Bars {

@@ -52,8 +52,8 @@ func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency,
 }
 
 func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
-	datetime, values, freqs, err := interface{}(b).(common.Feed).GetNextValues()
-	if err != nil || datetime == nil {
+	dateTime, values, freqs, err := interface{}(b).(common.Feed).GetNextValues()
+	if err != nil || dateTime == nil {
 		keys := values.GetInstruments()
 		for _, k := range keys {
 			if v, ok := b.dataseries[k]; !ok {
@@ -61,7 +61,9 @@ func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common
 			} else {
 				for _, freq := range freqs {
 					if v2, ok2 := v[freq]; ok2 {
-						v2.Append(values.GetBar(k))
+						for _, bar := range values.GetBarList(k) {
+							v2.Append(bar)
+						}
 					} else {
 						b.dataseries[k][freq] = b.CreateDataSeries(k, b.maxlen)
 					}
@@ -69,7 +71,7 @@ func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common
 			}
 		}
 	}
-	return datetime, values, freqs, err
+	return dateTime, values, freqs, err
 }
 
 func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
@@ -94,14 +96,14 @@ func (b *BaseFeed) GetNewValuesEvent() common.Event {
 
 func (b *BaseFeed) Dispatch() (bool, error) {
 	// TODO: check if freq here is needed
-	datetime, values, _, err := interface{}(b).(common.Feed).GetNextValuesAndUpdateDS()
+	dateTime, values, _, err := interface{}(b).(common.Feed).GetNextValuesAndUpdateDS()
 	if err != nil {
 		return false, err
 	}
-	if datetime != nil {
-		b.event.Emit(datetime, values)
+	if dateTime != nil {
+		b.event.Emit(dateTime, values)
 	}
-	return datetime != nil && err == nil, nil
+	return dateTime != nil && err == nil, nil
 }
 
 func (b *BaseFeed) Eof() bool {

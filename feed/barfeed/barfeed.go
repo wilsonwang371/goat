@@ -19,7 +19,7 @@ type baseBarFeed struct {
 	stype             series.Type
 	defaultInstrument string
 	currentBars       common.Bars
-	lastBars          map[string]common.Bar
+	lastBars          map[string][]common.Bar
 }
 
 func NewBaseBarFeed(frequencies []common.Frequency, stype series.Type, maxlen int) *baseBarFeed {
@@ -29,20 +29,20 @@ func NewBaseBarFeed(frequencies []common.Frequency, stype series.Type, maxlen in
 		frequencies:      frequencies,
 		useAdjustedValue: false,
 		stype:            stype,
-		lastBars:         map[string]common.Bar{},
+		lastBars:         map[string][]common.Bar{},
 	}
 }
 
 func (b *baseBarFeed) Reset() {
 	b.currentBars = nil
-	b.lastBars = map[string]common.Bar{}
+	b.lastBars = map[string][]common.Bar{}
 }
 
 func (b *baseBarFeed) GetCurrentBars() common.Bars {
 	return b.currentBars
 }
 
-func (b *baseBarFeed) GetLastBar(instrument string) common.Bar {
+func (b *baseBarFeed) GetLastBar(instrument string) []common.Bar {
 	if v, ok := b.lastBars[instrument]; ok {
 		return v
 	}
@@ -59,24 +59,24 @@ func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequen
 	bars := interface{}(b).(common.BarFeed).GetNextBars()
 	if bars == nil {
 		freqs := bars.GetFrequencies()
-		datetime := bars.GetDateTime()
+		dateTime := bars.GetDateTime()
 
-		if len(freqs) == 0 || datetime == nil {
-			lg.Logger.Error("invalid frequency and/or datetime", zap.Any("Frequencies", freqs), zap.Time("DateTime", *datetime))
-			return nil, nil, []common.Frequency{}, fmt.Errorf("invalid frequency and/or datetime")
+		if len(freqs) == 0 || dateTime == nil {
+			lg.Logger.Error("invalid frequency and/or dateTime", zap.Any("Frequencies", freqs), zap.Time("DateTime", *dateTime))
+			return nil, nil, []common.Frequency{}, fmt.Errorf("invalid frequency and/or dateTime")
 		}
 
-		if b.currentBars != nil && b.currentBars.GetDateTime().After(*datetime) {
+		if b.currentBars != nil && b.currentBars.GetDateTime().After(*dateTime) {
 			return nil, nil, []common.Frequency{},
-				fmt.Errorf("Bar date times are not in order. Previous datetime was %s and current datetime is %s",
-					b.currentBars.GetDateTime(), datetime)
+				fmt.Errorf("bar date times are not in order. Previous dateTime was %s and current dateTime is %s",
+					b.currentBars.GetDateTime(), dateTime)
 		}
 
 		b.currentBars = bars
 		for _, v := range bars.GetInstruments() {
-			b.lastBars[v] = bars.GetBar(v)
+			b.lastBars[v] = bars.GetBarList(v)
 		}
-		return datetime, bars, freqs, nil
+		return dateTime, bars, freqs, nil
 	}
 	return nil, nil, []common.Frequency{}, fmt.Errorf("no next bars")
 }

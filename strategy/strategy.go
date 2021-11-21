@@ -15,7 +15,7 @@ type Strategy interface {
 	OnIdle() error
 	OnFinish() error
 	OnOrderUpdated(order common.Order) error
-	OnBars(datetime time.Time, bars map[string]common.Bar) error
+	OnBars(dateTime time.Time, bars map[string]common.Bar) error
 	GetBarsProcessedEvent() common.Event
 	GetBroker() common.Broker
 	RegisterPositionOrder(position Position, order common.Order) error

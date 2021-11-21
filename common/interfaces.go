@@ -51,6 +51,12 @@ type Order interface {
 	SwitchState(newState OrderState) error
 }
 
+// Bar, BarList, Bars are 3 different things
+// Bar is an instance of Bar
+// BarList is an array of Bars
+// Bars is an instance of Bars which contains a map of BarLists
+// However, due to compatibility issue with pyalgotrade, we use Bar and BarList interchangeably
+
 type Bar interface {
 	SetUseAdjustedValue(useAdjusted bool) error
 	GetUseAdjValue() bool
@@ -68,9 +74,9 @@ type Bar interface {
 type Bars interface {
 	GetDateTime() *time.Time
 	GetInstruments() []string
-	GetBar(instrument string) Bar
+	GetBarList(instrument string) []Bar
 	GetFrequencies() []Frequency
-	AddBar(instrument string, bar Bar) error
+	AddBarList(instrument string, barlist []Bar) error
 }
 
 type Feed interface {
@@ -88,7 +94,7 @@ type Feed interface {
 type BarFeed interface {
 	Feed
 	GetCurrentBars() Bars
-	GetLastBar(instrument string) Bar
+	GetLastBar(instrument string) []Bar
 	GetNextBars() Bars
 	GetCurrentDateTime() *time.Time
 	BarsHaveAdjClose() bool
@@ -101,7 +107,7 @@ type BarFeed interface {
 
 type BarDataSeries interface {
 	Append(bar Bar) error
-	AppendWithDateTime(datetime time.Time, bar Bar) error
+	AppendWithDateTime(dateTime time.Time, bar Bar) error
 	OpenDS() *series.Series
 	HighDS() *series.Series
 	LowDS() *series.Series

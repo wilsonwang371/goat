@@ -12,11 +12,11 @@ type Position interface {
 	GetEntryOrder() common.Order
 	EntryActive() bool
 	EntryFilled() bool
-	SetEntryDateTime(datetime time.Time)
+	SetEntryDateTime(dateTime time.Time)
 	GetExitOrder() common.Order
 	ExitActive() bool
 	ExitFilled() bool
-	SetExitDateTime(datetime time.Time)
+	SetExitDateTime(dateTime time.Time)
 	GetShares() int
 	GetStrategy() Strategy
 }
@@ -88,13 +88,13 @@ func (p *position) GetExitOrder() common.Order {
 	return p.exitOrder
 }
 
-func (p *position) SetEntryDateTime(datetime time.Time) {
-	tmptime := datetime
+func (p *position) SetEntryDateTime(dateTime time.Time) {
+	tmptime := dateTime
 	p.entryDateTime = &tmptime
 }
 
-func (p *position) SetExitDateTime(datetime time.Time) {
-	tmptime := datetime
+func (p *position) SetExitDateTime(dateTime time.Time) {
+	tmptime := dateTime
 	p.exitDateTime = &tmptime
 }
 

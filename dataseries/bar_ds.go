@@ -41,7 +41,7 @@ func (s *barDataSeries) Append(bar common.Bar) error {
 	return s.AppendWithDateTime(*bar.GetDateTime(), bar)
 }
 
-func (s *barDataSeries) AppendWithDateTime(datetime time.Time, bar common.Bar) error {
+func (s *barDataSeries) AppendWithDateTime(dateTime time.Time, bar common.Bar) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
