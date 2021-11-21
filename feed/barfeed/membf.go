@@ -24,7 +24,7 @@ type memBarFeed struct {
 	currentDateTime *time.Time
 }
 
-func NewMemBarFeed(freqs []common.Frequency, stype series.Type, maxlen int) MemBarFeed {
+func NewMemBarFeed(freqs []common.Frequency, stype series.Type, maxlen int) *memBarFeed {
 	barfeed := NewBaseBarFeed(freqs, stype, maxlen)
 	return &memBarFeed{
 		baseBarFeed: *barfeed,
