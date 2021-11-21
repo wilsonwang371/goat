@@ -22,7 +22,7 @@ type baseBarFeed struct {
 	lastBars          map[string]common.Bar
 }
 
-func NewBaseBarFeed(frequencies []common.Frequency, stype series.Type, maxlen int) common.BarFeed {
+func NewBaseBarFeed(frequencies []common.Frequency, stype series.Type, maxlen int) *baseBarFeed {
 	basefeed := feed.NewBaseFeed(maxlen)
 	return &baseBarFeed{
 		BaseFeed:         *basefeed,
