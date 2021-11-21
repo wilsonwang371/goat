@@ -8,15 +8,16 @@ import (
 )
 
 type broker struct {
-	*core.DefaultSubject
+	core.DefaultSubject
 	orderEvent   common.Event
 	activeOrders map[uint64]common.Order
 	barfeed      common.BarFeed
 }
 
 func NewBroker(barfeed common.BarFeed) common.Broker {
+	subject := core.NewDefaultSubject()
 	return &broker{
-		DefaultSubject: core.NewDefaultSubject(),
+		DefaultSubject: *subject,
 		orderEvent:     core.NewEvent(),
 		barfeed:        barfeed,
 	}

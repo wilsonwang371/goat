@@ -13,7 +13,7 @@ type regDs struct {
 }
 
 type BaseFeed struct {
-	*core.DefaultSubject
+	core.DefaultSubject
 	event        common.Event
 	dataseries   map[string]map[common.Frequency]common.BarDataSeries
 	registeredDs []regDs
@@ -21,8 +21,9 @@ type BaseFeed struct {
 }
 
 func NewBaseFeed(maxlen int) *BaseFeed {
+	subject := core.NewDefaultSubject()
 	return &BaseFeed{
-		DefaultSubject: core.NewDefaultSubject(),
+		DefaultSubject: *subject,
 		event:          core.NewEvent(),
 		dataseries:     map[string]map[common.Frequency]common.BarDataSeries{},
 		maxlen:         maxlen,
@@ -51,7 +52,7 @@ func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency,
 }
 
 func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
-	datetime, values, freqs, err := b.GetNextValues()
+	datetime, values, freqs, err := interface{}(b).(common.Feed).GetNextValues()
 	if err != nil || datetime == nil {
 		keys := values.GetInstruments()
 		for _, k := range keys {
@@ -93,7 +94,7 @@ func (b *BaseFeed) GetNewValuesEvent() common.Event {
 
 func (b *BaseFeed) Dispatch() (bool, error) {
 	// TODO: check if freq here is needed
-	datetime, values, _, err := b.GetNextValuesAndUpdateDS()
+	datetime, values, _, err := interface{}(b).(common.Feed).GetNextValuesAndUpdateDS()
 	if err != nil {
 		return false, err
 	}

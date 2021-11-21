@@ -13,7 +13,7 @@ import (
 )
 
 type baseBarFeed struct {
-	*feed.BaseFeed
+	feed.BaseFeed
 	frequencies       []common.Frequency
 	useAdjustedValue  bool
 	stype             series.Type
@@ -23,13 +23,19 @@ type baseBarFeed struct {
 }
 
 func NewBaseBarFeed(frequencies []common.Frequency, stype series.Type, maxlen int) common.BarFeed {
+	basefeed := feed.NewBaseFeed(maxlen)
 	return &baseBarFeed{
-		BaseFeed:         feed.NewBaseFeed(maxlen),
+		BaseFeed:         *basefeed,
 		frequencies:      frequencies,
 		useAdjustedValue: false,
 		stype:            stype,
 		lastBars:         map[string]common.Bar{},
 	}
+}
+
+func (b *baseBarFeed) Reset() {
+	b.currentBars = nil
+	b.lastBars = map[string]common.Bar{}
 }
 
 func (b *baseBarFeed) GetCurrentBars() common.Bars {
@@ -50,7 +56,7 @@ func (b *baseBarFeed) GetNextBars() common.Bars {
 }
 
 func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency, error) {
-	bars := b.GetNextBars()
+	bars := interface{}(b).(common.BarFeed).GetNextBars()
 	if bars == nil {
 		freqs := bars.GetFrequencies()
 		datetime := bars.GetDateTime()
