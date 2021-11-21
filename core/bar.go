@@ -87,19 +87,19 @@ type basicBar struct {
 
 func NewBasicBar(dateTime time.Time, o, h, l, c float64, v int, adjClose float64, freq common.Frequency) common.Bar {
 	if h < l {
-		lg.Logger.Error("high < low on %s", zap.Time("dateTime", dateTime))
+		lg.Logger.Error("high < low on %s", zap.Time("datetime", dateTime))
 		return nil
 	} else if h < o {
-		lg.Logger.Error("high < open on %s", zap.Time("dateTime", dateTime))
+		lg.Logger.Error("high < open on %s", zap.Time("datetime", dateTime))
 		return nil
 	} else if h < c {
-		lg.Logger.Error("high < close on %s", zap.Time("dateTime", dateTime))
+		lg.Logger.Error("high < close on %s", zap.Time("datetime", dateTime))
 		return nil
 	} else if l > o {
-		lg.Logger.Error("low > open on %s", zap.Time("dateTime", dateTime))
+		lg.Logger.Error("low > open on %s", zap.Time("datetime", dateTime))
 		return nil
 	} else if l > c {
-		lg.Logger.Error("low > close on %s", zap.Time("dateTime", dateTime))
+		lg.Logger.Error("low > close on %s", zap.Time("datetime", dateTime))
 		return nil
 	}
 	tmptime := dateTime

@@ -49,15 +49,15 @@ func (b *baseBarFeed) GetLastBar(instrument string) []common.Bar {
 	return nil
 }
 
-func (b *baseBarFeed) GetNextBars() common.Bars {
+func (b *baseBarFeed) GetNextBars() (common.Bars, error) {
 	// TODO: implement me
 	lg.Logger.Error("not implemented")
 	panic("not implemented")
 }
 
 func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency, error) {
-	bars := interface{}(b).(common.BarFeed).GetNextBars()
-	if bars == nil {
+	bars, err := interface{}(b).(common.BarFeed).GetNextBars()
+	if bars == nil && err != nil {
 		freqs := bars.GetFrequencies()
 		dateTime := bars.GetDateTime()
 

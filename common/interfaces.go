@@ -95,7 +95,7 @@ type BarFeed interface {
 	Feed
 	GetCurrentBars() Bars
 	GetLastBar(instrument string) []Bar
-	GetNextBars() Bars
+	GetNextBars() (Bars, error)
 	GetCurrentDateTime() *time.Time
 	BarsHaveAdjClose() bool
 	GetFrequencies() []Frequency

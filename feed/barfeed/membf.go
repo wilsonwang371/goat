@@ -12,6 +12,8 @@ import (
 
 type MemBarFeed interface {
 	common.BarFeed
+	AddBarListFromSequence(instrument string, barlist []common.Bar) error
+	LoadAll() error
 }
 
 type memBarFeed struct {
@@ -122,9 +124,28 @@ func (m *memBarFeed) PeekDateTime() *time.Time {
 	return resultDateTime
 }
 
-func (m *memBarFeed) GetNextBars() common.Bars {
-	// TODO: implement me
-	panic("implement me")
+func (m *memBarFeed) GetNextBars() (common.Bars, error) {
+	smallestDateTime := m.PeekDateTime()
+	if smallestDateTime == nil {
+		return nil, fmt.Errorf("invalid datetime")
+	}
+
+	ret := core.NewBars()
+	for _, instrument := range m.bars.GetInstruments() {
+		barlist := m.bars.GetBarList(instrument)
+		nextIdx := m.nextIdx[instrument]
+		if nextIdx < len(barlist) && barlist[nextIdx].GetDateTime().Equal(*smallestDateTime) {
+			ret.AddBarList(instrument, barlist)
+			m.nextIdx[instrument]++
+		}
+	}
+
+	if m.currentDateTime.Equal(*smallestDateTime) {
+		return nil, fmt.Errorf("Duplicate bars found for %v on %s", ret.GetInstruments(), smallestDateTime)
+	}
+
+	m.currentDateTime = smallestDateTime
+	return ret, nil
 }
 
 func (m *memBarFeed) LoadAll() error {
