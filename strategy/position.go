@@ -32,9 +32,9 @@ type PositionState interface {
 type PositionStateType int
 
 const (
-	PS_WaitingEntryState PositionStateType = iota
-	PS_OpenState
-	PS_ClosedState
+	PositionStateWaitingEntryState PositionStateType = iota
+	PositionStateOpenState
+	PositionStateClosedState
 )
 
 type position struct {
@@ -113,11 +113,11 @@ func (p *position) submitExitOrder(stopPrice, limitPrice float64, goodTillCancel
 
 func NewPositionState(stateType PositionStateType) PositionState {
 	switch stateType {
-	case PS_WaitingEntryState:
+	case PositionStateWaitingEntryState:
 		return &WaitingEntryState{}
-	case PS_OpenState:
+	case PositionStateOpenState:
 		return &OpenState{}
-	case PS_ClosedState:
+	case PositionStateClosedState:
 		return &ClosedState{}
 	}
 	return nil

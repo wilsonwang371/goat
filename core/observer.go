@@ -6,7 +6,7 @@ import (
 )
 
 type DefaultSubject struct {
-	dispatchPrio int
+	dispatchPriority int
 }
 
 func NewDefaultSubject() *DefaultSubject {
@@ -38,11 +38,11 @@ func (s *DefaultSubject) PeekDateTime() *time.Time {
 }
 
 func (s *DefaultSubject) GetDispatchPriority() int {
-	return s.dispatchPrio
+	return s.dispatchPriority
 }
 
 func (s *DefaultSubject) SetDispatchPriority(priority int) {
-	s.dispatchPrio = priority
+	s.dispatchPriority = priority
 }
 
 func (s *DefaultSubject) OnDispatcherRegistered(dispatcher common.Dispatcher) error {

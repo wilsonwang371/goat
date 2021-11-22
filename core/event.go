@@ -50,7 +50,7 @@ func (e *event) Emit(args ...interface{}) []error {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
-	res := []error{}
+	var res []error
 
 	for _, v := range e.handlers {
 		if err := v(args...); err != nil {

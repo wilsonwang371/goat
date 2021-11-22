@@ -18,22 +18,22 @@ type barDataSeries struct {
 	volume       series.Series
 	extra        map[string]series.Series
 	useAdjValues bool
-	maxlen       int
-	stype        series.Type
+	maxLen       int
+	sType        series.Type
 }
 
-func NewBarDataSeries(stype series.Type, maxlen int) common.BarDataSeries {
+func NewBarDataSeries(sType series.Type, maxLen int) common.BarDataSeries {
 	return &barDataSeries{
-		open:         series.New(nil, stype, "open"),
-		high:         series.New(nil, stype, "high"),
-		low:          series.New(nil, stype, "low"),
-		close:        series.New(nil, stype, "close"),
-		adjClose:     series.New(nil, stype, "adjClose"),
+		open:         series.New(nil, sType, "open"),
+		high:         series.New(nil, sType, "high"),
+		low:          series.New(nil, sType, "low"),
+		close:        series.New(nil, sType, "close"),
+		adjClose:     series.New(nil, sType, "adjClose"),
 		volume:       series.New(nil, series.Float, "volume"),
 		extra:        map[string]series.Series{},
 		useAdjValues: false,
-		maxlen:       maxlen,
-		stype:        stype,
+		maxLen:       maxLen,
+		sType:        sType,
 	}
 }
 
@@ -45,7 +45,10 @@ func (s *barDataSeries) AppendWithDateTime(dateTime time.Time, bar common.Bar) e
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	bar.SetUseAdjustedValue(s.useAdjValues)
+	err := bar.SetUseAdjustedValue(s.useAdjValues)
+	if err != nil {
+		return err
+	}
 	// TODO: call super class?
 
 	s.open.Append(bar.Open())
@@ -55,16 +58,16 @@ func (s *barDataSeries) AppendWithDateTime(dateTime time.Time, bar common.Bar) e
 	s.adjClose.Append(bar.AdjClose())
 	s.volume.Append(bar.Volume())
 
-	for _, series := range []*series.Series{&s.open, &s.high, &s.low, &s.close, &s.adjClose, &s.volume} {
-		if series.Len() > s.maxlen {
-			*series = series.Slice(series.Len()-s.maxlen, s.maxlen-1)
+	for _, val := range []*series.Series{&s.open, &s.high, &s.low, &s.close, &s.adjClose, &s.volume} {
+		if val.Len() > s.maxLen {
+			*val = val.Slice(val.Len()-s.maxLen, s.maxLen-1)
 		}
 	}
 
 	newExtra := map[string]series.Series{}
 	for k, v := range s.extra {
-		if v.Len() > s.maxlen {
-			newExtra[k] = v.Slice(v.Len()-s.maxlen, s.maxlen-1)
+		if v.Len() > s.maxLen {
+			newExtra[k] = v.Slice(v.Len()-s.maxLen, s.maxLen-1)
 		} else {
 			newExtra[k] = v
 		}

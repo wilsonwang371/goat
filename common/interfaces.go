@@ -76,12 +76,12 @@ type Bars interface {
 	GetInstruments() []string
 	GetBarList(instrument string) []Bar
 	GetFrequencies() []Frequency
-	AddBarList(instrument string, barlist []Bar) error
+	AddBarList(instrument string, barList []Bar) error
 }
 
 type Feed interface {
 	Subject
-	CreateDataSeries(key string, maxlen int) BarDataSeries
+	CreateDataSeries(key string, maxLen int) BarDataSeries
 	GetNextValues() (*time.Time, Bars, []Frequency, error)
 	GetNextValuesAndUpdateDS() (*time.Time, Bars, []Frequency, error)
 	RegisterDataSeries(key string, freq Frequency) error

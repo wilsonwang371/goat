@@ -16,19 +16,19 @@ type baseBarFeed struct {
 	feed.BaseFeed
 	frequencies       []common.Frequency
 	useAdjustedValue  bool
-	stype             series.Type
+	sType             series.Type
 	defaultInstrument string
 	currentBars       common.Bars
 	lastBars          map[string][]common.Bar
 }
 
-func NewBaseBarFeed(frequencies []common.Frequency, stype series.Type, maxlen int) *baseBarFeed {
-	basefeed := feed.NewBaseFeed(maxlen)
+func NewBaseBarFeed(frequencies []common.Frequency, sType series.Type, maxLen int) *baseBarFeed {
+	basefeed := feed.NewBaseFeed(maxLen)
 	return &baseBarFeed{
 		BaseFeed:         *basefeed,
 		frequencies:      frequencies,
 		useAdjustedValue: false,
-		stype:            stype,
+		sType:            sType,
 		lastBars:         map[string][]common.Bar{},
 	}
 }
@@ -57,12 +57,12 @@ func (b *baseBarFeed) GetNextBars() (common.Bars, error) {
 
 func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency, error) {
 	bars, err := interface{}(b).(common.BarFeed).GetNextBars()
-	if bars == nil && err != nil {
-		freqs := bars.GetFrequencies()
+	if bars != nil && err == nil {
+		freqList := bars.GetFrequencies()
 		dateTime := bars.GetDateTime()
 
-		if len(freqs) == 0 || dateTime == nil {
-			lg.Logger.Error("invalid frequency and/or dateTime", zap.Any("Frequencies", freqs), zap.Time("DateTime", *dateTime))
+		if len(freqList) == 0 || dateTime == nil {
+			lg.Logger.Error("invalid frequency and/or dateTime", zap.Any("Frequencies", freqList), zap.Time("DateTime", *dateTime))
 			return nil, nil, []common.Frequency{}, fmt.Errorf("invalid frequency and/or dateTime")
 		}
 
@@ -76,7 +76,7 @@ func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequen
 		for _, v := range bars.GetInstruments() {
 			b.lastBars[v] = bars.GetBarList(v)
 		}
-		return dateTime, bars, freqs, nil
+		return dateTime, bars, freqList, nil
 	}
 	return nil, nil, []common.Frequency{}, fmt.Errorf("no next bars")
 }
@@ -97,8 +97,8 @@ func (b *baseBarFeed) GetFrequencies() []common.Frequency {
 	return b.frequencies
 }
 
-func (b *baseBarFeed) CreateDataSeries(key string, maxlen int) common.BarDataSeries {
-	ret := dataseries.NewBarDataSeries(b.stype, b.BaseFeed.GetMaxLen())
+func (b *baseBarFeed) CreateDataSeries(key string, maxLen int) common.BarDataSeries {
+	ret := dataseries.NewBarDataSeries(b.sType, b.BaseFeed.GetMaxLen())
 	return ret
 }
 

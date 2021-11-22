@@ -13,7 +13,7 @@ import (
 type dispatcher struct {
 	mu              sync.RWMutex
 	subjects        []common.Subject
-	stopc           chan struct{}
+	stopC           chan struct{}
 	currentDateTime *time.Time
 
 	startEvent common.Event
@@ -23,7 +23,7 @@ type dispatcher struct {
 func NewDispatcher() common.Dispatcher {
 	return &dispatcher{
 		subjects:        []common.Subject{},
-		stopc:           make(chan struct{}, 1),
+		stopC:           make(chan struct{}, 1),
 		currentDateTime: nil,
 		startEvent:      NewEvent(),
 		idleEvent:       NewEvent(),
@@ -60,16 +60,20 @@ func (d *dispatcher) GetCurrentDateTime() *time.Time {
 }
 
 func (d *dispatcher) Stop() error {
-	d.stopc <- struct{}{}
+	d.stopC <- struct{}{}
 	return nil
 }
 
 func (d *dispatcher) cleanup() {
 	for _, v := range d.subjects {
-		v.Stop()
+		if err := v.Stop(); err != nil {
+			lg.Logger.Warn("error", zap.Error(err))
+		}
 	}
 	for _, v := range d.subjects {
-		v.Join()
+		if err := v.Join(); err != nil {
+			lg.Logger.Warn("error", zap.Error(err))
+		}
 	}
 }
 
@@ -136,7 +140,7 @@ func (d *dispatcher) mainDispatchLoop() {
 
 	for {
 		select {
-		case <-d.stopc:
+		case <-d.stopC:
 			d.currentDateTime = nil
 			return
 		default:
@@ -145,7 +149,7 @@ func (d *dispatcher) mainDispatchLoop() {
 		eof, eventDispatched := d.dispatch()
 		d.mu.RUnlock()
 		if eof {
-			d.stopc <- struct{}{}
+			d.stopC <- struct{}{}
 		} else if eventDispatched {
 			d.idleEvent.Emit()
 		}

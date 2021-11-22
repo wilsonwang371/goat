@@ -1,10 +1,13 @@
 package feed
 
 import (
+	"fmt"
 	"goalgotrade/common"
 	"goalgotrade/core"
 	lg "goalgotrade/logger"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type regDs struct {
@@ -17,31 +20,34 @@ type BaseFeed struct {
 	event        common.Event
 	dataseries   map[string]map[common.Frequency]common.BarDataSeries
 	registeredDs []regDs
-	maxlen       int
+	maxLen       int
 }
 
-func NewBaseFeed(maxlen int) *BaseFeed {
+func NewBaseFeed(maxLen int) *BaseFeed {
 	subject := core.NewDefaultSubject()
 	return &BaseFeed{
 		DefaultSubject: *subject,
 		event:          core.NewEvent(),
 		dataseries:     map[string]map[common.Frequency]common.BarDataSeries{},
-		maxlen:         maxlen,
+		maxLen:         maxLen,
 	}
 }
 
 func (b *BaseFeed) GetMaxLen() int {
-	return b.maxlen
+	return b.maxLen
 }
 
 func (b *BaseFeed) Reset() {
 	b.dataseries = make(map[string]map[common.Frequency]common.BarDataSeries)
 	for _, v := range b.registeredDs {
-		b.RegisterDataSeries(v.key, v.freq)
+		err := b.RegisterDataSeries(v.key, v.freq)
+		if err != nil {
+			lg.Logger.Warn("error", zap.Error(err))
+		}
 	}
 }
 
-func (b *BaseFeed) CreateDataSeries(key string, maxlen int) common.BarDataSeries {
+func (b *BaseFeed) CreateDataSeries(key string, maxLen int) common.BarDataSeries {
 	lg.Logger.Error("not implemented")
 	panic("not implemented")
 }
@@ -52,26 +58,29 @@ func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency,
 }
 
 func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
-	dateTime, values, freqs, err := interface{}(b).(common.Feed).GetNextValues()
+	dateTime, values, freqList, err := interface{}(b).(common.Feed).GetNextValues()
 	if err != nil || dateTime == nil {
 		keys := values.GetInstruments()
+		if keys == nil || len(keys) == 0 {
+			return nil, nil, nil, fmt.Errorf("no instruments found")
+		}
 		for _, k := range keys {
 			if v, ok := b.dataseries[k]; !ok {
 				b.dataseries[k] = make(map[common.Frequency]common.BarDataSeries)
 			} else {
-				for _, freq := range freqs {
+				for _, freq := range freqList {
 					if v2, ok2 := v[freq]; ok2 {
 						for _, bar := range values.GetBarList(k) {
 							v2.Append(bar)
 						}
 					} else {
-						b.dataseries[k][freq] = b.CreateDataSeries(k, b.maxlen)
+						b.dataseries[k][freq] = b.CreateDataSeries(k, b.maxLen)
 					}
 				}
 			}
 		}
 	}
-	return dateTime, values, freqs, err
+	return dateTime, values, freqList, err
 }
 
 func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
@@ -79,7 +88,7 @@ func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
 		b.dataseries[key] = map[common.Frequency]common.BarDataSeries{}
 	}
 	if _, ok := b.dataseries[key][freq]; !ok {
-		b.dataseries[key][freq] = b.CreateDataSeries(key, b.maxlen)
+		b.dataseries[key][freq] = b.CreateDataSeries(key, b.maxLen)
 		for _, v := range b.registeredDs {
 			if v.key == key && v.freq == freq {
 				return nil
@@ -103,7 +112,7 @@ func (b *BaseFeed) Dispatch() (bool, error) {
 	if dateTime != nil {
 		b.event.Emit(dateTime, values)
 	}
-	return dateTime != nil && err == nil, nil
+	return dateTime != nil, nil
 }
 
 func (b *BaseFeed) Eof() bool {
@@ -111,7 +120,7 @@ func (b *BaseFeed) Eof() bool {
 }
 
 func (b *BaseFeed) GetKeys() []string {
-	res := []string{}
+	var res []string
 	for k := range b.dataseries {
 		res = append(res, k)
 	}

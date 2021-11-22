@@ -102,9 +102,9 @@ func NewBasicBar(dateTime time.Time, o, h, l, c, v, adjClose float64, freq commo
 		lg.Logger.Error("low > close on %s", zap.Time("datetime", dateTime))
 		return nil
 	}
-	tmptime := dateTime
+	tmpTime := dateTime
 	return &basicBar{
-		dateTime:         &tmptime,
+		dateTime:         &tmpTime,
 		open:             o,
 		high:             h,
 		low:              l,

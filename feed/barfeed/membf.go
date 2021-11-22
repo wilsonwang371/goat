@@ -24,8 +24,8 @@ type memBarFeed struct {
 	currentDateTime *time.Time
 }
 
-func NewMemBarFeed(freqs []common.Frequency, stype series.Type, maxlen int) *memBarFeed {
-	barfeed := NewBaseBarFeed(freqs, stype, maxlen)
+func NewMemBarFeed(freqList []common.Frequency, sType series.Type, maxLen int) *memBarFeed {
+	barfeed := NewBaseBarFeed(freqList, sType, maxLen)
 	return &memBarFeed{
 		baseBarFeed: *barfeed,
 		bars:        core.NewBars(),
@@ -141,7 +141,7 @@ func (m *memBarFeed) GetNextBars() (common.Bars, error) {
 	}
 
 	if m.currentDateTime.Equal(*smallestDateTime) {
-		return nil, fmt.Errorf("Duplicate bars found for %v on %s", ret.GetInstruments(), smallestDateTime)
+		return nil, fmt.Errorf("duplicate bars found for %v on %s", ret.GetInstruments(), smallestDateTime)
 	}
 
 	m.currentDateTime = smallestDateTime

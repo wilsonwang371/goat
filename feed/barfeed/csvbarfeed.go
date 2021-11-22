@@ -2,6 +2,7 @@ package barfeed
 
 import (
 	"encoding/csv"
+	"fmt"
 	"goalgotrade/common"
 	"goalgotrade/core"
 	lg "goalgotrade/logger"
@@ -41,11 +42,11 @@ type CSVBarFeed struct {
 	TimeZone       string
 }
 
-func NewCSVBarFeed(freqs []common.Frequency, stype series.Type, timezone string, maxlen int) *CSVBarFeed {
-	if len(freqs) != 1 {
+func NewCSVBarFeed(freqList []common.Frequency, sType series.Type, timezone string, maxLen int) *CSVBarFeed {
+	if len(freqList) != 1 {
 		panic("currently csv barfeed only supports one frequency")
 	}
-	m := NewMemBarFeed(freqs, stype, maxlen)
+	m := NewMemBarFeed(freqList, sType, maxLen)
 	return &CSVBarFeed{
 		memBarFeed:     *m,
 		DateTimeFormat: "%Y-%m-%d %H:%M:%S",
@@ -99,7 +100,7 @@ func (c *CSVBarFeed) parseRawToBar(dict map[string]string) (common.Bar, error) {
 	if err != nil {
 		return nil, err
 	}
-	close, err := strconv.ParseFloat(closeRaw, 64)
+	closeVal, err := strconv.ParseFloat(closeRaw, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -111,16 +112,18 @@ func (c *CSVBarFeed) parseRawToBar(dict map[string]string) (common.Bar, error) {
 	if err != nil {
 		adjClose = .0
 	}
-	bar := core.NewBasicBar(dateTime, open, high, low, close, volume, adjClose, c.frequencies[0])
+	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, volume, adjClose, c.frequencies[0])
 	if c.HaveAdjClose {
-		bar.SetUseAdjustedValue(true)
+		if err := bar.SetUseAdjustedValue(true); err != nil {
+			return nil, err
+		}
 	}
 	return bar, nil
 }
 
-func (c *CSVBarFeed) AddBarsFromCSV(instrument string, path string, timezone string) error {
+func (c *CSVBarFeed) AddBarsFromCSV(instrument string, path string, _ string) error {
 	isHeader := true
-	headers := []string{}
+	var headers []string
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -128,7 +131,7 @@ func (c *CSVBarFeed) AddBarsFromCSV(instrument string, path string, timezone str
 	}
 
 	reader := csv.NewReader(file)
-	loadedBarList := []common.Bar{}
+	var loadedBarList []common.Bar
 	for {
 		// Read each record from csv
 		record, err := reader.Read()
@@ -144,9 +147,16 @@ func (c *CSVBarFeed) AddBarsFromCSV(instrument string, path string, timezone str
 			headers = record
 			isHeader = false
 		} else {
+			if headers == nil {
+				return fmt.Errorf("invalid headers")
+			}
 			data := map[string]string{}
 			for i, v := range record {
-				data[headers[i]] = v
+				if i < len(headers) {
+					data[headers[i]] = v
+				} else {
+					lg.Logger.Warn("header not found", zap.Int("index", i), zap.String("value", v))
+				}
 			}
 			bar, err := c.parseRawToBar(data)
 			if err != nil {
@@ -156,7 +166,9 @@ func (c *CSVBarFeed) AddBarsFromCSV(instrument string, path string, timezone str
 				loadedBarList = append(loadedBarList, bar)
 			}
 		}
-		c.AddBarListFromSequence(instrument, loadedBarList)
+		if err := c.AddBarListFromSequence(instrument, loadedBarList); err != nil {
+			return err
+		}
 	}
 	return nil
 }

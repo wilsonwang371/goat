@@ -11,14 +11,13 @@ import (
 )
 
 func TestStrategyBasics(t *testing.T) {
-	freqs := []common.Frequency{common.Frequency_DAY, common.Frequency_MINUTE}
+	freqList := []common.Frequency{common.Frequency_DAY, common.Frequency_MINUTE}
 
-	f := barfeed.NewBaseBarFeed(freqs, series.Float, 100)
+	f := barfeed.NewBaseBarFeed(freqList, series.Float, 100)
 	b := broker.NewBroker(f)
 	s := strategy.NewBaseStrategy(f, b)
 
 	ch, err := s.Run()
-
 	if err != nil {
 		panic(err)
 	}
