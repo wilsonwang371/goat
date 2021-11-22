@@ -82,11 +82,11 @@ func (c *CSVBarFeed) parseRawToBar(dict map[string]string) (common.Bar, error) {
 	if adjCloseRaw != "" {
 		c.HaveAdjClose = true
 	}
-	cbon := carbon.ParseByFormat(c.DateTimeFormat, dateTimeRaw)
-	if cbon.Error != nil {
-		return nil, cbon.Error
+	carbonResult := carbon.ParseByFormat(c.DateTimeFormat, dateTimeRaw)
+	if carbonResult.Error != nil {
+		return nil, carbonResult.Error
 	}
-	dateTime := cbon.Carbon2Time()
+	dateTime := carbonResult.Carbon2Time()
 	open, err := strconv.ParseFloat(openRaw, 64)
 	if err != nil {
 		return nil, err
