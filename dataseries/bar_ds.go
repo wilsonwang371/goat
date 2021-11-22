@@ -74,7 +74,7 @@ func (s *barDataSeries) AppendWithDateTime(dateTime time.Time, bar common.Bar) e
 	}
 	s.extra = newExtra
 
-	// TODO: add extr columns
+	// TODO: add extra columns
 	return nil
 }
 

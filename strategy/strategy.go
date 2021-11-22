@@ -28,7 +28,7 @@ type baseStrategy struct {
 	mu         sync.RWMutex
 	dispatcher common.Dispatcher
 	broker     common.Broker
-	barfeed    common.BarFeed
+	barFeed    common.BarFeed
 
 	barsProcessedEvent common.Event
 	orderToPosition    map[uint64]Position
@@ -38,28 +38,49 @@ type baseStrategy struct {
 func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
 	s := &baseStrategy{
 		dispatcher:         core.NewDispatcher(),
-		barfeed:            bf,
+		barFeed:            bf,
 		broker:             bk,
 		barsProcessedEvent: core.NewEvent(),
 		activePositions:    []Position{},
 	}
 
-	s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
+	err := s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
 		return s.onOrderEvent(args)
 	})
-	s.barfeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
+	if err != nil {
+		return nil
+	}
+
+	err = s.barFeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
 		return s.onBars(args)
 	})
+	if err != nil {
+		return nil
+	}
 
-	s.dispatcher.GetStartEvent().Subscribe(func(args ...interface{}) error {
+	err = s.dispatcher.GetStartEvent().Subscribe(func(args ...interface{}) error {
 		return s.OnStart()
 	})
-	s.dispatcher.GetIdleEvent().Subscribe(func(args ...interface{}) error {
+	if err != nil {
+		return nil
+	}
+
+	err = s.dispatcher.GetIdleEvent().Subscribe(func(args ...interface{}) error {
 		return s.OnIdle()
 	})
+	if err != nil {
+		return nil
+	}
 
-	s.dispatcher.AddSubject(s.broker)
-	s.dispatcher.AddSubject(s.barfeed)
+	err = s.dispatcher.AddSubject(s.broker)
+	if err != nil {
+		return nil
+	}
+
+	err = s.dispatcher.AddSubject(s.barFeed)
+	if err != nil {
+		return nil
+	}
 	return s
 }
 
@@ -137,7 +158,10 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 	// bk := args[0].(broker.Broker)
 	orderEvent := args[1].(*common.OrderEvent)
 	order := orderEvent.Order
-	s.OnOrderUpdated(order)
+	err := s.OnOrderUpdated(order)
+	if err != nil {
+		return err
+	}
 
 	if pos, ok := s.orderToPosition[order.GetId()]; ok {
 		if pos == nil {
@@ -146,9 +170,15 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 			panic(msg)
 		}
 		if order.IsActive() {
-			s.UnregisterPositionOrder(pos, order)
+			err := s.UnregisterPositionOrder(pos, order)
+			if err != nil {
+				return err
+			}
 		}
-		pos.OnOrderEvent(orderEvent)
+		err := pos.OnOrderEvent(orderEvent)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -160,7 +190,10 @@ func (s *baseStrategy) onBars(args ...interface{}) error {
 		panic(msg)
 	}
 	bars := args[0].(common.Bars)
-	s.OnBars(bars)
+	err := s.OnBars(bars)
+	if err != nil {
+		return err
+	}
 	s.barsProcessedEvent.Emit(bars)
 	return nil
 }
@@ -171,7 +204,7 @@ func (s *baseStrategy) Run() (<-chan struct{}, error) {
 		return ch, err
 	}
 
-	currentBars := s.barfeed.GetCurrentBars()
+	currentBars := s.barFeed.GetCurrentBars()
 
 	if currentBars != nil {
 		if err := s.OnFinish(currentBars); err != nil {

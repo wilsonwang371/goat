@@ -89,13 +89,13 @@ func (p *position) GetExitOrder() common.Order {
 }
 
 func (p *position) SetEntryDateTime(dateTime time.Time) {
-	tmptime := dateTime
-	p.entryDateTime = &tmptime
+	tmpTime := dateTime
+	p.entryDateTime = &tmpTime
 }
 
 func (p *position) SetExitDateTime(dateTime time.Time) {
-	tmptime := dateTime
-	p.exitDateTime = &tmptime
+	tmpTime := dateTime
+	p.exitDateTime = &tmpTime
 }
 
 func (p *position) GetStrategy() Strategy {
@@ -152,7 +152,10 @@ func (w *WaitingEntryState) Exit(position Position, stopPrice, limitPrice float6
 	if !position.GetEntryOrder().IsActive() {
 		return fmt.Errorf("entry order is not active")
 	}
-	position.GetStrategy().GetBroker().CancelOrder(position.GetEntryOrder())
+	err := position.GetStrategy().GetBroker().CancelOrder(position.GetEntryOrder())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -185,10 +188,15 @@ func (o *OpenState) Exit(pos Position, stopPrice, limitPrice float64, goodTillCa
 		return fmt.Errorf("exit oder is active and it should be cancelled first")
 	}
 	if pos.EntryActive() {
-		pos.GetStrategy().GetBroker().CancelOrder(pos.GetEntryOrder())
+		err := pos.GetStrategy().GetBroker().CancelOrder(pos.GetEntryOrder())
+		if err != nil {
+			return err
+		}
 	}
 	if pos2, ok := pos.(*position); ok {
-		pos2.submitExitOrder(stopPrice, limitPrice, goodTillCanceled)
+		if err := pos2.submitExitOrder(stopPrice, limitPrice, goodTillCanceled); err != nil {
+			return err
+		}
 	} else {
 		return fmt.Errorf("failed to submit exit order")
 	}
@@ -214,7 +222,9 @@ func (c *ClosedState) OnEnter(position Position) error {
 	if position.GetShares() == 0 {
 		return fmt.Errorf("no shares")
 	}
-	position.GetStrategy().UnregisterPosition(position)
+	if err := position.GetStrategy().UnregisterPosition(position); err != nil {
+		return err
+	}
 	return nil
 }
 

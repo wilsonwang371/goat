@@ -23,9 +23,9 @@ type baseBarFeed struct {
 }
 
 func NewBaseBarFeed(frequencies []common.Frequency, sType series.Type, maxLen int) *baseBarFeed {
-	basefeed := feed.NewBaseFeed(maxLen)
+	baseFeed := feed.NewBaseFeed(maxLen)
 	return &baseBarFeed{
-		BaseFeed:         *basefeed,
+		BaseFeed:         *baseFeed,
 		frequencies:      frequencies,
 		useAdjustedValue: false,
 		sType:            sType,
@@ -62,7 +62,7 @@ func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequen
 		dateTime := bars.GetDateTime()
 
 		if len(freqList) == 0 || dateTime == nil {
-			lg.Logger.Error("invalid frequency and/or dateTime", zap.Any("Frequencies", freqList), zap.Time("DateTime", *dateTime))
+			lg.Logger.Error("invalid frequency and/or dateTime", zap.Any("Frequencies", freqList), zap.Any("DateTime", dateTime))
 			return nil, nil, []common.Frequency{}, fmt.Errorf("invalid frequency and/or dateTime")
 		}
 

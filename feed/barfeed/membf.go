@@ -12,7 +12,7 @@ import (
 
 type MemBarFeed interface {
 	common.BarFeed
-	AddBarListFromSequence(instrument string, barlist []common.Bar) error
+	AddBarListFromSequence(instrument string, barList []common.Bar) error
 	LoadAll() error
 }
 
@@ -25,9 +25,9 @@ type memBarFeed struct {
 }
 
 func NewMemBarFeed(freqList []common.Frequency, sType series.Type, maxLen int) *memBarFeed {
-	barfeed := NewBaseBarFeed(freqList, sType, maxLen)
+	barFeed := NewBaseBarFeed(freqList, sType, maxLen)
 	return &memBarFeed{
-		baseBarFeed: *barfeed,
+		baseBarFeed: *barFeed,
 		bars:        core.NewBars(),
 		nextIdx:     map[string]int{},
 	}
@@ -47,7 +47,9 @@ func (m *memBarFeed) GetCurrentDateTime() *time.Time {
 }
 
 func (m *memBarFeed) Start() error {
-	m.baseBarFeed.Start()
+	if err := m.baseBarFeed.Start(); err != nil {
+		return err
+	}
 	m.started = true
 	return nil
 }
@@ -62,7 +64,7 @@ func (m *memBarFeed) Join() error {
 	return nil
 }
 
-func (m *memBarFeed) AddBarListFromSequence(instrument string, barlist []common.Bar) error {
+func (m *memBarFeed) AddBarListFromSequence(instrument string, barList []common.Bar) error {
 	if m.started {
 		return fmt.Errorf("can't add more bars once you started consuming bars")
 	}
@@ -71,21 +73,25 @@ func (m *memBarFeed) AddBarListFromSequence(instrument string, barlist []common.
 		m.nextIdx[instrument] = 0
 	}
 
-	m.bars.AddBarList(instrument, barlist)
-	newbarlist := m.bars.GetBarList(instrument)
-	if len(newbarlist) > 1 {
-		sort.SliceStable(newbarlist, func(i, j int) bool {
-			return newbarlist[i].GetDateTime().Before(*newbarlist[j].GetDateTime())
+	if err := m.bars.AddBarList(instrument, barList); err != nil {
+		return err
+	}
+	newBarList := m.bars.GetBarList(instrument)
+	if len(newBarList) > 1 {
+		sort.SliceStable(newBarList, func(i, j int) bool {
+			return newBarList[i].GetDateTime().Before(*newBarList[j].GetDateTime())
 		})
 	}
-	allfreqs := map[common.Frequency]bool{}
-	for _, v := range barlist {
-		if _, ok := allfreqs[v.Frequency()]; !ok {
-			allfreqs[v.Frequency()] = true
+	allFreq := map[common.Frequency]bool{}
+	for _, v := range barList {
+		if _, ok := allFreq[v.Frequency()]; !ok {
+			allFreq[v.Frequency()] = true
 		}
 	}
-	for freq := range allfreqs {
-		m.RegisterInstrument(instrument, freq)
+	for freq := range allFreq {
+		if err := m.RegisterInstrument(instrument, freq); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -93,8 +99,8 @@ func (m *memBarFeed) AddBarListFromSequence(instrument string, barlist []common.
 func (m *memBarFeed) Eof() bool {
 	ret := true
 	for _, instrument := range m.bars.GetInstruments() {
-		barlist := m.bars.GetBarList(instrument)
-		if m.nextIdx[instrument] < len(barlist) {
+		barList := m.bars.GetBarList(instrument)
+		if m.nextIdx[instrument] < len(barList) {
 			ret = false
 			break
 		}
@@ -107,9 +113,9 @@ func (m *memBarFeed) PeekDateTime() *time.Time {
 
 	for _, instrument := range m.bars.GetInstruments() {
 		nextIdx := m.nextIdx[instrument]
-		barlist := m.bars.GetBarList(instrument)
-		if nextIdx < len(barlist) {
-			dateTime := barlist[nextIdx].GetDateTime()
+		barList := m.bars.GetBarList(instrument)
+		if nextIdx < len(barList) {
+			dateTime := barList[nextIdx].GetDateTime()
 			if resultDateTime == nil {
 				if dateTime != nil {
 					resultDateTime = dateTime
@@ -132,10 +138,12 @@ func (m *memBarFeed) GetNextBars() (common.Bars, error) {
 
 	ret := core.NewBars()
 	for _, instrument := range m.bars.GetInstruments() {
-		barlist := m.bars.GetBarList(instrument)
+		barList := m.bars.GetBarList(instrument)
 		nextIdx := m.nextIdx[instrument]
-		if nextIdx < len(barlist) && barlist[nextIdx].GetDateTime().Equal(*smallestDateTime) {
-			ret.AddBarList(instrument, barlist)
+		if nextIdx < len(barList) && barList[nextIdx].GetDateTime().Equal(*smallestDateTime) {
+			if err := ret.AddBarList(instrument, barList); err != nil {
+				return nil, err
+			}
 			m.nextIdx[instrument]++
 		}
 	}
@@ -159,8 +167,12 @@ func (m *memBarFeed) LoadAll() error {
 		}
 		_, _, _, err := m.GetNextValuesAndUpdateDS()
 		if err != nil {
-			m.Stop()
-			m.Join()
+			if err := m.Stop(); err != nil {
+				return err
+			}
+			if err := m.Join(); err != nil {
+				return err
+			}
 			return err
 		}
 	}

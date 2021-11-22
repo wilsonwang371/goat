@@ -44,7 +44,7 @@ type CSVBarFeed struct {
 
 func NewCSVBarFeed(freqList []common.Frequency, sType series.Type, timezone string, maxLen int) *CSVBarFeed {
 	if len(freqList) != 1 {
-		panic("currently csv barfeed only supports one frequency")
+		panic("currently csv bar feed only supports one frequency")
 	}
 	m := NewMemBarFeed(freqList, sType, maxLen)
 	return &CSVBarFeed{
