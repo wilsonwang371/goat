@@ -80,12 +80,12 @@ type basicBar struct {
 	low              float64
 	close            float64
 	adjClose         float64
-	volume           int
+	volume           float64
 	frequency        common.Frequency
 	useAdjustedValue bool
 }
 
-func NewBasicBar(dateTime time.Time, o, h, l, c float64, v int, adjClose float64, freq common.Frequency) common.Bar {
+func NewBasicBar(dateTime time.Time, o, h, l, c, v, adjClose float64, freq common.Frequency) common.Bar {
 	if h < l {
 		lg.Logger.Error("high < low on %s", zap.Time("datetime", dateTime))
 		return nil
@@ -157,7 +157,7 @@ func (b *basicBar) Close() float64 {
 	return b.open
 }
 
-func (b *basicBar) Volume() int {
+func (b *basicBar) Volume() float64 {
 	return b.volume
 }
 

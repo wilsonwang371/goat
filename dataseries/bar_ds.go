@@ -29,7 +29,7 @@ func NewBarDataSeries(stype series.Type, maxlen int) common.BarDataSeries {
 		low:          series.New(nil, stype, "low"),
 		close:        series.New(nil, stype, "close"),
 		adjClose:     series.New(nil, stype, "adjClose"),
-		volume:       series.New(nil, series.Int, "volume"),
+		volume:       series.New(nil, series.Float, "volume"),
 		extra:        map[string]series.Series{},
 		useAdjValues: false,
 		maxlen:       maxlen,

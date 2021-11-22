@@ -65,7 +65,7 @@ type Bar interface {
 	High() float64
 	Low() float64
 	Close() float64
-	Volume() int
+	Volume() float64
 	AdjClose() float64
 	Frequency() Frequency
 	Price() float64
