@@ -10,7 +10,35 @@ import (
 	lg "goalgotrade/logger"
 )
 
+type Analyzer interface {
+	BeforeAttach(s Strategy) error
+	Attached(s Strategy) error
+	BeforeOnBars(s Strategy, bars common.Bars) error
+}
+
+type strategyLogger interface {
+	Critical(msg string)
+	Warning(msg string)
+	Error(msg string)
+	Info(msg string)
+	Debug(msg string)
+}
+
+type analyzeProvider interface {
+	AttachAnalyzer(a Analyzer, name string) error
+	GetNamedAnalyzer(name string) (Analyzer, error)
+}
+
+type positionCtrl interface {
+	RegisterPositionOrder(position Position, order common.Order) error
+	UnregisterPositionOrder(position Position, order common.Order) error
+	UnregisterPosition(position Position) error
+}
+
 type Strategy interface {
+	strategyLogger
+	analyzeProvider
+	positionCtrl
 	OnStart() error
 	OnIdle() error
 	OnFinish(bars common.Bars) error
@@ -23,10 +51,8 @@ type Strategy interface {
 	GetUseAdjustedValues() bool
 	GetLastPrice(instrument string) (float64, error)
 	GetCurrentDateTime() *time.Time
-	RegisterPositionOrder(position Position, order common.Order) error
-	UnregisterPositionOrder(position Position, order common.Order) error
-	UnregisterPosition(position Position) error
 	Run() (<-chan struct{}, error)
+	Stop() error
 }
 
 type baseStrategy struct {
@@ -40,6 +66,7 @@ type baseStrategy struct {
 	barsProcessedEvent common.Event
 	orderToPosition    map[uint64]Position
 	activePositions    []Position
+	namedAnalyzer      map[string]Analyzer
 }
 
 func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
@@ -49,6 +76,7 @@ func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
 		broker:             bk,
 		barsProcessedEvent: core.NewEvent(),
 		activePositions:    []Position{},
+		namedAnalyzer:      map[string]Analyzer{},
 	}
 	res.Self = res
 	return res
@@ -281,4 +309,24 @@ func (s *baseStrategy) Warning(msg string) {
 
 func (s *baseStrategy) Critical(msg string) {
 	lg.Logger.Fatal(msg)
+}
+
+func (s *baseStrategy) AttachAnalyzer(a Analyzer, name string) error {
+	if a == nil {
+		return fmt.Errorf("analyzer is nil")
+	}
+	if _, ok := s.namedAnalyzer[name]; !ok {
+		a.BeforeAttach(s)
+		s.namedAnalyzer[name] = a
+		a.Attached((s))
+		return nil
+	}
+	return fmt.Errorf("analyzer %s already exists", name)
+}
+
+func (s *baseStrategy) GetNamedAnalyzer(name string) (Analyzer, error) {
+	if a, ok := s.namedAnalyzer[name]; ok {
+		return a, nil
+	}
+	return nil, fmt.Errorf("analyzer not found")
 }
