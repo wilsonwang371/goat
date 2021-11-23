@@ -17,11 +17,11 @@ type Strategy interface {
 	OnOrderUpdated(order common.Order) error
 	OnBars(bars common.Bars) error
 	GetBarsProcessedEvent() common.Event
-	GetBarFeed() common.BarFeed
+	GetFeed() common.Feed
 	GetBroker() common.Broker
 	SetBroker(broker common.Broker)
 	GetUseAdjustedValues() bool
-	GetLastPrice() (float64, error)
+	GetLastPrice(instrument string) (float64, error)
 	GetCurrentDateTime() *time.Time
 	RegisterPositionOrder(position Position, order common.Order) error
 	UnregisterPositionOrder(position Position, order common.Order) error
@@ -249,7 +249,7 @@ func (s *baseStrategy) GetUseAdjustedValues() bool {
 }
 
 func (s *baseStrategy) GetLastPrice(instrument string) (float64, error) {
-	barList := s.Self.(Strategy).GetBarFeed().GetLastBar(instrument)
+	barList := s.Self.(Strategy).GetFeed().(common.BarFeed).GetLastBar(instrument)
 	if barList == nil {
 		return 0, fmt.Errorf("invalid bar after calling GetLastBar")
 	}
