@@ -35,15 +35,27 @@ type positionCtrl interface {
 	UnregisterPosition(position Position) error
 }
 
-type Strategy interface {
-	strategyLogger
-	analyzeProvider
-	positionCtrl
+type strategyEvent interface {
 	OnStart() error
 	OnIdle() error
 	OnFinish(bars common.Bars) error
 	OnOrderUpdated(order common.Order) error
 	OnBars(bars common.Bars) error
+}
+
+type positionNotification interface {
+	OnEnterOk(p Position) error
+	OnEnterCanceled(p Position) error
+	OnExitOk(p Position) error
+	OnExitCanceled(p Position) error
+}
+
+type Strategy interface {
+	strategyLogger
+	analyzeProvider
+	positionCtrl
+	strategyEvent
+	positionNotification
 	GetBarsProcessedEvent() common.Event
 	GetFeed() common.Feed
 	GetBroker() common.Broker
@@ -316,9 +328,13 @@ func (s *baseStrategy) AttachAnalyzer(a Analyzer, name string) error {
 		return fmt.Errorf("analyzer is nil")
 	}
 	if _, ok := s.namedAnalyzer[name]; !ok {
-		a.BeforeAttach(s)
+		if err := a.BeforeAttach(s); err != nil {
+			return fmt.Errorf("before attach analyzer failed: %v", err)
+		}
 		s.namedAnalyzer[name] = a
-		a.Attached((s))
+		if err := a.Attached(s); err != nil {
+			return fmt.Errorf("attached analyzer failed: %v", err)
+		}
 		return nil
 	}
 	return fmt.Errorf("analyzer %s already exists", name)
@@ -329,4 +345,24 @@ func (s *baseStrategy) GetNamedAnalyzer(name string) (Analyzer, error) {
 		return a, nil
 	}
 	return nil, fmt.Errorf("analyzer not found")
+}
+
+func (s *baseStrategy) OnEnterOk(p Position) error {
+	panic("not implemented")
+	return nil
+}
+
+func (s *baseStrategy) OnEnterCanceled(p Position) error {
+	panic("not implemented")
+	return nil
+}
+
+func (s *baseStrategy) OnExitOk(p Position) error {
+	panic("not implemented")
+	return nil
+}
+
+func (s *baseStrategy) OnExitCanceled(p Position) error {
+	panic("not implemented")
+	return nil
 }

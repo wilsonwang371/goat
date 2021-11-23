@@ -13,6 +13,7 @@ type Position interface {
 	EntryActive() bool
 	EntryFilled() bool
 	SetEntryDateTime(dateTime time.Time)
+	BuildExitOrder(stopPrice, limitPrice float64) common.Order
 	GetExitOrder() common.Order
 	ExitActive() bool
 	ExitFilled() bool
@@ -38,6 +39,7 @@ const (
 )
 
 type position struct {
+	Self  interface{}
 	state PositionState
 
 	entryOrder common.Order
@@ -50,10 +52,14 @@ type position struct {
 	shares   int
 }
 
-func NewPosition(strategy Strategy) Position {
-	return &position{
-		strategy: strategy,
+func NewPosition(strategy Strategy, entryOrder common.Order, goodTillCanceled, allOrNone bool) Position {
+	res := &position{
+		strategy:   strategy,
+		entryOrder: entryOrder,
 	}
+	// TODO: implement me
+	res.Self = res
+	return res
 }
 
 func (p *position) OnOrderEvent(orderEvent *common.OrderEvent) error {
@@ -108,6 +114,11 @@ func (p *position) GetShares() int {
 
 func (p *position) submitExitOrder(stopPrice, limitPrice float64, goodTillCanceled bool) error {
 	// TODO: implement me
+	return nil
+}
+
+func (p *position) BuildExitOrder(stopPrice, limitPrice float64) common.Order {
+	panic("not implemented")
 	return nil
 }
 
@@ -233,5 +244,23 @@ func (c *ClosedState) IsOpen(position Position) bool {
 }
 
 func (c *ClosedState) Exit(position Position, stopPrice, limitPrice float64, goodTillCanceled bool) error {
+	return nil
+}
+
+type LongPosition struct {
+	position
+}
+
+func NewLongPosition(stopPrice, limitPrice float64) Position {
+	// TODO: implement me
+	return nil
+}
+
+type ShortPosition struct {
+	position
+}
+
+func NewShortPosition(stopPrice, limitPrice float64) Position {
+	// TODO: implement me
 	return nil
 }
