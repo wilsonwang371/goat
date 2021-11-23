@@ -47,7 +47,7 @@ func NewCSVBarFeed(freqList []common.Frequency, sType series.Type, timezone stri
 		panic("currently csv bar feed only supports one frequency")
 	}
 	m := NewMemBarFeed(freqList, sType, maxLen)
-	return &CSVBarFeed{
+	res := &CSVBarFeed{
 		memBarFeed:     *m,
 		DateTimeFormat: "%Y-%m-%d %H:%M:%S",
 		ColumnNames: map[ColumnName]string{
@@ -62,6 +62,8 @@ func NewCSVBarFeed(freqList []common.Frequency, sType series.Type, timezone stri
 		HaveAdjClose: false,
 		TimeZone:     timezone,
 	}
+	res.Self = res
+	return res
 }
 
 func (c *CSVBarFeed) SetNoAdjClose() {

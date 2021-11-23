@@ -11,16 +11,18 @@ type broker struct {
 	core.DefaultSubject
 	orderEvent   common.Event
 	activeOrders map[uint64]common.Order
-	barfeed      common.BarFeed
+	barFeed      common.BarFeed
 }
 
-func NewBroker(barfeed common.BarFeed) common.Broker {
+func NewBroker(barFeed common.BarFeed) common.Broker {
 	subject := core.NewDefaultSubject()
-	return &broker{
+	res := &broker{
 		DefaultSubject: *subject,
 		orderEvent:     core.NewEvent(),
-		barfeed:        barfeed,
+		barFeed:        barFeed,
 	}
+	res.Self = res
+	return res
 }
 
 func (b *broker) GetOrderUpdatedEvent() common.Event {
@@ -56,5 +58,5 @@ func (b *broker) PeekDateTime() *time.Time {
 }
 
 func (b *broker) Eof() bool {
-	return b.barfeed.Eof()
+	return b.barFeed.Eof()
 }

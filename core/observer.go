@@ -6,11 +6,14 @@ import (
 )
 
 type DefaultSubject struct {
+	Self             interface{}
 	dispatchPriority int
 }
 
 func NewDefaultSubject() *DefaultSubject {
-	return &DefaultSubject{}
+	res := &DefaultSubject{}
+	res.Self = res
+	return res
 }
 
 func (s *DefaultSubject) Start() error {

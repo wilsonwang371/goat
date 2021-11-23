@@ -24,13 +24,15 @@ type baseBarFeed struct {
 
 func NewBaseBarFeed(frequencies []common.Frequency, sType series.Type, maxLen int) *baseBarFeed {
 	baseFeed := feed.NewBaseFeed(maxLen)
-	return &baseBarFeed{
+	res := &baseBarFeed{
 		BaseFeed:         *baseFeed,
 		frequencies:      frequencies,
 		useAdjustedValue: false,
 		sType:            sType,
 		lastBars:         map[string][]common.Bar{},
 	}
+	res.Self = res
+	return res
 }
 
 func (b *baseBarFeed) Reset() {
@@ -56,7 +58,7 @@ func (b *baseBarFeed) GetNextBars() (common.Bars, error) {
 }
 
 func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency, error) {
-	bars, err := interface{}(b).(common.BarFeed).GetNextBars()
+	bars, err := b.Self.(common.BarFeed).GetNextBars()
 	if bars != nil && err == nil {
 		freqList := bars.GetFrequencies()
 		dateTime := bars.GetDateTime()

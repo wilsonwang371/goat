@@ -25,12 +25,14 @@ type BaseFeed struct {
 
 func NewBaseFeed(maxLen int) *BaseFeed {
 	subject := core.NewDefaultSubject()
-	return &BaseFeed{
+	res := &BaseFeed{
 		DefaultSubject: *subject,
 		event:          core.NewEvent(),
 		dataSeries:     map[string]map[common.Frequency]common.BarDataSeries{},
 		maxLen:         maxLen,
 	}
+	res.Self = res
+	return res
 }
 
 func (b *BaseFeed) GetMaxLen() int {
@@ -58,7 +60,7 @@ func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency,
 }
 
 func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
-	dateTime, values, freqList, err := interface{}(b).(common.Feed).GetNextValues()
+	dateTime, values, freqList, err := b.Self.(common.Feed).GetNextValues()
 	if err != nil || dateTime == nil {
 		if values == nil {
 			return nil, nil, nil, fmt.Errorf("get next values failed")
@@ -110,7 +112,7 @@ func (b *BaseFeed) GetNewValuesEvent() common.Event {
 
 func (b *BaseFeed) Dispatch() (bool, error) {
 	// TODO: check if freq here is needed
-	dateTime, values, _, err := interface{}(b).(common.Feed).GetNextValuesAndUpdateDS()
+	dateTime, values, _, err := b.Self.(common.Feed).GetNextValuesAndUpdateDS()
 	if err != nil {
 		return false, err
 	}

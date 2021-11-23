@@ -13,11 +13,16 @@ import (
 type Strategy interface {
 	OnStart() error
 	OnIdle() error
-	OnFinish() error
+	OnFinish(bars common.Bars) error
 	OnOrderUpdated(order common.Order) error
-	OnBars(dateTime time.Time, bars map[string]common.Bar) error
+	OnBars(bars common.Bars) error
 	GetBarsProcessedEvent() common.Event
+	GetBarFeed() common.BarFeed
 	GetBroker() common.Broker
+	SetBroker(broker common.Broker)
+	GetUseAdjustedValues() bool
+	GetLastPrice() (float64, error)
+	GetCurrentDateTime() *time.Time
 	RegisterPositionOrder(position Position, order common.Order) error
 	UnregisterPositionOrder(position Position, order common.Order) error
 	UnregisterPosition(position Position) error
@@ -25,6 +30,8 @@ type Strategy interface {
 }
 
 type baseStrategy struct {
+	Self interface{}
+
 	mu         sync.RWMutex
 	dispatcher common.Dispatcher
 	broker     common.Broker
@@ -36,52 +43,15 @@ type baseStrategy struct {
 }
 
 func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
-	s := &baseStrategy{
+	res := &baseStrategy{
 		dispatcher:         core.NewDispatcher(),
 		barFeed:            bf,
 		broker:             bk,
 		barsProcessedEvent: core.NewEvent(),
 		activePositions:    []Position{},
 	}
-
-	err := s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
-		return s.onOrderEvent(args)
-	})
-	if err != nil {
-		return nil
-	}
-
-	err = s.barFeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
-		return s.onBars(args)
-	})
-	if err != nil {
-		return nil
-	}
-
-	err = s.dispatcher.GetStartEvent().Subscribe(func(args ...interface{}) error {
-		return s.OnStart()
-	})
-	if err != nil {
-		return nil
-	}
-
-	err = s.dispatcher.GetIdleEvent().Subscribe(func(args ...interface{}) error {
-		return s.OnIdle()
-	})
-	if err != nil {
-		return nil
-	}
-
-	err = s.dispatcher.AddSubject(s.broker)
-	if err != nil {
-		return nil
-	}
-
-	err = s.dispatcher.AddSubject(s.barFeed)
-	if err != nil {
-		return nil
-	}
-	return s
+	res.Self = res
+	return res
 }
 
 func (s *baseStrategy) OnStart() error {
@@ -158,7 +128,7 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 	// bk := args[0].(broker.Broker)
 	orderEvent := args[1].(*common.OrderEvent)
 	order := orderEvent.Order
-	err := s.OnOrderUpdated(order)
+	err := s.Self.(Strategy).OnOrderUpdated(order)
 	if err != nil {
 		return err
 	}
@@ -170,7 +140,7 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 			panic(msg)
 		}
 		if order.IsActive() {
-			err := s.UnregisterPositionOrder(pos, order)
+			err := s.Self.(Strategy).UnregisterPositionOrder(pos, order)
 			if err != nil {
 				return err
 			}
@@ -190,7 +160,7 @@ func (s *baseStrategy) onBars(args ...interface{}) error {
 		panic(msg)
 	}
 	bars := args[0].(common.Bars)
-	err := s.OnBars(bars)
+	err := s.Self.(Strategy).OnBars(bars)
 	if err != nil {
 		return err
 	}
@@ -199,6 +169,44 @@ func (s *baseStrategy) onBars(args ...interface{}) error {
 }
 
 func (s *baseStrategy) Run() (<-chan struct{}, error) {
+	err := s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
+		return s.onOrderEvent(args)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.barFeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
+		return s.onBars(args)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.dispatcher.GetStartEvent().Subscribe(func(args ...interface{}) error {
+		return s.Self.(Strategy).OnStart()
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.dispatcher.GetIdleEvent().Subscribe(func(args ...interface{}) error {
+		return s.Self.(Strategy).OnIdle()
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.dispatcher.AddSubject(s.broker)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.dispatcher.AddSubject(s.barFeed)
+	if err != nil {
+		return nil, err
+	}
+
 	ch, err := s.dispatcher.Run()
 	if err != nil {
 		return ch, err
@@ -207,7 +215,7 @@ func (s *baseStrategy) Run() (<-chan struct{}, error) {
 	currentBars := s.barFeed.GetCurrentBars()
 
 	if currentBars != nil {
-		if err := s.OnFinish(currentBars); err != nil {
+		if err := s.Self.(Strategy).OnFinish(currentBars); err != nil {
 			return ch, err
 		}
 	} else {
@@ -224,8 +232,35 @@ func (s *baseStrategy) GetBarsProcessedEvent() common.Event {
 	return s.barsProcessedEvent
 }
 
+func (s *baseStrategy) GetFeed() common.Feed {
+	return s.barFeed
+}
+
 func (s *baseStrategy) GetBroker() common.Broker {
 	return s.broker
+}
+
+func (s *baseStrategy) SetBroker(broker common.Broker) {
+	s.broker = broker
+}
+
+func (s *baseStrategy) GetUseAdjustedValues() bool {
+	return false
+}
+
+func (s *baseStrategy) GetLastPrice(instrument string) (float64, error) {
+	barList := s.Self.(Strategy).GetBarFeed().GetLastBar(instrument)
+	if barList == nil {
+		return 0, fmt.Errorf("invalid bar after calling GetLastBar")
+	}
+	if len(barList) != 1 {
+		return 0, fmt.Errorf("too many bars getting from GetLastBar")
+	}
+	return barList[0].Price(), nil
+}
+
+func (s *baseStrategy) GetCurrentDateTime() *time.Time {
+	return s.barFeed.GetCurrentDateTime()
 }
 
 func (s *baseStrategy) Debug(msg string) {

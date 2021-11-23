@@ -26,11 +26,13 @@ type memBarFeed struct {
 
 func NewMemBarFeed(freqList []common.Frequency, sType series.Type, maxLen int) *memBarFeed {
 	barFeed := NewBaseBarFeed(freqList, sType, maxLen)
-	return &memBarFeed{
+	res := &memBarFeed{
 		baseBarFeed: *barFeed,
 		bars:        core.NewBars(),
 		nextIdx:     map[string]int{},
 	}
+	res.Self = res
+	return res
 }
 
 func (m *memBarFeed) Reset() {
