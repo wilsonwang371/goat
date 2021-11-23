@@ -2,10 +2,11 @@ package strategy
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"goalgotrade/common"
 	lg "goalgotrade/logger"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type enterExitOrder interface {
