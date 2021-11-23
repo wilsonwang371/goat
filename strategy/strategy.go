@@ -62,8 +62,7 @@ type Strategy interface {
 }
 
 type baseStrategy struct {
-	Self interface{}
-
+	Self       interface{}
 	mu         sync.RWMutex
 	dispatcher common.Dispatcher
 	broker     common.Broker
