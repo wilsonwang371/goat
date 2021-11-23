@@ -2,24 +2,31 @@ package strategy
 
 import (
 	"fmt"
+	"go.uber.org/zap"
 	"goalgotrade/common"
+	lg "goalgotrade/logger"
 	"time"
 )
 
-type Position interface {
-	OnOrderEvent(orderEvent *common.OrderEvent) error
-	IsOpen() bool
+type enterExitOrder interface {
 	GetEntryOrder() common.Order
+	GetExitOrder() common.Order
 	EntryActive() bool
 	EntryFilled() bool
-	SetEntryDateTime(dateTime time.Time)
-	BuildExitOrder(stopPrice, limitPrice float64) common.Order
-	GetExitOrder() common.Order
 	ExitActive() bool
 	ExitFilled() bool
+	SetEntryDateTime(dateTime time.Time)
 	SetExitDateTime(dateTime time.Time)
+}
+
+type Position interface {
+	enterExitOrder
+	OnOrderEvent(orderEvent *common.OrderEvent) error
+	IsOpen() bool
+	BuildExitOrder(stopPrice, limitPrice float64) common.Order
 	GetShares() int
 	GetStrategy() Strategy
+	SwitchState(newState PositionState)
 }
 
 type PositionState interface {
@@ -38,7 +45,7 @@ const (
 	PositionStateClosedState
 )
 
-type position struct {
+type basePosition struct {
 	Self  interface{}
 	state PositionState
 
@@ -52,8 +59,8 @@ type position struct {
 	shares   int
 }
 
-func NewPosition(strategy Strategy, entryOrder common.Order, goodTillCanceled, allOrNone bool) Position {
-	res := &position{
+func NewBasePosition(strategy Strategy, entryOrder common.Order, goodTillCanceled, allOrNone bool) *basePosition {
+	res := &basePosition{
 		strategy:   strategy,
 		entryOrder: entryOrder,
 	}
@@ -62,63 +69,89 @@ func NewPosition(strategy Strategy, entryOrder common.Order, goodTillCanceled, a
 	return res
 }
 
-func (p *position) OnOrderEvent(orderEvent *common.OrderEvent) error {
+func (p *basePosition) OnOrderEvent(orderEvent *common.OrderEvent) error {
 	return nil
 }
 
-func (p *position) IsOpen() bool {
-	return p.state.IsOpen(p)
+func (p *basePosition) IsOpen() bool {
+	return p.state.IsOpen(p.Self.(Position))
 }
 
-func (p *position) EntryActive() bool {
+func (p *basePosition) EntryActive() bool {
 	return p.entryOrder != nil && p.entryOrder.IsActive()
 }
 
-func (p *position) ExitActive() bool {
+func (p *basePosition) ExitActive() bool {
 	return p.exitOrder != nil && p.exitOrder.IsActive()
 }
 
-func (p *position) EntryFilled() bool {
+func (p *basePosition) EntryFilled() bool {
 	return p.exitOrder != nil && p.entryOrder.IsFilled()
 }
 
-func (p *position) ExitFilled() bool {
+func (p *basePosition) ExitFilled() bool {
 	return p.exitOrder != nil && p.exitOrder.IsFilled()
 }
 
-func (p *position) GetEntryOrder() common.Order {
+func (p *basePosition) GetEntryOrder() common.Order {
 	return p.entryOrder
 }
 
-func (p *position) GetExitOrder() common.Order {
+func (p *basePosition) GetExitOrder() common.Order {
 	return p.exitOrder
 }
 
-func (p *position) SetEntryDateTime(dateTime time.Time) {
+func (p *basePosition) SetEntryDateTime(dateTime time.Time) {
 	tmpTime := dateTime
 	p.entryDateTime = &tmpTime
 }
 
-func (p *position) SetExitDateTime(dateTime time.Time) {
+func (p *basePosition) SetExitDateTime(dateTime time.Time) {
 	tmpTime := dateTime
 	p.exitDateTime = &tmpTime
 }
 
-func (p *position) GetStrategy() Strategy {
+func (p *basePosition) SwitchState(newState PositionState) {
+	p.state = newState
+	if err := p.state.OnEnter(p.Self.(Position)); err != nil {
+		lg.Logger.Warn("switch state failed", zap.Error(err))
+	}
+}
+
+func (p *basePosition) GetStrategy() Strategy {
 	return p.strategy
 }
 
-func (p *position) GetShares() int {
+func (p *basePosition) GetShares() int {
 	return p.shares
 }
 
-func (p *position) submitExitOrder(stopPrice, limitPrice float64, goodTillCanceled bool) error {
+func (p *basePosition) submitExitOrder(stopPrice, limitPrice float64, goodTillCanceled bool) error {
 	// TODO: implement me
 	return nil
 }
 
-func (p *position) BuildExitOrder(stopPrice, limitPrice float64) common.Order {
+func (p *basePosition) BuildExitOrder(stopPrice, limitPrice float64) common.Order {
 	panic("not implemented")
+	return nil
+}
+
+func (p *basePosition) GetAge() *time.Duration {
+	if p.entryDateTime != nil {
+		var res time.Duration
+		if p.exitDateTime != nil {
+			res = p.exitDateTime.Sub(*p.exitDateTime)
+		} else {
+			tmp := p.strategy.GetCurrentDateTime()
+			if tmp == nil {
+				lg.Logger.Warn("empty strategy GetCurrentDateTime")
+				return nil
+			}
+			res = tmp.Sub(*p.exitDateTime)
+		}
+		return &res
+	}
+	lg.Logger.Warn("empty entry time")
 	return nil
 }
 
@@ -204,7 +237,7 @@ func (o *OpenState) Exit(pos Position, stopPrice, limitPrice float64, goodTillCa
 			return err
 		}
 	}
-	if pos2, ok := pos.(*position); ok {
+	if pos2, ok := pos.(*basePosition); ok {
 		if err := pos2.submitExitOrder(stopPrice, limitPrice, goodTillCanceled); err != nil {
 			return err
 		}
@@ -248,7 +281,7 @@ func (c *ClosedState) Exit(position Position, stopPrice, limitPrice float64, goo
 }
 
 type LongPosition struct {
-	position
+	basePosition
 }
 
 func NewLongPosition(stopPrice, limitPrice float64) Position {
@@ -257,7 +290,7 @@ func NewLongPosition(stopPrice, limitPrice float64) Position {
 }
 
 type ShortPosition struct {
-	position
+	basePosition
 }
 
 func NewShortPosition(stopPrice, limitPrice float64) Position {

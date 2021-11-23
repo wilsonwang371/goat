@@ -10,12 +10,6 @@ import (
 	lg "goalgotrade/logger"
 )
 
-type Analyzer interface {
-	BeforeAttach(s Strategy) error
-	Attached(s Strategy) error
-	BeforeOnBars(s Strategy, bars common.Bars) error
-}
-
 type strategyLogger interface {
 	Critical(msg string)
 	Warning(msg string)
