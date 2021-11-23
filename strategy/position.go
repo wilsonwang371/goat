@@ -28,6 +28,7 @@ type Position interface {
 	GetShares() int
 	GetStrategy() Strategy
 	SwitchState(newState PositionState)
+	GetActiveOrders() []common.Order
 }
 
 type PositionState interface {
@@ -50,11 +51,12 @@ type basePosition struct {
 	Self  interface{}
 	state PositionState
 
-	entryOrder common.Order
-	exitOrder  common.Order
-
+	entryOrder    common.Order
 	entryDateTime *time.Time
+	exitOrder     common.Order
 	exitDateTime  *time.Time
+	allOrNone     bool
+	activeOrders  map[int]common.Order
 
 	strategy Strategy
 	shares   int
@@ -62,8 +64,10 @@ type basePosition struct {
 
 func NewBasePosition(strategy Strategy, entryOrder common.Order, goodTillCanceled, allOrNone bool) *basePosition {
 	res := &basePosition{
-		strategy:   strategy,
-		entryOrder: entryOrder,
+		strategy:     strategy,
+		entryOrder:   entryOrder,
+		allOrNone:    allOrNone,
+		activeOrders: map[int]common.Order{},
 	}
 	// TODO: implement me
 	res.Self = res
@@ -154,6 +158,14 @@ func (p *basePosition) GetAge() *time.Duration {
 	}
 	lg.Logger.Warn("empty entry time")
 	return nil
+}
+
+func (p *basePosition) GetActiveOrders() []common.Order {
+	var res []common.Order
+	for _, order := range p.activeOrders {
+		res = append(res, order)
+	}
+	return res
 }
 
 func NewPositionState(stateType PositionStateType) PositionState {
