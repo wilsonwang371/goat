@@ -89,6 +89,7 @@ type Feed interface {
 	Reset()
 	GetKeys() []string
 	GetMaxLen() int
+	IsLive() bool
 }
 
 type BarFeed interface {

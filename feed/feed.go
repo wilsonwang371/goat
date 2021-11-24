@@ -133,3 +133,7 @@ func (b *BaseFeed) GetKeys() []string {
 	}
 	return res
 }
+
+func (b *BaseFeed) IsLive() bool {
+	return false
+}
