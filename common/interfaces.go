@@ -118,3 +118,11 @@ type BarDataSeries interface {
 	PriceDS() *series.Series
 	ExtraDS() map[string]series.Series
 }
+
+type LiveBarFetcher interface {
+	Stop()
+	PendingBarsC() <-chan Bars
+	IsRunning() bool
+	ErrorC() <-chan error
+	CurrentDateTime() *time.Time
+}

@@ -87,6 +87,9 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 		if !v.Eof() {
 			eof = false
 			t := v.PeekDateTime()
+			if t == nil {
+				continue
+			}
 			if smallestDateTime == nil {
 				smallestDateTime = t
 			} else if smallestDateTime.After(*t) {
@@ -150,7 +153,7 @@ func (d *dispatcher) mainDispatchLoop() {
 		d.mu.RUnlock()
 		if eof {
 			d.stopC <- struct{}{}
-		} else if eventDispatched {
+		} else if !eventDispatched {
 			d.idleEvent.Emit()
 		}
 	}

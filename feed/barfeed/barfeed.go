@@ -80,7 +80,8 @@ func (b *baseBarFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequen
 		}
 		return dateTime, bars, freqList, nil
 	}
-	return nil, nil, []common.Frequency{}, fmt.Errorf("no next bars")
+	// it is okay to return nil with no error. it is idle() case
+	return nil, nil, []common.Frequency{}, err
 }
 
 func (b *baseBarFeed) GetCurrentDateTime() *time.Time {
