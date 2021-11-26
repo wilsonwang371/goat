@@ -102,7 +102,7 @@ type BarFeed interface {
 	GetFrequencies() []Frequency
 	GetDefaultInstrument() string
 	GetRegisteredInstruments() []string
-	RegisterInstrument(instrument string, freq Frequency) error
+	RegisterInstrument(instrument string, freqList []Frequency) error
 	GetDataSeries(instrument string, freq Frequency) *series.Series
 }
 
@@ -120,7 +120,9 @@ type BarDataSeries interface {
 }
 
 type LiveBarFetcher interface {
-	Stop()
+	RegisterInstrument(instrument string, freqList []Frequency) error
+	Start() error
+	Stop() error
 	PendingBarsC() <-chan Bars
 	IsRunning() bool
 	ErrorC() <-chan error

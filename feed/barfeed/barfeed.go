@@ -113,10 +113,15 @@ func (b *baseBarFeed) GetRegisteredInstruments() []string {
 	return b.GetKeys()
 }
 
-func (b *baseBarFeed) RegisterInstrument(instrument string, freq common.Frequency) error {
+func (b *baseBarFeed) RegisterInstrument(instrument string, freqList []common.Frequency) error {
 	b.defaultInstrument = instrument
-	err := b.RegisterDataSeries(instrument, freq)
-	return err
+	for _, freq := range freqList {
+		err := b.RegisterDataSeries(instrument, freq)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (b *baseBarFeed) GetDataSeries(instrument string, freq common.Frequency) *series.Series {

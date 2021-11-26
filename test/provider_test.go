@@ -16,11 +16,15 @@ func init() {
 // pass "-username=<user> -password=<pass>" as arguments to test
 func TestTradingViewAuth(t *testing.T) {
 	if username == "" || password == "" {
-		t.Error("username and/or password is empty")
+		t.Skip("username and/or password is empty")
 	}
 	result, err := providers.GetAuthToken(username, password)
 	if err != nil {
 		t.Error(err)
 	}
 	t.Log(result)
+}
+
+func TestWSConnection(t *testing.T) {
+	providers.TradingViewConnect()
 }

@@ -1,12 +1,17 @@
 package fetcher
 
 import (
+	"fmt"
 	"goalgotrade/common"
+	"sync"
 	"time"
 )
 
-type WebFetcher struct {
-	instruments  []string
+const DefaultDataPullInterval = 10 * time.Second
+
+type NetworkBarFetcher struct {
+	mu           sync.Mutex
+	instrument   string
 	freqList     []common.Frequency
 	pendingBars  chan common.Bars
 	stopped      bool
@@ -15,61 +20,89 @@ type WebFetcher struct {
 	pullInterval time.Duration
 }
 
-const DefaultDataPullInterval = 10 * time.Second
-
 // TODO: implement me
 
-func NewWebFetcher(instruments []string, freqList []common.Frequency, pullInterval time.Duration) common.LiveBarFetcher {
-	w := &WebFetcher{
-		instruments:  instruments,
-		freqList:     freqList,
+func NewNetworkBarFetcher(pullInterval time.Duration) common.LiveBarFetcher {
+	n := &NetworkBarFetcher{
+		instrument:   "",
 		pendingBars:  make(chan common.Bars, 32),
-		stopped:      false,
+		stopped:      true,
 		stopC:        make(chan struct{}, 1),
 		doneC:        make(chan struct{}, 1),
 		pullInterval: DefaultDataPullInterval,
 	}
 	if pullInterval != 0 {
-		w.pullInterval = pullInterval
+		n.pullInterval = pullInterval
 	}
-	go w.run()
-	return w
+	return n
 }
 
-func (w *WebFetcher) run() {
-	defer func() {
-		close(w.doneC)
-		w.stopped = true
-	}()
-	t := time.NewTimer(w.pullInterval)
-	for {
-		select {
-		case <-t.C:
-		case <-w.stopC:
-			break
-		}
-		// TODO: implement me
-		t.Reset(w.pullInterval)
+func (n *NetworkBarFetcher) Start() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if !n.stopped {
+		return fmt.Errorf("already running")
 	}
-}
-
-func (w *WebFetcher) Stop() {
-	close(w.stopC)
-	<-w.doneC
-}
-
-func (w *WebFetcher) CurrentDateTime() *time.Time {
+	n.stopped = false
+	go n.run()
 	return nil
 }
 
-func (w *WebFetcher) ErrorC() <-chan error {
+func (n *NetworkBarFetcher) run() {
+	defer func() {
+		close(n.doneC)
+		n.stopped = true
+	}()
+	t := time.NewTimer(n.pullInterval)
+	for {
+		select {
+		case <-t.C:
+		case <-n.stopC:
+			break
+		}
+		// TODO: implement me
+		t.Reset(n.pullInterval)
+	}
+}
+
+func (n *NetworkBarFetcher) Stop() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.stopped {
+		return fmt.Errorf("already stopped")
+	}
+	close(n.stopC)
+	<-n.doneC
+	return nil
+}
+
+func (n *NetworkBarFetcher) RegisterInstrument(instrument string, freqList []common.Frequency) error {
+	if !n.stopped {
+		return fmt.Errorf("fetcher is already running")
+	}
+	if len(freqList) == 0 {
+		return fmt.Errorf("empty list of frequencies")
+	}
+	if n.instrument == "" {
+		n.instrument = instrument
+		n.freqList = freqList
+		return nil
+	}
+	return fmt.Errorf("cannot only register instrument once")
+}
+
+func (n *NetworkBarFetcher) CurrentDateTime() *time.Time {
+	return nil
+}
+
+func (n *NetworkBarFetcher) ErrorC() <-chan error {
 	panic("implement me")
 }
 
-func (w *WebFetcher) PendingBarsC() <-chan common.Bars {
-	return w.pendingBars
+func (n *NetworkBarFetcher) PendingBarsC() <-chan common.Bars {
+	return n.pendingBars
 }
 
-func (w *WebFetcher) IsRunning() bool {
-	return !w.stopped
+func (n *NetworkBarFetcher) IsRunning() bool {
+	return !n.stopped
 }

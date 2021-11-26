@@ -91,7 +91,7 @@ func (m *memBarFeed) AddBarListFromSequence(instrument string, barList []common.
 		}
 	}
 	for freq := range allFreq {
-		if err := m.RegisterInstrument(instrument, freq); err != nil {
+		if err := m.RegisterInstrument(instrument, []common.Frequency{freq}); err != nil {
 			return err
 		}
 	}
