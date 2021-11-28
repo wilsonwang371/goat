@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"goalgotrade/common"
+	"goalgotrade/core"
 	lg "goalgotrade/logger"
 	"math/rand"
 	"net/http"
@@ -23,6 +24,16 @@ const (
 	TradingViewSignInUrl           = "https://www.tradingview.com/accounts/signin/"
 	TradingViewWebSocketUrl        = "wss://data.tradingview.com/socket.io/websocket"
 )
+
+var frequencyTable map[common.Frequency]string
+
+func init() {
+	frequencyTable = map[common.Frequency]string{
+		common.Frequency_MINUTE: "1",
+		common.Frequency_HOUR:   "60",
+		common.Frequency_DAY:    "1D",
+	}
+}
 
 func GetAuthToken(username, password string) (string, error) {
 	headers := req.Header{
@@ -75,6 +86,8 @@ type TradingViewWSFetcherProvider struct {
 	authToken        string
 	instrument       string
 	freqList         []common.Frequency
+
+	bufferedBarList []common.Bar
 }
 
 func NewTradingViewFetcher(username, password string) common.LiveBarFetcher {
@@ -154,16 +167,27 @@ type pTypeDef struct {
 	} `json:"s1"`
 }
 
-func TVDataParse(data []byte) error {
+func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common.Bar, error) {
+	res := []common.Bar{}
 	parsedData := dTypeDef{}
+	freq := common.Frequency_INVALID
+	for _, v := range t.freqList {
+		if v != common.Frequency_REALTIME {
+			freq = v
+			break
+		}
+	}
+	if freq == common.Frequency_INVALID {
+		lg.Logger.Fatal("invalid frequency")
+	}
 	if err := json.Unmarshal(data, &parsedData); err != nil {
-		return err
+		return nil, err
 	}
 	if parsedData.M == "du" {
 		for _, pvalue := range parsedData.P {
 			data2, err := json.Marshal(pvalue)
 			if err != nil {
-				return fmt.Errorf("invalid data 0")
+				return nil, fmt.Errorf("invalid data 0")
 			}
 
 			parsedInnerData := pTypeDef{}
@@ -171,20 +195,22 @@ func TVDataParse(data []byte) error {
 				continue
 			}
 			if len(parsedInnerData.S1.S) == 0 {
-				return fmt.Errorf("no data")
+				return nil, fmt.Errorf("no data")
 			}
-			lg.Logger.Info("******One Batch******")
 			for _, svalue := range parsedInnerData.S1.S {
 				lg.Logger.Info("parsed data", zap.Any("quote", svalue))
+				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
+					svalue.V[5], .0, common.Frequency_REALTIME)
+				res = append(res, bar)
 			}
-			lg.Logger.Info("*********************")
-			return nil
+			return res, nil
 		}
 	} else if parsedData.M == "timescale_update" {
 		for _, pvalue := range parsedData.P {
 			data2, err := json.Marshal(pvalue)
 			if err != nil {
-				return fmt.Errorf("invalid data 0")
+				return nil, fmt.Errorf("invalid data 0")
 			}
 
 			parsedInnerData := pTypeDef{}
@@ -192,21 +218,23 @@ func TVDataParse(data []byte) error {
 				continue
 			}
 			if len(parsedInnerData.S1.S) == 0 {
-				return fmt.Errorf("no data")
+				return nil, fmt.Errorf("no data")
 			}
-			lg.Logger.Info("******One Batch******")
 			for _, svalue := range parsedInnerData.S1.S {
 				lg.Logger.Info("parsed data", zap.Any("quote", svalue))
+				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
+					svalue.V[5], .0, freq)
+				res = append(res, bar)
 			}
-			lg.Logger.Info("*********************")
-			return nil
+			return res, nil
 		}
 		// TODO: implement me
 	} else {
 		lg.Logger.Info("skip the data we dont care", zap.String("method", parsedData.M))
-		return nil
+		return nil, fmt.Errorf("skipped data")
 	}
-	return fmt.Errorf("invalid data 3")
+	return nil, fmt.Errorf("invalid data 3")
 }
 
 func (t *TradingViewWSFetcherProvider) sendRawMessage(message []byte) error {
@@ -223,12 +251,24 @@ func (t *TradingViewWSFetcherProvider) sendMessage(methodName string, paramList 
 }
 
 func (t *TradingViewWSFetcherProvider) init(instrument string, freqList []common.Frequency) error {
+	count := 0
+	for _, freq := range freqList {
+		if freq == common.Frequency_REALTIME {
+			continue
+		}
+		if _, ok := frequencyTable[freq]; !ok {
+			return fmt.Errorf("frequency not supported")
+		}
+		count++
+	}
+	if count > 1 {
+		return fmt.Errorf("too many frequencies")
+	}
 	t.instrument = instrument
 	t.freqList = freqList
 	t.reset()
 	return nil
 }
-
 
 func (t *TradingViewWSFetcherProvider) setupConnection() error {
 	lg.Logger.Info("initialize new connection")
@@ -255,7 +295,7 @@ func (t *TradingViewWSFetcherProvider) setupConnection() error {
 	t.sendMessage("resolve_symbol",
 		[]interface{}{t.chatSessionName, "symbol_1", "={\"symbol\":\"" + t.instrument + "\",\"adjustment\":\"splits\"}"})
 	t.sendMessage("create_series",
-		[]interface{}{t.chatSessionName, "s1", "s1", "symbol_1", "1", 300})
+		[]interface{}{t.chatSessionName, "s1", "s1", "symbol_1", frequencyTable[t.freqList[0]], 300})
 
 	t.sendMessage("quote_fast_symbols",
 		[]interface{}{t.querySessionName, t.instrument})
@@ -309,6 +349,24 @@ func (t *TradingViewWSFetcherProvider) reset() error {
 }
 
 func (t *TradingViewWSFetcherProvider) nextBars() (common.Bars, error) {
+	var tmp common.Bar
+	var err error
+	if len(t.bufferedBarList) == 0 {
+		tmp, err = t.nextBarsInternal()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		tmp = t.bufferedBarList[0]
+		t.bufferedBarList = t.bufferedBarList[1:]
+	}
+
+	res := core.NewBars()
+	res.AddBarList(t.instrument, []common.Bar{tmp})
+	return res, nil
+}
+
+func (t *TradingViewWSFetcherProvider) nextBarsInternal() (common.Bar, error) {
 	r := regexp.MustCompile("~m~\\d+~m~~h~\\d+$")
 	r2 := regexp.MustCompile("~m~\\d+~m~")
 	for {
@@ -332,12 +390,17 @@ func (t *TradingViewWSFetcherProvider) nextBars() (common.Bars, error) {
 					if len(v) == 0 {
 						continue
 					}
-					err := TVDataParse([]byte(v))
+					barList, err := t.tvDataParse([]byte(v))
 					if err != nil {
 						lg.Logger.Info("parsing data error", zap.Error(err), zap.String("data", v))
 					}
+					if len(barList) > 0 {
+						t.bufferedBarList = append(t.bufferedBarList, barList...)
+						tmp := t.bufferedBarList[0]
+						t.bufferedBarList = t.bufferedBarList[1:]
+						return tmp, nil
+					}
 				}
-				// TODO: implement me
 			}
 		}
 	}
