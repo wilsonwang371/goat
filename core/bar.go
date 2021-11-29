@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"goalgotrade/common"
 	"time"
 
@@ -60,6 +61,10 @@ func (b *bars) addSingleBar(instrument string, bar common.Bar) error {
 		b.frequencies = append(b.frequencies, bar.Frequency())
 	}
 	b.barList[instrument] = append(b.barList[instrument], bar)
+
+	if b.dateTime == nil || bar.GetDateTime().Before(*b.dateTime) {
+		b.dateTime = bar.GetDateTime()
+	}
 	return nil
 }
 
@@ -85,22 +90,22 @@ type basicBar struct {
 	useAdjustedValue bool
 }
 
-func NewBasicBar(dateTime time.Time, o, h, l, c, v, adjClose float64, freq common.Frequency) common.Bar {
+func NewBasicBar(dateTime time.Time, o, h, l, c, v, adjClose float64, freq common.Frequency) (common.Bar, error) {
 	if h < l {
 		lg.Logger.Error("high < low on %s", zap.Time("datetime", dateTime))
-		return nil
+		return nil, fmt.Errorf("high < low ")
 	} else if h < o {
 		lg.Logger.Error("high < open on %s", zap.Time("datetime", dateTime))
-		return nil
+		return nil, fmt.Errorf("high < open")
 	} else if h < c {
 		lg.Logger.Error("high < close on %s", zap.Time("datetime", dateTime))
-		return nil
+		return nil, fmt.Errorf("high < close")
 	} else if l > o {
 		lg.Logger.Error("low > open on %s", zap.Time("datetime", dateTime))
-		return nil
+		return nil, fmt.Errorf("low > open")
 	} else if l > c {
 		lg.Logger.Error("low > close on %s", zap.Time("datetime", dateTime))
-		return nil
+		return nil, fmt.Errorf("low > close")
 	}
 	tmpTime := dateTime
 	return &basicBar{
@@ -113,7 +118,7 @@ func NewBasicBar(dateTime time.Time, o, h, l, c, v, adjClose float64, freq commo
 		volume:           v,
 		frequency:        freq,
 		useAdjustedValue: false,
-	}
+	}, nil
 }
 
 func (b *basicBar) SetUseAdjustedValue(useAdjusted bool) error {

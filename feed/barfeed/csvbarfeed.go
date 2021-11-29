@@ -114,7 +114,10 @@ func (c *CSVBarFeed) parseRawToBar(dict map[string]string) (common.Bar, error) {
 	if err != nil {
 		adjClose = .0
 	}
-	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, volume, adjClose, c.frequencies[0])
+	bar, err := core.NewBasicBar(dateTime, open, high, low, closeVal, volume, adjClose, c.frequencies[0])
+	if err != nil {
+		return nil, err
+	}
 	if c.HaveAdjClose {
 		if err := bar.SetUseAdjustedValue(true); err != nil {
 			return nil, err

@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/go-gota/gota/series"
 )
 
@@ -39,7 +41,7 @@ type BarFetcherProvider interface {
 func NewBaseBarFetcher(pullInterval time.Duration) *BaseBarFetcher {
 	b := &BaseBarFetcher{
 		instrument:   "",
-		pendingBars:  make(chan common.Bars, 32),
+		pendingBars:  make(chan common.Bars, 1024),
 		stopped:      true,
 		stopC:        make(chan struct{}, 1),
 		doneC:        make(chan struct{}, 1),
@@ -99,6 +101,7 @@ func (b *BaseBarFetcher) run() {
 		}
 
 		if bars, err := b.Self.(BarFetcherProvider).nextBars(); err != nil {
+			lg.Logger.Error("nextBars failed", zap.Error(err))
 			return
 		} else {
 			if bars == nil {

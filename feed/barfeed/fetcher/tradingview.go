@@ -3,6 +3,7 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"goalgotrade/common"
 	"goalgotrade/core"
 	lg "goalgotrade/logger"
@@ -12,8 +13,6 @@ import (
 	"time"
 
 	"github.com/go-gota/gota/series"
-
-	"go.uber.org/zap"
 
 	"github.com/gorilla/websocket"
 
@@ -89,17 +88,18 @@ type TradingViewWSFetcherProvider struct {
 	instrument       string
 	freqList         []common.Frequency
 
-	bufferedBarList []common.Bar
+	barC chan common.Bar
 }
 
 func NewTradingViewFetcher(username, password string) common.LiveBarFetcher {
 	res := &TradingViewWSFetcherProvider{
-		BaseBarFetcher:   *NewBaseBarFetcher(-1), // required
+		BaseBarFetcher:   *NewBaseBarFetcher(0), // required
 		querySessionName: TVGenQuerySession(),
 		chatSessionName:  TVGenChatSession(),
 		username:         username,
 		password:         password,
 		authToken:        "",
+		barC:             make(chan common.Bar, 1024),
 	}
 	res.Self = res
 	return res
@@ -170,7 +170,7 @@ type pTypeDef struct {
 }
 
 func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common.Bar, error) {
-	res := []common.Bar{}
+	var res []common.Bar
 	parsedData := dTypeDef{}
 	freq := common.Frequency_INVALID
 	for _, v := range t.freqList {
@@ -200,14 +200,19 @@ func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common.Bar, e
 				return nil, fmt.Errorf("no data")
 			}
 			for _, svalue := range parsedInnerData.S1.S {
-				lg.Logger.Info("parsed data", zap.Any("quote", svalue))
-				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+				// lg.Logger.Debug("parsed data", zap.Any("quote", svalue))
+				bar, err := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
 					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
 					svalue.V[5], .0, common.Frequency_REALTIME)
+				if err != nil {
+					lg.Logger.Error("creating basic bar failed", zap.Error(err))
+					continue
+				}
 				res = append(res, bar)
 			}
 			return res, nil
 		}
+		lg.Logger.Warn("no new data")
 	} else if parsedData.M == "timescale_update" {
 		for _, pvalue := range parsedData.P {
 			data2, err := json.Marshal(pvalue)
@@ -223,17 +228,20 @@ func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common.Bar, e
 				return nil, fmt.Errorf("no data")
 			}
 			for _, svalue := range parsedInnerData.S1.S {
-				lg.Logger.Info("parsed data", zap.Any("quote", svalue))
-				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+				bar, err := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
 					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
 					svalue.V[5], .0, freq)
+				if err != nil {
+					lg.Logger.Error("creating basic bar failed", zap.Error(err))
+					continue
+				}
 				res = append(res, bar)
 			}
 			return res, nil
 		}
 		// TODO: implement me
 	} else {
-		lg.Logger.Info("skip the data we dont care", zap.String("method", parsedData.M))
+		// lg.Logger.Debug("skip the data we dont care", zap.String("method", parsedData.M), zap.String("data", string(data)))
 		return nil, fmt.Errorf("skipped data")
 	}
 	return nil, fmt.Errorf("invalid data 3")
@@ -273,6 +281,16 @@ func (t *TradingViewWSFetcherProvider) init(instrument string, freqList []common
 }
 
 func (t *TradingViewWSFetcherProvider) setupConnection() error {
+	freq := common.Frequency_INVALID
+	for _, v := range t.freqList {
+		if v != common.Frequency_REALTIME {
+			freq = v
+			break
+		}
+	}
+	if freq == common.Frequency_INVALID {
+		lg.Logger.Fatal("invalid frequency")
+	}
 	lg.Logger.Info("initialize new connection")
 	t.sendMessage("set_auth_token",
 		[]interface{}{"unauthorized_user_token"})
@@ -297,7 +315,7 @@ func (t *TradingViewWSFetcherProvider) setupConnection() error {
 	t.sendMessage("resolve_symbol",
 		[]interface{}{t.chatSessionName, "symbol_1", "={\"symbol\":\"" + t.instrument + "\",\"adjustment\":\"splits\"}"})
 	t.sendMessage("create_series",
-		[]interface{}{t.chatSessionName, "s1", "s1", "symbol_1", frequencyTable[t.freqList[0]], 300})
+		[]interface{}{t.chatSessionName, "s1", "s1", "symbol_1", frequencyTable[freq], 300})
 
 	t.sendMessage("quote_fast_symbols",
 		[]interface{}{t.querySessionName, t.instrument})
@@ -312,6 +330,8 @@ func (t *TradingViewWSFetcherProvider) setupConnection() error {
 		})
 	t.sendMessage("quote_hibernate_all",
 		[]interface{}{t.querySessionName})
+
+	go t.fetchBarsLoop()
 	return nil
 }
 
@@ -356,55 +376,42 @@ func (t *TradingViewWSFetcherProvider) datatype() series.Type {
 
 func (t *TradingViewWSFetcherProvider) nextBars() (common.Bars, error) {
 	var tmp common.Bar
-	var err error
-	if len(t.bufferedBarList) == 0 {
-		tmp, err = t.nextBarsInternal()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		tmp = t.bufferedBarList[0]
-		t.bufferedBarList = t.bufferedBarList[1:]
-	}
+
+	tmp = <-t.barC
 
 	res := core.NewBars()
 	res.AddBarList(t.instrument, []common.Bar{tmp})
 	return res, nil
 }
 
-func (t *TradingViewWSFetcherProvider) nextBarsInternal() (common.Bar, error) {
+func (t *TradingViewWSFetcherProvider) fetchBarsLoop() error {
 	r := regexp.MustCompile("~m~\\d+~m~~h~\\d+$")
 	r2 := regexp.MustCompile("~m~\\d+~m~")
 	for {
 		if !t.ws.IsConnected() {
-			return nil, fmt.Errorf("got disconnected")
+			return fmt.Errorf("got disconnected")
 		}
 		if msgType, data, err := t.ws.ReadMessage(); err != nil {
-			return nil, err
+			return err
 		} else {
 			if msgType != websocket.TextMessage {
-				return nil, fmt.Errorf("reply data is not text message")
+				return fmt.Errorf("reply data is not text message")
 			}
 			if r.MatchString(string(data)) {
 				// we got a message that we need to echo back
 				t.ws.ReadMessage()
 				t.ws.WriteMessage(websocket.TextMessage, data)
 			} else {
-
 				split := r2.Split(string(data), -1)
 				for _, v := range split {
 					if len(v) == 0 {
 						continue
 					}
-					barList, err := t.tvDataParse([]byte(v))
-					if err != nil {
-						lg.Logger.Info("parsing data error", zap.Error(err), zap.String("data", v))
-					}
+					barList, _ := t.tvDataParse([]byte(v))
 					if len(barList) > 0 {
-						t.bufferedBarList = append(t.bufferedBarList, barList...)
-						tmp := t.bufferedBarList[0]
-						t.bufferedBarList = t.bufferedBarList[1:]
-						return tmp, nil
+						for _, bar := range barList {
+							t.barC <- bar
+						}
 					}
 				}
 			}

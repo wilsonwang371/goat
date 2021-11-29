@@ -2,7 +2,6 @@ package test
 
 import (
 	"flag"
-	"fmt"
 	"goalgotrade/broker"
 	"goalgotrade/common"
 	"goalgotrade/feed/barfeed"
@@ -17,12 +16,12 @@ var username, password, symbol string
 func init() {
 	flag.StringVar(&username, "username", "", "TradingView Username")
 	flag.StringVar(&password, "password", "", "TradingView Password")
-	flag.StringVar(&symbol, "symbol", "FOREXCOM:XAUUSD", "TradingView Symbol")
+	flag.StringVar(&symbol, "symbol", "BINANCE:BTCUSDT", "TradingView Symbol")
 }
 
 // pass "-username=<user> -password=<pass>" as arguments to test
 func TestTradingView(t *testing.T) {
-	freqList := []common.Frequency{common.Frequency_REALTIME}
+	freqList := []common.Frequency{common.Frequency_REALTIME, common.Frequency_MINUTE}
 
 	if username == "" || password == "" {
 		t.Skip("username and/or password is empty")
@@ -47,26 +46,30 @@ func TestTradingView(t *testing.T) {
 	b := broker.NewBroker(lbf)
 	s := strategy.NewBaseStrategy(lbf, b)
 
-	ch, err := s.Run()
+	go func() {
+		var err error
+
+		timer := time.NewTimer(120 * time.Second)
+
+		select {
+		case <-timer.C:
+		}
+
+		t.Log("terminating...")
+
+		if tvf.Stop() != nil {
+			t.Error(err)
+			return
+		}
+
+		if s.Stop() != nil {
+			t.Error(err)
+			return
+		}
+	}()
+
+	err := s.Run()
 	if err != nil {
 		panic(err)
-	}
-
-	timer := time.NewTimer(120 * time.Second)
-
-	select {
-	case <-ch:
-		t.Log("data from strategy done channel")
-	case <-timer.C:
-		t.Error("timeout waiting for data")
-	case bars := <-tvf.PendingBarsC():
-		t.Log(fmt.Sprintf("got bars: %v", bars))
-	case err := <-tvf.ErrorC():
-		t.Error(err)
-	}
-
-	if err := tvf.Stop(); err != nil {
-		t.Error(err)
-		return
 	}
 }

@@ -6,6 +6,8 @@ import (
 	lg "goalgotrade/logger"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // TODO: make a LiveBarFeed interface and put it into common
@@ -68,23 +70,26 @@ func (l *LiveBarFeed) Start() error {
 		return fmt.Errorf("fetcher not set yet")
 	}
 	go func() {
-		select {
-		case bars := <-l.fetcher.PendingBarsC():
-			if bars == nil {
-				panic("invalid bars")
+		for {
+			select {
+			case bars := <-l.fetcher.PendingBarsC():
+				if bars == nil {
+					panic("invalid bars")
+				}
+				l.mu.Lock()
+				l.barsBuffer = append(l.barsBuffer, bars)
+				l.mu.Unlock()
+			case <-l.stopC:
+				l.stopped = true
+				return
 			}
-			l.mu.Lock()
-			l.barsBuffer = append(l.barsBuffer, bars)
-			l.mu.Unlock()
-		case <-l.stopC:
-			l.stopped = true
-			return
 		}
 	}()
 	return nil
 }
 
 func (l *LiveBarFeed) Stop() error {
+	lg.Logger.Info("stopping live bar feed", zap.Any("LiveBarFeed", l))
 	close(l.stopC)
 	return nil
 }

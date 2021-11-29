@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"goalgotrade/common"
 	"goalgotrade/core"
+	"os"
 	"sync"
 	"time"
 
@@ -57,7 +58,7 @@ type Strategy interface {
 	GetUseAdjustedValues() bool
 	GetLastPrice(instrument string) (float64, error)
 	GetCurrentDateTime() *time.Time
-	Run() (<-chan struct{}, error)
+	Run() error
 	Stop() error
 }
 
@@ -88,22 +89,27 @@ func NewBaseStrategy(bf common.BarFeed, bk common.Broker) *baseStrategy {
 }
 
 func (s *baseStrategy) OnStart() error {
+	lg.Logger.Debug("OnStart()")
 	return nil
 }
 
 func (s *baseStrategy) OnIdle() error {
+	lg.Logger.Debug("OnIdle()")
 	return nil
 }
 
 func (s *baseStrategy) OnOrderUpdated(order common.Order) error {
+	lg.Logger.Debug("OnOrderUpdated()")
 	return nil
 }
 
 func (s *baseStrategy) OnFinish(bars common.Bars) error {
+	lg.Logger.Debug("OnFinish()")
 	return nil
 }
 
 func (s *baseStrategy) OnBars(bars common.Bars) error {
+	fmt.Fprintf(os.Stderr, "OnBars %s bars %v\n", bars.GetInstruments(), bars)
 	return nil
 }
 
@@ -187,12 +193,16 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 }
 
 func (s *baseStrategy) onBars(args ...interface{}) error {
-	if len(args) != 1 {
+	if len(args) != 2 {
 		msg := "invalid amount of arguments"
 		lg.Logger.Error(msg)
 		panic(msg)
 	}
-	bars := args[0].(common.Bars)
+	dateTime := args[0].(*time.Time) // not used
+	if dateTime == nil {
+		lg.Logger.Error("invalid date time")
+	}
+	bars := args[1].(common.Bars)
 	err := s.Self.(Strategy).OnBars(bars)
 	if err != nil {
 		return err
@@ -201,63 +211,66 @@ func (s *baseStrategy) onBars(args ...interface{}) error {
 	return nil
 }
 
-func (s *baseStrategy) Run() (<-chan struct{}, error) {
+func (s *baseStrategy) Run() error {
 	err := s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
 		return s.onOrderEvent(args)
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = s.barFeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
-		return s.onBars(args)
+		return s.onBars(args...)
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = s.dispatcher.GetStartEvent().Subscribe(func(args ...interface{}) error {
 		return s.Self.(Strategy).OnStart()
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = s.dispatcher.GetIdleEvent().Subscribe(func(args ...interface{}) error {
 		return s.Self.(Strategy).OnIdle()
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = s.dispatcher.AddSubject(s.broker)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = s.dispatcher.AddSubject(s.barFeed)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	ch, err := s.dispatcher.Run()
 	if err != nil {
-		return ch, err
+		return err
 	}
+
+	<-ch
 
 	currentBars := s.barFeed.GetCurrentBars()
 
 	if currentBars != nil {
 		if err := s.Self.(Strategy).OnFinish(currentBars); err != nil {
-			return ch, err
+			return err
 		}
 	} else {
-		lg.Logger.Error("Feed was empty")
+		lg.Logger.Info("Feed was empty")
 	}
-	return ch, nil
+	return nil
 }
 
 func (s *baseStrategy) Stop() error {
+	lg.Logger.Info("stopping strategy")
 	return s.dispatcher.Stop()
 }
 

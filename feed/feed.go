@@ -63,7 +63,7 @@ func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common
 	dateTime, values, freqList, err := b.Self.(common.Feed).GetNextValues()
 	if err == nil {
 		if values == nil {
-			return nil, nil, nil, fmt.Errorf("get next values failed. err: %v", err)
+			return nil, nil, nil, nil
 		}
 		keys := values.GetInstruments()
 		if keys == nil || len(keys) == 0 {
@@ -81,7 +81,7 @@ func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common
 							}
 						}
 					} else {
-						b.dataSeries[k][freq] = b.CreateDataSeries(k, b.maxLen)
+						b.dataSeries[k][freq] = b.Self.(common.Feed).CreateDataSeries(k, b.maxLen)
 					}
 				}
 			}
@@ -95,7 +95,7 @@ func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
 		b.dataSeries[key] = map[common.Frequency]common.BarDataSeries{}
 	}
 	if _, ok := b.dataSeries[key][freq]; !ok {
-		b.dataSeries[key][freq] = b.CreateDataSeries(key, b.maxLen)
+		b.dataSeries[key][freq] = b.Self.(common.Feed).CreateDataSeries(key, b.maxLen)
 		for _, v := range b.registeredDs {
 			if v.key == key && v.freq == freq {
 				return nil
@@ -114,6 +114,7 @@ func (b *BaseFeed) Dispatch() (bool, error) {
 	// TODO: check if freq here is needed
 	dateTime, values, _, err := b.Self.(common.Feed).GetNextValuesAndUpdateDS()
 	if err != nil {
+		lg.Logger.Debug("GetNextValuesAndUpdateDS failed", zap.Error(err))
 		return false, err
 	}
 	if dateTime != nil {
