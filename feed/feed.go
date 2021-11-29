@@ -61,9 +61,9 @@ func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency,
 
 func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
 	dateTime, values, freqList, err := b.Self.(common.Feed).GetNextValues()
-	if err != nil || dateTime == nil {
+	if err == nil {
 		if values == nil {
-			return nil, nil, nil, fmt.Errorf("get next values failed")
+			return nil, nil, nil, fmt.Errorf("get next values failed. err: %v", err)
 		}
 		keys := values.GetInstruments()
 		if keys == nil || len(keys) == 0 {

@@ -25,14 +25,14 @@ func NewLiveBarFeed(f common.LiveBarFetcher, maxLen int) *LiveBarFeed {
 		lg.Logger.Error("invalid fetcher was given")
 		return nil
 	}
-	res := LiveBarFeed{
+	res := &LiveBarFeed{
 		baseBarFeed: *NewBaseBarFeed(f.GetFrequencies(), f.GetDSType(), maxLen),
 		stopC:       make(chan struct{}, 1),
 		doneC:       make(chan struct{}, 1),
 		fetcher:     f,
 	}
 	res.Self = res
-	return &res
+	return res
 }
 
 func (l *LiveBarFeed) IsLive() bool {
