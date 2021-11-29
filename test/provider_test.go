@@ -19,12 +19,14 @@ func init() {
 
 // pass "-username=<user> -password=<pass>" as arguments to test
 func TestTradingView(t *testing.T) {
+	freqList := []common.Frequency{common.Frequency_REALTIME}
+
 	if username == "" || password == "" {
 		t.Skip("username and/or password is empty")
 	}
 	tv := fetcher.NewTradingViewFetcher(username, password)
 
-	if err := tv.RegisterInstrument(symbol, []common.Frequency{common.Frequency_REALTIME}); err != nil {
+	if err := tv.RegisterInstrument(symbol, freqList); err != nil {
 		t.Error(err)
 		return
 	}
