@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/go-gota/gota/series"
+
 	"go.uber.org/zap"
 
 	"github.com/gorilla/websocket"
@@ -346,6 +348,10 @@ func (t *TradingViewWSFetcherProvider) reset() error {
 		t.ws.Close()
 	}
 	return nil
+}
+
+func (t *TradingViewWSFetcherProvider) datatype() series.Type {
+	return series.Float
 }
 
 func (t *TradingViewWSFetcherProvider) nextBars() (common.Bars, error) {

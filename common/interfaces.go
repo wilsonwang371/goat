@@ -121,6 +121,9 @@ type BarDataSeries interface {
 
 type LiveBarFetcher interface {
 	RegisterInstrument(instrument string, freqList []Frequency) error
+	GetInstrument() string
+	GetFrequencies() []Frequency
+	GetDSType() series.Type
 	Start() error
 	Stop() error
 	PendingBarsC() <-chan Bars

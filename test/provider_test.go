@@ -3,8 +3,11 @@ package test
 import (
 	"flag"
 	"fmt"
+	"goalgotrade/broker"
 	"goalgotrade/common"
+	"goalgotrade/feed/barfeed"
 	"goalgotrade/feed/barfeed/fetcher"
+	"goalgotrade/strategy"
 	"testing"
 	"time"
 )
@@ -24,30 +27,45 @@ func TestTradingView(t *testing.T) {
 	if username == "" || password == "" {
 		t.Skip("username and/or password is empty")
 	}
-	tv := fetcher.NewTradingViewFetcher(username, password)
+	tvf := fetcher.NewTradingViewFetcher(username, password)
 
-	if err := tv.RegisterInstrument(symbol, freqList); err != nil {
+	if err := tvf.RegisterInstrument(symbol, freqList); err != nil {
 		t.Error(err)
 		return
 	}
 
-	if err := tv.Start(); err != nil {
+	lbf := barfeed.NewLiveBarFeed(tvf, 100)
+	if lbf == nil {
+		t.Error("cannot create live bar feed")
+	}
+
+	if err := tvf.Start(); err != nil {
 		t.Error(err)
 		return
 	}
 
-	timer := time.NewTimer(60 * time.Second)
+	b := broker.NewBroker(lbf)
+	s := strategy.NewBaseStrategy(lbf, b)
+
+	ch, err := s.Run()
+	if err != nil {
+		panic(err)
+	}
+
+	timer := time.NewTimer(120 * time.Second)
 
 	select {
+	case <-ch:
+		t.Log("data from strategy done channel")
 	case <-timer.C:
 		t.Error("timeout waiting for data")
-	case bars := <-tv.PendingBarsC():
+	case bars := <-tvf.PendingBarsC():
 		t.Log(fmt.Sprintf("got bars: %v", bars))
-	case err := <-tv.ErrorC():
+	case err := <-tvf.ErrorC():
 		t.Error(err)
 	}
 
-	if err := tv.Stop(); err != nil {
+	if err := tvf.Stop(); err != nil {
 		t.Error(err)
 		return
 	}

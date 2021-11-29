@@ -6,6 +6,8 @@ import (
 	lg "goalgotrade/logger"
 	"sync"
 	"time"
+
+	"github.com/go-gota/gota/series"
 )
 
 const DefaultDataPullInterval = 10 * time.Second
@@ -29,6 +31,7 @@ type BarFetcherProvider interface {
 	nextBars() (common.Bars, error)
 	reset() error
 	stop() error
+	datatype() series.Type
 }
 
 // TODO: implement me
@@ -155,4 +158,16 @@ func (b *BaseBarFetcher) PendingBarsC() <-chan common.Bars {
 
 func (b *BaseBarFetcher) IsRunning() bool {
 	return !b.stopped
+}
+
+func (b *BaseBarFetcher) GetInstrument() string {
+	return b.instrument
+}
+
+func (b *BaseBarFetcher) GetFrequencies() []common.Frequency {
+	return b.freqList
+}
+
+func (b *BaseBarFetcher) GetDSType() series.Type {
+	return b.Self.(BarFetcherProvider).datatype()
 }
