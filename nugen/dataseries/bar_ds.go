@@ -1,15 +1,28 @@
 package dataseries
 
 import (
-	"goalgotrade/common"
+	"goalgotrade/nugen/bar"
 	"sync"
 	"time"
 
 	"github.com/go-gota/gota/series"
 )
 
-type barDataSeries struct {
+// BarDataSeries ...
+type BarDataSeries interface {
 	SequenceDataSeries
+	OpenDS() series.Series
+	HighDS() series.Series
+	LowDS() series.Series
+	CloseDS() series.Series
+	AdjCloseDS() series.Series
+	VolumeDS() series.Series
+	PriceDS() series.Series
+	ExtraDS() map[string]series.Series
+}
+
+type barDataSeries struct {
+	sequenceDataSeries
 	mu           sync.RWMutex
 	open         series.Series
 	high         series.Series
@@ -23,9 +36,10 @@ type barDataSeries struct {
 	sType        series.Type
 }
 
-func NewBarDataSeries(sType series.Type, maxLen int) common.BarDataSeries {
+// NewBarDataSeries ...
+func NewBarDataSeries(sType series.Type, maxLen int) BarDataSeries {
 	res := &barDataSeries{
-		SequenceDataSeries: *NewSequenceDataSeries(maxLen),
+		sequenceDataSeries: *NewSequenceDataSeries(maxLen).(*sequenceDataSeries),
 		open:               series.New(nil, sType, "open"),
 		high:               series.New(nil, sType, "high"),
 		low:                series.New(nil, sType, "low"),
@@ -37,25 +51,26 @@ func NewBarDataSeries(sType series.Type, maxLen int) common.BarDataSeries {
 		maxLen:             maxLen,
 		sType:              sType,
 	}
-	res.Self = res
 	return res
 }
 
+// Append ...
 func (s *barDataSeries) Append(value interface{}) error {
-	bar := value.(common.Bar)
-	return s.AppendWithDateTime(bar.GetDateTime(), bar)
+	bar := value.(bar.Bar)
+	return s.AppendWithDateTime(bar.Time(), bar)
 }
 
+// AppendWithDateTime ...
 func (s *barDataSeries) AppendWithDateTime(dateTime *time.Time, value interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	bar := value.(common.Bar)
+	bar := value.(bar.Bar)
 
 	err := bar.SetUseAdjustedValue(s.useAdjValues)
 	if err != nil {
 		return err
 	}
-	if err := s.SequenceDataSeries.AppendWithDateTime(dateTime, bar); err != nil {
+	if err := s.sequenceDataSeries.AppendWithDateTime(dateTime, bar); err != nil {
 		return err
 	}
 
@@ -86,37 +101,50 @@ func (s *barDataSeries) AppendWithDateTime(dateTime *time.Time, value interface{
 	return nil
 }
 
-func (s *barDataSeries) OpenDS() *series.Series {
-	return &s.open
+// OpenDS ...
+func (s *barDataSeries) OpenDS() series.Series {
+	return s.open
 }
 
-func (s *barDataSeries) HighDS() *series.Series {
-	return &s.high
+// HighDS ...
+func (s *barDataSeries) HighDS() series.Series {
+	return s.high
 }
 
-func (s *barDataSeries) LowDS() *series.Series {
-	return &s.low
+// LowDS ...
+func (s *barDataSeries) LowDS() series.Series {
+	return s.low
 }
 
-func (s *barDataSeries) CloseDS() *series.Series {
-	return &s.close
+// CloseDS ...
+func (s *barDataSeries) CloseDS() series.Series {
+	return s.close
 }
 
-func (s *barDataSeries) AdjCloseDS() *series.Series {
-	return &s.adjClose
+// AdjCloseDS ...
+func (s *barDataSeries) AdjCloseDS() series.Series {
+	return s.adjClose
 }
 
-func (s *barDataSeries) VolumeDS() *series.Series {
-	return &s.volume
+// VolumeDS ...
+func (s *barDataSeries) VolumeDS() series.Series {
+	return s.volume
 }
 
-func (s *barDataSeries) PriceDS() *series.Series {
+// PriceDS ...
+func (s *barDataSeries) PriceDS() series.Series {
 	if s.useAdjValues {
-		return &s.adjClose
+		return s.adjClose
 	}
-	return &s.close
+	return s.close
 }
 
+// ExtraDS ...
 func (s *barDataSeries) ExtraDS() map[string]series.Series {
 	return s.extra
+}
+
+// Times ...
+func (s *barDataSeries) Times() []*time.Time {
+	return s.times
 }

@@ -101,6 +101,7 @@ func (b *baseBarFeed) GetFrequencies() []common.Frequency {
 }
 
 func (b *baseBarFeed) CreateDataSeries(key string, maxLen int) common.BarDataSeries {
+	// TODO: implement me and confirm if this is correct usage of dataseries
 	ret := dataseries.NewBarDataSeries(b.sType, b.BaseFeed.GetMaxLen())
 	return ret
 }

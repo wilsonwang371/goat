@@ -3,7 +3,6 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"goalgotrade/common"
 	"goalgotrade/core"
 	lg "goalgotrade/logger"
@@ -11,6 +10,8 @@ import (
 	"net/http"
 	"regexp"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/go-gota/gota/series"
 

@@ -106,9 +106,18 @@ type BarFeed interface {
 	GetDataSeries(instrument string, freq Frequency) *series.Series
 }
 
+type SequenceDataSeries interface {
+	Append(value interface{}) error
+	AppendWithDateTime(dateTime *time.Time, value interface{}) error
+	Len() int
+	MaxLen() int
+	SetMaxLen(maxLen int)
+	GetNewValueEvent() Event
+	GetDateTimes() []*time.Time
+}
+
 type BarDataSeries interface {
-	Append(bar Bar) error
-	AppendWithDateTime(dateTime time.Time, bar Bar) error
+	SequenceDataSeries
 	OpenDS() *series.Series
 	HighDS() *series.Series
 	LowDS() *series.Series
