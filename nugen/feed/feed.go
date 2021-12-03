@@ -37,50 +37,62 @@ type baseFeed struct {
 	maxLen          int
 }
 
+// Start ...
 func (b *baseFeed) Start() error {
 	panic("implement me")
 }
 
+// Stop ...
 func (b *baseFeed) Stop() error {
 	panic("implement me")
 }
 
+// Join ...
 func (b *baseFeed) Join() error {
 	panic("implement me")
 }
 
+// Eof ...
 func (b *baseFeed) Eof() bool {
 	panic("implement me")
 }
 
+// PeekDateTime ...
 func (b *baseFeed) PeekDateTime() *time.Time {
 	panic("implement me")
 }
 
+// GetDispatchPriority ...
 func (b *baseFeed) GetDispatchPriority() int {
 	return 0
 }
 
+// SetDispatchPriority ...
 func (b *baseFeed) SetDispatchPriority(priority int) {
 	panic("implement me")
 }
 
+// OnDispatcherRegistered ...
 func (b *baseFeed) OnDispatcherRegistered(dispatcher core.Dispatcher) error {
 	panic("implement me")
 }
 
+// CreateDataSeries ...
 func (b *baseFeed) CreateDataSeries(key string, maxLen int) dataseries.DataSeries {
 	panic("implement me")
 }
 
+// NextValues ...
 func (b *baseFeed) NextValues(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
 	panic("implement me")
 }
 
+// Get ...
 func (b *baseFeed) Get(instrument string, freq frequency.Frequency) interface{} {
 	panic("implement me")
 }
 
+// NewBaseFeed ...
 func NewBaseFeed(maxLen int) BaseFeed {
 	return newBaseFeed(maxLen)
 }

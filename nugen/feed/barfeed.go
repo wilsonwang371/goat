@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// BaseBarFeed ...
 type BaseBarFeed interface {
 	BaseFeed
 	SetUseAdjustedValue(f BaseBarFeed, useAdjusted bool) error
@@ -38,6 +39,7 @@ type baseBarFeed struct {
 	lastBars          map[string]bar.Bar
 }
 
+// NewBaseBarFeed ...
 func NewBaseBarFeed(frequencies []frequency.Frequency, sType series.Type, maxLen int) BaseBarFeed {
 	return newBaseBarFeed(frequencies, sType, maxLen)
 }
@@ -45,7 +47,7 @@ func NewBaseBarFeed(frequencies []frequency.Frequency, sType series.Type, maxLen
 func newBaseBarFeed(frequencies []frequency.Frequency, sType series.Type, maxLen int) *baseBarFeed {
 	p := newBaseFeed(maxLen)
 	res := &baseBarFeed{
-		baseFeed:  *p,
+		baseFeed:         *p,
 		frequencies:      frequencies,
 		useAdjustedValue: false,
 		sType:            sType,
@@ -54,12 +56,14 @@ func newBaseBarFeed(frequencies []frequency.Frequency, sType series.Type, maxLen
 	return res
 }
 
+// Reset ...
 func (b *baseBarFeed) Reset(f BaseFeed) error {
 	b.currentBars = nil
 	b.lastBars = map[string]bar.Bar{}
 	return b.baseFeed.Reset(f)
 }
 
+// SetUseAdjustedValue ...
 func (b *baseBarFeed) SetUseAdjustedValue(f BaseBarFeed, useAdjusted bool) error {
 	if useAdjusted && !f.BarsHaveAdjClose(f) {
 		return fmt.Errorf("not supported")
@@ -72,21 +76,22 @@ func (b *baseBarFeed) SetUseAdjustedValue(f BaseBarFeed, useAdjusted bool) error
 	return nil
 }
 
-
+// CurrentTime ...
 func (b *baseBarFeed) CurrentTime() *time.Time {
 	panic("not implemented")
 }
 
+// BarsHaveAdjClose ...
 func (b *baseBarFeed) BarsHaveAdjClose(f BaseBarFeed) bool {
 	panic("not implemented")
 }
 
-
+// NextBars ...
 func (b *baseBarFeed) NextBars() (bar.Bars, error) {
 	panic("not implemented")
 }
 
-// derived
+// CreateDataSeries ...
 func (b *baseBarFeed) CreateDataSeries(key string, maxLen int) dataseries.DataSeries {
 	// TODO: implement me and confirm if this is correct usage of data series
 	ret := dataseries.NewBarDataSeries(b.sType, maxLen)
@@ -94,6 +99,7 @@ func (b *baseBarFeed) CreateDataSeries(key string, maxLen int) dataseries.DataSe
 	return ret
 }
 
+// NextValues ...
 func (b *baseBarFeed) NextValues(bf BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
 	f := bf.(BaseBarFeed)
 	bars, err := f.NextBars()
@@ -122,10 +128,12 @@ func (b *baseBarFeed) NextValues(bf BaseFeed) (*time.Time, interface{}, []freque
 	return nil, nil, []frequency.Frequency{}, err
 }
 
+// AllFrequencies ...
 func (b *baseBarFeed) AllFrequencies() []frequency.Frequency {
 	return b.frequencies
 }
 
+// IsIntraDay ...
 func (b *baseBarFeed) IsIntraDay() bool {
 	for _, v := range b.frequencies {
 		if v < frequency.DAY {
@@ -135,10 +143,12 @@ func (b *baseBarFeed) IsIntraDay() bool {
 	return false
 }
 
+// CurrentBars ...
 func (b *baseBarFeed) CurrentBars() bar.Bars {
 	return b.currentBars
 }
 
+// LastBar ...
 func (b *baseBarFeed) LastBar(instrument string) bar.Bar {
 	if v, ok := b.lastBars[instrument]; ok {
 		return v
@@ -146,14 +156,17 @@ func (b *baseBarFeed) LastBar(instrument string) bar.Bar {
 	return nil
 }
 
+// DefaultInstrument ...
 func (b *baseBarFeed) DefaultInstrument() string {
 	return b.defaultInstrument
 }
 
+// RegisteredInstruments ...
 func (b *baseBarFeed) RegisteredInstruments() []string {
 	return b.Keys()
 }
 
+// RegisterInstrument ...
 func (b *baseBarFeed) RegisterInstrument(f BaseFeed, instrument string, freqList []frequency.Frequency) error {
 	b.defaultInstrument = instrument
 	for _, freq := range freqList {
@@ -165,6 +178,7 @@ func (b *baseBarFeed) RegisterInstrument(f BaseFeed, instrument string, freqList
 	return nil
 }
 
+// DataSeries ...
 func (b *baseBarFeed) DataSeries(instrument string, freq frequency.Frequency) dataseries.DataSeries {
 	if instrument == "" {
 		instrument = b.defaultInstrument
