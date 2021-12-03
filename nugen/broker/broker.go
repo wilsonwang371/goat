@@ -10,13 +10,9 @@ import (
 // Broker ...
 type Broker interface {
 	core.Subject
-	BrokerEssentials
-}
-
-// BrokerEssentials ...
-type BrokerEssentials interface {
 	NotifyOrderEvent(orderEvent *OrderEvent)
 	OrderUpdatedChannel() core.Channel
+	CancelOrder(order Order) error
 }
 
 type baseBroker struct {
@@ -25,8 +21,47 @@ type baseBroker struct {
 	feed         interface{}
 }
 
+// Start ...
+func (b *baseBroker) Start() error {
+	panic("implement me")
+}
+
+// Stop ...
+func (b *baseBroker) Stop() error {
+	panic("implement me")
+}
+
+// Join ...
+func (b *baseBroker) Join() error {
+	panic("implement me")
+}
+
+// Dispatch ...
+func (b *baseBroker) Dispatch(subject interface{}) (bool, error) {
+	panic("implement me")
+}
+
+// GetDispatchPriority ...
+func (b *baseBroker) GetDispatchPriority() int {
+	return 0
+}
+
+// SetDispatchPriority ...
+func (b *baseBroker) SetDispatchPriority(priority int) {
+	panic("implement me")
+}
+
+// OnDispatcherRegistered ...
+func (b *baseBroker) OnDispatcherRegistered(dispatcher core.Dispatcher) error {
+	panic("implement me")
+}
+
 // NewBrokerEssentials ...
-func NewBrokerEssentials(feed core.Subject) BrokerEssentials {
+func NewBaseBroker(feed core.Subject) Broker {
+	return newBaseBroker(feed)
+}
+
+func newBaseBroker(feed core.Subject) *baseBroker {
 	res := &baseBroker{
 		orderChannel: core.NewChannel(),
 		feed:         feed,

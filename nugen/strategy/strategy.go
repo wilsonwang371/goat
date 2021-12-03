@@ -2,12 +2,10 @@ package strategy
 
 import (
 	"fmt"
-	"goalgotrade/common"
-	"goalgotrade/core"
 	"goalgotrade/nugen/bar"
 	"goalgotrade/nugen/broker"
+	"goalgotrade/nugen/core"
 	"goalgotrade/nugen/feed"
-	"goalgotrade/nugen/feed/barfeed"
 	"os"
 	"sync"
 	"time"
@@ -25,21 +23,21 @@ type strategyLogger interface {
 
 type analyzeProvider interface {
 	AttachAnalyzer(a Analyzer, name string) error
-	GetNamedAnalyzer(name string) (Analyzer, error)
+	NamedAnalyzer(name string) (Analyzer, error)
 }
 
 type positionCtrl interface {
-	RegisterPositionOrder(position Position, order *broker.Order) error
-	UnregisterPositionOrder(position Position, order *broker.Order) error
+	RegisterPositionOrder(position Position, order broker.Order) error
+	UnregisterPositionOrder(position Position, order broker.Order) error
 	UnregisterPosition(position Position) error
 }
 
 type strategyEvent interface {
 	OnStart() error
 	OnIdle() error
-	OnFinish(bars *bar.Bars) error
-	OnOrderUpdated(order *broker.Order) error
-	OnBars(bars *bar.Bars) error
+	OnFinish(bars bar.Bars) error
+	OnOrderUpdated(order broker.Order) error
+	OnBars(bars bar.Bars) error
 }
 
 type positionNotification interface {
@@ -49,75 +47,85 @@ type positionNotification interface {
 	OnExitCanceled(p Position) error
 }
 
+// Strategy ...
 type Strategy interface {
 	strategyLogger
 	analyzeProvider
 	positionCtrl
 	strategyEvent
 	positionNotification
-	GetBarsProcessedEvent() common.Event
-	GetFeed() feed.Feed
-	GetBroker() *broker.Broker
-	SetBroker(broker *broker.Broker)
-	GetUseAdjustedValues() bool
-	GetLastPrice(instrument string) (float64, error)
-	GetCurrentDateTime() *time.Time
-	Run() error
+	BarsProcessedChannel() core.Channel
+	Feed() feed.BaseFeed
+	Broker() broker.Broker
+	SetBroker(broker broker.Broker)
+	UseAdjustedValues() bool
+	LastPrice(b Strategy, instrument string) (float64, error)
+	CurrentTime() *time.Time
+	Run(b Strategy) error
 	Stop() error
 }
 
 type baseStrategy struct {
-	Self       interface{}
 	mu         sync.RWMutex
-	dispatcher common.Dispatcher
-	broker     *broker.Broker
-	barFeed    barfeed.BarFeed
+	dispatcher core.Dispatcher
+	broker     broker.Broker
+	barFeed    feed.BaseBarFeed
 
-	barsProcessedEvent common.Event
-	orderToPosition    map[uint64]Position
-	activePositions    []Position
-	namedAnalyzer      map[string]Analyzer
+	barsProcessedChannel core.Channel
+	orderToPosition      map[uint64]Position
+	activePositions      []Position
+	namedAnalyzer        map[string]Analyzer
 }
 
-func NewBaseStrategy(bf barfeed.BarFeed, bk *broker.Broker) *baseStrategy {
+// NewBaseStrategy ...
+func NewBaseStrategy(bf feed.BaseBarFeed, bk broker.Broker) Strategy {
+	return newBaseStrategy(bf, bk)
+}
+
+func newBaseStrategy(bf feed.BaseBarFeed, bk broker.Broker) *baseStrategy {
 	res := &baseStrategy{
-		dispatcher:         core.NewDispatcher(),
-		barFeed:            bf,
-		broker:             bk,
-		barsProcessedEvent: core.NewEvent(),
-		activePositions:    []Position{},
-		namedAnalyzer:      map[string]Analyzer{},
+		dispatcher:           core.NewDispatcher(),
+		barFeed:              bf,
+		broker:               bk,
+		barsProcessedChannel: core.NewChannel(),
+		activePositions:      []Position{},
+		namedAnalyzer:        map[string]Analyzer{},
 	}
-	res.Self = res
 	return res
 }
 
+// OnStart ...
 func (s *baseStrategy) OnStart() error {
 	lg.Logger.Debug("OnStart()")
 	return nil
 }
 
+// OnIdle ...
 func (s *baseStrategy) OnIdle() error {
 	lg.Logger.Debug("OnIdle()")
 	return nil
 }
 
-func (s *baseStrategy) OnOrderUpdated(order *broker.Order) error {
+// OnOrderUpdated ...
+func (s *baseStrategy) OnOrderUpdated(order broker.Order) error {
 	lg.Logger.Debug("OnOrderUpdated()")
 	return nil
 }
 
-func (s *baseStrategy) OnFinish(bars *bar.Bars) error {
+// OnFinish ...
+func (s *baseStrategy) OnFinish(bars bar.Bars) error {
 	lg.Logger.Debug("OnFinish()")
 	return nil
 }
 
-func (s *baseStrategy) OnBars(bars *bar.Bars) error {
-	fmt.Fprintf(os.Stderr, "OnBars %s bars %v\n", bars.GetInstruments(), bars)
+// OnBars ...
+func (s *baseStrategy) OnBars(bars bar.Bars) error {
+	fmt.Fprintf(os.Stderr, "OnBars %s bars %v\n", bars.Instruments(), bars)
 	return nil
 }
 
-func (s *baseStrategy) RegisterPositionOrder(position Position, order *broker.Order) error {
+// RegisterPositionOrder ...
+func (s *baseStrategy) RegisterPositionOrder(position Position, order broker.Order) error {
 	if !order.IsActive() {
 		return fmt.Errorf("registering an inactive order")
 	}
@@ -128,23 +136,25 @@ func (s *baseStrategy) RegisterPositionOrder(position Position, order *broker.Or
 	}
 	s.activePositions = append(s.activePositions, position)
 
-	if _, ok := s.orderToPosition[order.GetId()]; !ok {
-		s.orderToPosition[order.GetId()] = position
+	if _, ok := s.orderToPosition[order.Id()]; !ok {
+		s.orderToPosition[order.Id()] = position
 	} else {
 		return fmt.Errorf("order exists already")
 	}
 	return nil
 }
 
-func (s *baseStrategy) UnregisterPositionOrder(position Position, order *broker.Order) error {
-	if _, ok := s.orderToPosition[order.GetId()]; ok {
-		delete(s.orderToPosition, order.GetId())
+// UnregisterPositionOrder ...
+func (s *baseStrategy) UnregisterPositionOrder(position Position, order broker.Order) error {
+	if _, ok := s.orderToPosition[order.Id()]; ok {
+		delete(s.orderToPosition, order.Id())
 	} else {
 		return fmt.Errorf("invalid order to find")
 	}
 	return nil
 }
 
+// UnregisterPosition ...
 func (s *baseStrategy) UnregisterPosition(position Position) error {
 	if position.IsOpen(position) {
 		return fmt.Errorf("position is still open")
@@ -162,28 +172,21 @@ func (s *baseStrategy) UnregisterPosition(position Position) error {
 	return nil
 }
 
-func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
-	if len(args) != 2 {
-		msg := "invalid number of arguments"
-		lg.Logger.Error(msg)
-		panic(msg)
-	}
-	// bk := args[0].(broker.Broker)
-	orderEvent := args[1].(*broker.OrderEvent)
+func (s *baseStrategy) onOrderEvent(b Strategy, orderEvent *broker.OrderEvent) error {
 	order := orderEvent.Order
-	err := s.Self.(Strategy).OnOrderUpdated(order)
+	err := b.OnOrderUpdated(order)
 	if err != nil {
 		return err
 	}
 
-	if pos, ok := s.orderToPosition[order.GetId()]; ok {
+	if pos, ok := s.orderToPosition[order.Id()]; ok {
 		if pos == nil {
 			msg := "invalid position"
 			lg.Logger.Error(msg)
 			panic(msg)
 		}
 		if order.IsActive() {
-			err := s.Self.(Strategy).UnregisterPositionOrder(pos, order)
+			err := b.UnregisterPositionOrder(pos, order)
 			if err != nil {
 				return err
 			}
@@ -196,75 +199,72 @@ func (s *baseStrategy) onOrderEvent(args ...interface{}) error {
 	return nil
 }
 
-func (s *baseStrategy) onBars(args ...interface{}) error {
-	if len(args) != 2 {
-		msg := "invalid amount of arguments"
-		lg.Logger.Error(msg)
-		panic(msg)
-	}
-	dateTime := args[0].(*time.Time) // not used
-	if dateTime == nil {
-		lg.Logger.Error("invalid date time")
-	}
-	bars := args[1].(common.Bars)
-	err := s.Self.(Strategy).OnBars(bars)
-	if err != nil {
-		return err
-	}
-	s.barsProcessedEvent.Emit(bars)
-	return nil
-}
-
-func (s *baseStrategy) Run() error {
-	err := s.broker.GetOrderUpdatedEvent().Subscribe(func(args ...interface{}) error {
-		return s.onOrderEvent(args)
+// Run ...
+func (s *baseStrategy) Run(b Strategy) error {
+	err := s.broker.OrderUpdatedChannel().Subscribe(func(event core.Event) error {
+		orderEventRaw, ok := event.Get("event")
+		if !ok {
+			panic("invalid event")
+		}
+		return s.onOrderEvent(b, orderEventRaw.(*broker.OrderEvent))
 	})
 	if err != nil {
 		return err
 	}
 
-	err = s.barFeed.GetNewValuesEvent().Subscribe(func(args ...interface{}) error {
-		return s.onBars(args...)
+	err = s.barFeed.NewValueChannel().Subscribe(func(event core.Event) error {
+		timeRaw, ok := event.Get("time")
+		if !ok {
+			panic("invalid time in event")
+		}
+
+		barsRaw, ok := event.Get("bars")
+		if !ok {
+			panic("invalid bars in event")
+		}
+
+		dateTime := timeRaw.(*time.Time)
+		bars := barsRaw.(bar.Bars)
+
+		if dateTime == nil {
+			lg.Logger.Error("invalid date time")
+		}
+		err := b.OnBars(bars)
+		if err != nil {
+			return err
+		}
+		s.barsProcessedChannel.Emit(core.NewBasicEvent("bars-processed", map[string]interface{}{
+			"value": bars,
+		}))
+		return nil
 	})
 	if err != nil {
 		return err
 	}
 
-	err = s.dispatcher.GetStartEvent().Subscribe(func(args ...interface{}) error {
-		return s.Self.(Strategy).OnStart()
+	err = s.dispatcher.StartChannel().Subscribe(func(event core.Event) error {
+		return b.OnStart()
 	})
 	if err != nil {
 		return err
 	}
 
-	err = s.dispatcher.GetIdleEvent().Subscribe(func(args ...interface{}) error {
-		return s.Self.(Strategy).OnIdle()
+	err = s.dispatcher.IdleChannel().Subscribe(func(event core.Event) error {
+		return b.OnIdle()
 	})
 	if err != nil {
 		return err
 	}
 
-	err = s.dispatcher.AddSubject(s.broker)
-	if err != nil {
-		return err
-	}
+	s.dispatcher.AddSubject(s.broker)
+	s.dispatcher.AddSubject(s.barFeed)
 
-	err = s.dispatcher.AddSubject(s.barFeed)
-	if err != nil {
-		return err
-	}
+	s.dispatcher.Run()
 
-	ch, err := s.dispatcher.Run()
-	if err != nil {
-		return err
-	}
-
-	<-ch
-
-	currentBars := s.barFeed.GetCurrentBars()
+	currentBars := s.barFeed.CurrentBars()
 
 	if currentBars != nil {
-		if err := s.Self.(Strategy).OnFinish(currentBars); err != nil {
+		if err := b.OnFinish(currentBars); err != nil {
 			return err
 		}
 	} else {
@@ -273,66 +273,77 @@ func (s *baseStrategy) Run() error {
 	return nil
 }
 
+// Stop ...
 func (s *baseStrategy) Stop() error {
 	lg.Logger.Info("stopping strategy")
 	return s.dispatcher.Stop()
 }
 
-func (s *baseStrategy) GetBarsProcessedEvent() common.Event {
-	return s.barsProcessedEvent
+// BarsProcessedChannel ...
+func (s *baseStrategy) BarsProcessedChannel() core.Channel {
+	return s.barsProcessedChannel
 }
 
-func (s *baseStrategy) GetFeed() feed.Feed {
+// Feed ...
+func (s *baseStrategy) Feed() feed.BaseFeed {
 	return s.barFeed
 }
 
-func (s *baseStrategy) GetBroker() *broker.Broker {
+// Broker ...
+func (s *baseStrategy) Broker() broker.Broker {
 	return s.broker
 }
 
-func (s *baseStrategy) SetBroker(broker *broker.Broker) {
+// SetBroker ...
+func (s *baseStrategy) SetBroker(broker broker.Broker) {
 	s.broker = broker
 }
 
-func (s *baseStrategy) GetUseAdjustedValues() bool {
+// UseAdjustedValues ...
+func (s *baseStrategy) UseAdjustedValues() bool {
 	return false
 }
 
-func (s *baseStrategy) GetLastPrice(instrument string) (float64, error) {
-	barList := s.Self.(Strategy).GetFeed().(barfeed.BarFeed).GetLastBar(instrument)
-	if barList == nil {
+// LastPrice ...
+func (s *baseStrategy) LastPrice(b Strategy, instrument string) (float64, error) {
+	bar := b.Feed().(feed.BaseBarFeed).LastBar(instrument)
+	if bar == nil {
 		return 0, fmt.Errorf("invalid bar after calling GetLastBar")
 	}
-	if len(barList) != 1 {
-		return 0, fmt.Errorf("too many bars getting from GetLastBar")
-	}
-	return barList[0].Price(), nil
+	return bar.Price(), nil
 }
 
-func (s *baseStrategy) GetCurrentDateTime() *time.Time {
-	return s.barFeed.GetCurrentDateTime()
+// CurrentTime ...
+func (s *baseStrategy) CurrentTime() *time.Time {
+	return s.barFeed.CurrentTime()
 }
 
+// Debug ...
 func (s *baseStrategy) Debug(msg string) {
 	lg.Logger.Debug(msg)
 }
 
+// Info ...
 func (s *baseStrategy) Info(msg string) {
 	lg.Logger.Info(msg)
 }
 
+// Error ...
 func (s *baseStrategy) Error(msg string) {
 	lg.Logger.Error(msg)
 }
 
+// Warning ...
 func (s *baseStrategy) Warning(msg string) {
 	lg.Logger.Warn(msg)
 }
 
+// Critical ...
 func (s *baseStrategy) Critical(msg string) {
 	lg.Logger.Fatal(msg)
 }
 
+// AttachAnalyzer ...
 func (s *baseStrategy) AttachAnalyzer(a Analyzer, name string) error {
 	if a == nil {
 		return fmt.Errorf("analyzer is nil")
@@ -350,28 +361,33 @@ func (s *baseStrategy) AttachAnalyzer(a Analyzer, name string) error {
 	return fmt.Errorf("analyzer %s already exists", name)
 }
 
-func (s *baseStrategy) GetNamedAnalyzer(name string) (Analyzer, error) {
+// NamedAnalyzer ...
+func (s *baseStrategy) NamedAnalyzer(name string) (Analyzer, error) {
 	if a, ok := s.namedAnalyzer[name]; ok {
 		return a, nil
 	}
 	return nil, fmt.Errorf("analyzer not found")
 }
 
+// OnEnterOk ...
 func (s *baseStrategy) OnEnterOk(p Position) error {
 	panic("not implemented")
 	return nil
 }
 
+// OnEnterCanceled ...
 func (s *baseStrategy) OnEnterCanceled(p Position) error {
 	panic("not implemented")
 	return nil
 }
 
+// OnExitOk ...
 func (s *baseStrategy) OnExitOk(p Position) error {
 	panic("not implemented")
 	return nil
 }
 
+// OnExitCanceled ...
 func (s *baseStrategy) OnExitCanceled(p Position) error {
 	panic("not implemented")
 	return nil

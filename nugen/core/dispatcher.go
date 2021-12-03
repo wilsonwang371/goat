@@ -26,6 +26,9 @@ type Dispatcher interface {
 	AddSubject(subject Subject)
 	Run()
 	Stop() error
+	StartChannel() Channel
+	IdleChannel() Channel
+	CurrentTime() *time.Time
 }
 
 type dispatcher struct {
@@ -33,9 +36,9 @@ type dispatcher struct {
 	subjects []Subject
 	stopC    chan struct{}
 
-	CurrentTime  *time.Time
-	StartChannel Channel
-	IdleChannel  Channel
+	currentTime  *time.Time
+	startChannel Channel
+	idleChannel  Channel
 }
 
 // NewDispatcher ...
@@ -43,9 +46,9 @@ func NewDispatcher() Dispatcher {
 	return &dispatcher{
 		subjects:     []Subject{},
 		stopC:        make(chan struct{}, 1),
-		CurrentTime:  nil,
-		StartChannel: NewChannel(),
-		IdleChannel:  NewChannel(),
+		currentTime:  nil,
+		startChannel: NewChannel(),
+		idleChannel:  NewChannel(),
 	}
 }
 
@@ -102,7 +105,7 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 	}
 
 	if !eof {
-		d.CurrentTime = smallestTime
+		d.currentTime = smallestTime
 		for _, v := range d.subjects {
 			wg.Add(1)
 			go func(sub Subject) {
@@ -133,12 +136,12 @@ func (d *dispatcher) mainDispatchLoop() {
 	}
 	d.mu.RUnlock()
 
-	d.StartChannel.Emit(NewBasicEvent("start", nil))
+	d.StartChannel().Emit(NewBasicEvent("start", nil))
 
 	for {
 		select {
 		case <-d.stopC:
-			d.CurrentTime = nil
+			d.currentTime = nil
 			return
 		default:
 		}
@@ -148,7 +151,22 @@ func (d *dispatcher) mainDispatchLoop() {
 		if eof {
 			d.stopC <- struct{}{}
 		} else if !eventDispatched {
-			d.IdleChannel.Emit(NewBasicEvent("idle", nil))
+			d.IdleChannel().Emit(NewBasicEvent("idle", nil))
 		}
 	}
+}
+
+// StartChannel ...
+func (d *dispatcher) StartChannel() Channel {
+	return d.startChannel
+}
+
+// IdleChannel ...
+func (d *dispatcher) IdleChannel() Channel {
+	return d.idleChannel
+}
+
+// CurrentTime ...
+func (d *dispatcher) CurrentTime() *time.Time {
+	return d.currentTime
 }
