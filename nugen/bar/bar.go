@@ -146,7 +146,6 @@ type Bars interface {
 	Frequencies() []frequency.Frequency
 	Time() *time.Time
 	Bar(instrument string) Bar
-	Items(instrument string) []Bar
 	AddBarList(instrument string, barList []Bar) error
 }
 
@@ -197,15 +196,6 @@ func (b *bars) Bar(instrument string) Bar {
 		return val
 	}
 	return nil
-}
-
-// Items ...
-func (b *bars) Items(instrument string) []Bar {
-	res := []Bar{}
-	if bar, ok := b.barList[instrument]; ok {
-		res = append(res, bar)
-	}
-	return res
 }
 
 func (b *bars) addSingleBar(instrument string, bar Bar) error {

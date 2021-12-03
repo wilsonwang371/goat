@@ -19,6 +19,7 @@ type BarDataSeries interface {
 	VolumeDS() series.Series
 	PriceDS() series.Series
 	ExtraDS() map[string]series.Series
+	SetUseAdjustedValues(useAdjusted bool)
 }
 
 type barDataSeries struct {
@@ -52,6 +53,10 @@ func NewBarDataSeries(sType series.Type, maxLen int) BarDataSeries {
 		sType:              sType,
 	}
 	return res
+}
+
+func (s *barDataSeries) SetUseAdjustedValues(useAdjusted bool) {
+	s.useAdjValues = useAdjusted
 }
 
 // Append ...

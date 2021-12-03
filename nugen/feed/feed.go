@@ -15,6 +15,7 @@ import (
 // BaseFeed ...
 type BaseFeed interface {
 	core.Subject
+	Reset(f BaseFeed) error
 	CreateDataSeries(key string, maxLen int) dataseries.DataSeries
 	NextValues(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error)
 	RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error
@@ -29,15 +30,63 @@ type regDs struct {
 	freq frequency.Frequency
 }
 
-type partialBaseFeed struct {
+type baseFeed struct {
 	newValueChannel core.Channel
 	dataSeries      map[string]map[frequency.Frequency]dataseries.DataSeries
 	registeredDs    []regDs
 	maxLen          int
 }
 
-func newPartialBaseFeed(maxLen int) *partialBaseFeed {
-	return &partialBaseFeed{
+func (b *baseFeed) Start() error {
+	panic("implement me")
+}
+
+func (b *baseFeed) Stop() error {
+	panic("implement me")
+}
+
+func (b *baseFeed) Join() error {
+	panic("implement me")
+}
+
+func (b *baseFeed) Eof() bool {
+	panic("implement me")
+}
+
+func (b *baseFeed) PeekDateTime() *time.Time {
+	panic("implement me")
+}
+
+func (b *baseFeed) GetDispatchPriority() int {
+	return 0
+}
+
+func (b *baseFeed) SetDispatchPriority(priority int) {
+	panic("implement me")
+}
+
+func (b *baseFeed) OnDispatcherRegistered(dispatcher core.Dispatcher) error {
+	panic("implement me")
+}
+
+func (b *baseFeed) CreateDataSeries(key string, maxLen int) dataseries.DataSeries {
+	panic("implement me")
+}
+
+func (b *baseFeed) NextValues(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
+	panic("implement me")
+}
+
+func (b *baseFeed) Get(instrument string, freq frequency.Frequency) interface{} {
+	panic("implement me")
+}
+
+func NewBaseFeed(maxLen int) BaseFeed {
+	return newBaseFeed(maxLen)
+}
+
+func newBaseFeed(maxLen int) *baseFeed {
+	return &baseFeed{
 		dataSeries:      map[string]map[frequency.Frequency]dataseries.DataSeries{},
 		maxLen:          maxLen,
 		newValueChannel: core.NewChannel(),
@@ -45,7 +94,7 @@ func newPartialBaseFeed(maxLen int) *partialBaseFeed {
 }
 
 // Reset ...
-func (b *partialBaseFeed) Reset(f BaseFeed) error {
+func (b *baseFeed) Reset(f BaseFeed) error {
 	b.dataSeries = map[string]map[frequency.Frequency]dataseries.DataSeries{}
 	for _, v := range b.registeredDs {
 		err := f.RegisterDataSeries(f, v.key, v.freq)
@@ -58,7 +107,7 @@ func (b *partialBaseFeed) Reset(f BaseFeed) error {
 }
 
 // RegisterDataSeries ...
-func (b *partialBaseFeed) RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error {
+func (b *baseFeed) RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error {
 	if _, ok := b.dataSeries[key]; !ok {
 		b.dataSeries[key] = map[frequency.Frequency]dataseries.DataSeries{}
 	}
@@ -75,12 +124,12 @@ func (b *partialBaseFeed) RegisterDataSeries(f BaseFeed, key string, freq freque
 }
 
 // NewValueChannel ...
-func (b *partialBaseFeed) NewValueChannel() core.Channel {
+func (b *baseFeed) NewValueChannel() core.Channel {
 	return b.newValueChannel
 }
 
 // Keys ...
-func (b *partialBaseFeed) Keys() []string {
+func (b *baseFeed) Keys() []string {
 	var res []string
 	for k := range b.dataSeries {
 		res = append(res, k)
@@ -89,7 +138,7 @@ func (b *partialBaseFeed) Keys() []string {
 }
 
 // Dispatch ...
-func (b *partialBaseFeed) Dispatch(sub interface{}) (bool, error) {
+func (b *baseFeed) Dispatch(sub interface{}) (bool, error) {
 	// TODO: check if freq here is needed
 	f := sub.(BaseFeed)
 	dsTime, values, _, err := f.GetNextValuesAndUpdateDS(f)
@@ -107,7 +156,7 @@ func (b *partialBaseFeed) Dispatch(sub interface{}) (bool, error) {
 }
 
 // GetNextValuesAndUpdateDS ...
-func (b *partialBaseFeed) GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
+func (b *baseFeed) GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
 	dateTime, nextValues, freqList, err := f.NextValues(f)
 	if err == nil {
 		if nextValues == nil {
@@ -126,11 +175,10 @@ func (b *partialBaseFeed) GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, inte
 			} else {
 				for _, freq := range freqList {
 					if v2, ok2 := v[freq]; ok2 {
-						for _, bar := range values.Items(k) {
-							sequenceDS := v2.(dataseries.SequenceDataSeries)
-							if err := sequenceDS.Append(bar); err != nil {
-								return nil, nil, nil, fmt.Errorf("error appeding bar")
-							}
+						bar := values.Bar(k)
+						sequenceDS := v2.(dataseries.SequenceDataSeries)
+						if err := sequenceDS.Append(bar); err != nil {
+							return nil, nil, nil, fmt.Errorf("error appeding bar")
 						}
 					} else {
 						b.dataSeries[k][freq] = f.CreateDataSeries(k, b.maxLen)
