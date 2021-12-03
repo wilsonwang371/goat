@@ -2,8 +2,8 @@ package test
 
 import (
 	"goalgotrade/broker"
-	"goalgotrade/common"
-	"goalgotrade/feed/barfeed"
+	"goalgotrade/consts/frequency"
+	"goalgotrade/feed"
 	"goalgotrade/strategy"
 	"testing"
 
@@ -11,16 +11,14 @@ import (
 )
 
 func TestStrategyBasics(t *testing.T) {
-	freqList := []common.Frequency{common.Frequency_DAY, common.Frequency_MINUTE}
+	freqList := []frequency.Frequency{frequency.DAY, frequency.MINUTE}
 
-	f := barfeed.NewBaseBarFeed(freqList, series.Float, 100)
-	b := broker.NewBroker(f)
+	f := feed.NewBaseBarFeed(freqList, series.Float, 100)
+	b := broker.NewBaseBroker(f)
 	s := strategy.NewBaseStrategy(f, b)
 
-	ch, err := s.Run()
+	err := s.Run(s)
 	if err != nil {
 		panic(err)
 	}
-
-	<-ch
 }

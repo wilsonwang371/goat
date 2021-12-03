@@ -2,100 +2,131 @@ package feed
 
 import (
 	"fmt"
-	"goalgotrade/common"
+	"goalgotrade/bar"
+	"goalgotrade/consts/frequency"
 	"goalgotrade/core"
+	"goalgotrade/dataseries"
 	lg "goalgotrade/logger"
 	"time"
 
 	"go.uber.org/zap"
 )
 
+// BaseFeed ...
+type BaseFeed interface {
+	core.Subject
+	Reset(f BaseFeed) error
+	CreateDataSeries(key string, maxLen int) dataseries.DataSeries
+	NextValues(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error)
+	RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error
+	GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error)
+	NewValueChannel() core.Channel
+	Keys() []string
+	Get(instrument string, freq frequency.Frequency) interface{}
+}
+
 type regDs struct {
 	key  string
-	freq common.Frequency
+	freq frequency.Frequency
 }
 
-type BaseFeed struct {
-	core.DefaultSubject
-	event        common.Event
-	dataSeries   map[string]map[common.Frequency]common.BarDataSeries
-	registeredDs []regDs
-	maxLen       int
+type baseFeed struct {
+	newValueChannel core.Channel
+	dataSeries      map[string]map[frequency.Frequency]dataseries.DataSeries
+	registeredDs    []regDs
+	maxLen          int
 }
 
-func NewBaseFeed(maxLen int) *BaseFeed {
-	subject := core.NewDefaultSubject()
-	res := &BaseFeed{
-		DefaultSubject: *subject,
-		event:          core.NewEvent(),
-		dataSeries:     map[string]map[common.Frequency]common.BarDataSeries{},
-		maxLen:         maxLen,
+// Start ...
+func (b *baseFeed) Start() error {
+	lg.Logger.Debug("baseFeed Start() called")
+	return nil
+}
+
+// Stop ...
+func (b *baseFeed) Stop() error {
+	panic("implement me")
+}
+
+// Join ...
+func (b *baseFeed) Join() error {
+	panic("implement me")
+}
+
+// Eof ...
+func (b *baseFeed) Eof() bool {
+	lg.Logger.Warn("baseFeed Eof() called")
+	return true
+}
+
+// PeekDateTime ...
+func (b *baseFeed) PeekDateTime() *time.Time {
+	panic("implement me")
+}
+
+// GetDispatchPriority ...
+func (b *baseFeed) GetDispatchPriority() int {
+	return 0
+}
+
+// SetDispatchPriority ...
+func (b *baseFeed) SetDispatchPriority(priority int) {
+	panic("implement me")
+}
+
+// OnDispatcherRegistered ...
+func (b *baseFeed) OnDispatcherRegistered(dispatcher core.Dispatcher) error {
+	panic("implement me")
+}
+
+// CreateDataSeries ...
+func (b *baseFeed) CreateDataSeries(key string, maxLen int) dataseries.DataSeries {
+	panic("implement me")
+}
+
+// NextValues ...
+func (b *baseFeed) NextValues(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
+	panic("implement me")
+}
+
+// Get ...
+func (b *baseFeed) Get(instrument string, freq frequency.Frequency) interface{} {
+	panic("implement me")
+}
+
+// NewBaseFeed ...
+func NewBaseFeed(maxLen int) BaseFeed {
+	return newBaseFeed(maxLen)
+}
+
+func newBaseFeed(maxLen int) *baseFeed {
+	return &baseFeed{
+		dataSeries:      map[string]map[frequency.Frequency]dataseries.DataSeries{},
+		maxLen:          maxLen,
+		newValueChannel: core.NewChannel(),
 	}
-	res.Self = res
-	return res
 }
 
-func (b *BaseFeed) GetMaxLen() int {
-	return b.maxLen
-}
-
-func (b *BaseFeed) Reset() {
-	b.dataSeries = make(map[string]map[common.Frequency]common.BarDataSeries)
+// Reset ...
+func (b *baseFeed) Reset(f BaseFeed) error {
+	b.dataSeries = map[string]map[frequency.Frequency]dataseries.DataSeries{}
 	for _, v := range b.registeredDs {
-		err := b.RegisterDataSeries(v.key, v.freq)
+		err := f.RegisterDataSeries(f, v.key, v.freq)
 		if err != nil {
 			lg.Logger.Warn("error", zap.Error(err))
+			return err
 		}
 	}
+	return nil
 }
 
-func (b *BaseFeed) CreateDataSeries(key string, maxLen int) common.BarDataSeries {
-	lg.Logger.Error("not implemented")
-	panic("not implemented")
-}
-
-func (b *BaseFeed) GetNextValues() (*time.Time, common.Bars, []common.Frequency, error) {
-	lg.Logger.Error("not implemented")
-	panic("not implemented")
-}
-
-func (b *BaseFeed) GetNextValuesAndUpdateDS() (*time.Time, common.Bars, []common.Frequency, error) {
-	dateTime, values, freqList, err := b.Self.(common.Feed).GetNextValues()
-	if err == nil {
-		if values == nil {
-			return nil, nil, nil, nil
-		}
-		keys := values.GetInstruments()
-		if keys == nil || len(keys) == 0 {
-			return nil, nil, nil, fmt.Errorf("no instruments found")
-		}
-		for _, k := range keys {
-			if v, ok := b.dataSeries[k]; !ok {
-				b.dataSeries[k] = make(map[common.Frequency]common.BarDataSeries)
-			} else {
-				for _, freq := range freqList {
-					if v2, ok2 := v[freq]; ok2 {
-						for _, bar := range values.GetBarList(k) {
-							if err := v2.Append(bar); err != nil {
-								return nil, nil, nil, fmt.Errorf("error appeding bar")
-							}
-						}
-					} else {
-						b.dataSeries[k][freq] = b.Self.(common.Feed).CreateDataSeries(k, b.maxLen)
-					}
-				}
-			}
-		}
-	}
-	return dateTime, values, freqList, err
-}
-
-func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
+// RegisterDataSeries ...
+func (b *baseFeed) RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error {
 	if _, ok := b.dataSeries[key]; !ok {
-		b.dataSeries[key] = map[common.Frequency]common.BarDataSeries{}
+		b.dataSeries[key] = map[frequency.Frequency]dataseries.DataSeries{}
 	}
 	if _, ok := b.dataSeries[key][freq]; !ok {
-		b.dataSeries[key][freq] = b.Self.(common.Feed).CreateDataSeries(key, b.maxLen)
+		b.dataSeries[key][freq] = f.CreateDataSeries(key, b.maxLen)
 		for _, v := range b.registeredDs {
 			if v.key == key && v.freq == freq {
 				return nil
@@ -106,28 +137,13 @@ func (b *BaseFeed) RegisterDataSeries(key string, freq common.Frequency) error {
 	return nil
 }
 
-func (b *BaseFeed) GetNewValuesEvent() common.Event {
-	return b.event
+// NewValueChannel ...
+func (b *baseFeed) NewValueChannel() core.Channel {
+	return b.newValueChannel
 }
 
-func (b *BaseFeed) Dispatch() (bool, error) {
-	// TODO: check if freq here is needed
-	dateTime, values, _, err := b.Self.(common.Feed).GetNextValuesAndUpdateDS()
-	if err != nil {
-		lg.Logger.Debug("GetNextValuesAndUpdateDS failed", zap.Error(err))
-		return false, err
-	}
-	if dateTime != nil {
-		b.event.Emit(dateTime, values)
-	}
-	return dateTime != nil, nil
-}
-
-func (b *BaseFeed) Eof() bool {
-	panic("not implemented")
-}
-
-func (b *BaseFeed) GetKeys() []string {
+// Keys ...
+func (b *baseFeed) Keys() []string {
 	var res []string
 	for k := range b.dataSeries {
 		res = append(res, k)
@@ -135,6 +151,55 @@ func (b *BaseFeed) GetKeys() []string {
 	return res
 }
 
-func (b *BaseFeed) IsLive() bool {
-	return false
+// Dispatch ...
+func (b *baseFeed) Dispatch(sub interface{}) (bool, error) {
+	// TODO: check if freq here is needed
+	f := sub.(BaseFeed)
+	dsTime, values, _, err := f.GetNextValuesAndUpdateDS(f)
+	if err != nil {
+		lg.Logger.Debug("GetNextValuesAndUpdateDS failed", zap.Error(err))
+		return false, err
+	}
+	if dsTime != nil {
+		b.newValueChannel.Emit(core.NewBasicEvent("new_value", map[string]interface{}{
+			"time": dsTime,
+			"bars": values,
+		}))
+	}
+	return dsTime != nil, nil
+}
+
+// GetNextValuesAndUpdateDS ...
+func (b *baseFeed) GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
+	dateTime, nextValues, freqList, err := f.NextValues(f)
+	if err == nil {
+		if nextValues == nil {
+			return nil, nil, nil, nil
+		}
+		// currently we dont support other than Bars.
+		// TODO: add a more generic implementation for nextValues
+		values := nextValues.(bar.Bars)
+		keys := values.Instruments()
+		if keys == nil || len(keys) == 0 {
+			return nil, nil, nil, fmt.Errorf("no instruments found")
+		}
+		for _, k := range keys {
+			if v, ok := b.dataSeries[k]; !ok {
+				b.dataSeries[k] = make(map[frequency.Frequency]dataseries.DataSeries)
+			} else {
+				for _, freq := range freqList {
+					if v2, ok2 := v[freq]; ok2 {
+						bar := values.Bar(k)
+						sequenceDS := v2.(dataseries.SequenceDataSeries)
+						if err := sequenceDS.Append(bar); err != nil {
+							return nil, nil, nil, fmt.Errorf("error appeding bar")
+						}
+					} else {
+						b.dataSeries[k][freq] = f.CreateDataSeries(k, b.maxLen)
+					}
+				}
+			}
+		}
+	}
+	return dateTime, nextValues, freqList, err
 }
