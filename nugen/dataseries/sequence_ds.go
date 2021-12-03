@@ -13,6 +13,8 @@ type SequenceDataSeries interface {
 	MaxLen() int
 	SetMaxLen(maxLen int)
 	NewValueChannel() core.Channel
+	Append(value interface{}) error
+	AppendWithDateTime(dateTime *time.Time, value interface{}) error
 }
 
 type sequenceDataSeries struct {

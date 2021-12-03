@@ -14,7 +14,7 @@ type Subject interface {
 	Stop() error
 	Join() error
 	Eof() bool
-	Dispatch() (bool, error)
+	Dispatch(subject interface{}) (bool, error)
 	PeekDateTime() *time.Time
 	GetDispatchPriority() int
 	SetDispatchPriority(priority int)
@@ -107,7 +107,7 @@ func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
 			wg.Add(1)
 			go func(sub Subject) {
 				defer wg.Done()
-				done, err := sub.Dispatch()
+				done, err := sub.Dispatch(sub)
 				if err != nil {
 					lg.Logger.Error("subject dispatch failed", zap.Error(err))
 				}

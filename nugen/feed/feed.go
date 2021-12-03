@@ -12,42 +12,40 @@ import (
 	"go.uber.org/zap"
 )
 
+// BaseFeed ...
+type BaseFeed interface {
+	core.Subject
+	CreateDataSeries(key string, maxLen int) dataseries.DataSeries
+	NextValues(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error)
+	RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error
+	GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error)
+	NewValueChannel() core.Channel
+	Keys() []string
+	Get(instrument string, freq frequency.Frequency) interface{}
+}
+
 type regDs struct {
 	key  string
 	freq frequency.Frequency
 }
 
-type InheritedFeedOps interface {
-	CreateDataSeries(key string, maxLen int) dataseries.DataSeries
-	RegisterDataSeries(f InheritedFeedOps, key string, freq frequency.Frequency) error
-	NextValues(f InheritedFeedOps) (*time.Time, *bar.Bars, []frequency.Frequency, error)
-	GetNextValuesAndUpdateDS(f InheritedFeedOps) (*time.Time, *bar.Bars, []frequency.Frequency, error)
-}
-
-type Feed interface {
-	core.Subject
-	InheritedFeedOps
-	NewValueChannel() *core.Channel
-	MaxLen() int
-	Keys() []string
-}
-
-func NewBaseFeed(maxLen int) *BaseFeed {
-	return &BaseFeed{
-		dataSeries:      map[string]map[frequency.Frequency]dataseries.DataSeries{},
-		maxLen:          maxLen,
-		newValueChannel: core.NewChannel(),
-	}
-}
-
-type BaseFeed struct {
+type partialBaseFeed struct {
 	newValueChannel core.Channel
 	dataSeries      map[string]map[frequency.Frequency]dataseries.DataSeries
 	registeredDs    []regDs
 	maxLen          int
 }
 
-func (b *BaseFeed) Reset(f Feed) error {
+func newPartialBaseFeed(maxLen int) *partialBaseFeed {
+	return &partialBaseFeed{
+		dataSeries:      map[string]map[frequency.Frequency]dataseries.DataSeries{},
+		maxLen:          maxLen,
+		newValueChannel: core.NewChannel(),
+	}
+}
+
+// Reset ...
+func (b *partialBaseFeed) Reset(f BaseFeed) error {
 	b.dataSeries = map[string]map[frequency.Frequency]dataseries.DataSeries{}
 	for _, v := range b.registeredDs {
 		err := f.RegisterDataSeries(f, v.key, v.freq)
@@ -59,7 +57,8 @@ func (b *BaseFeed) Reset(f Feed) error {
 	return nil
 }
 
-func (b *BaseFeed) RegisterDataSeries(f InheritedFeedOps, key string, freq frequency.Frequency) error {
+// RegisterDataSeries ...
+func (b *partialBaseFeed) RegisterDataSeries(f BaseFeed, key string, freq frequency.Frequency) error {
 	if _, ok := b.dataSeries[key]; !ok {
 		b.dataSeries[key] = map[frequency.Frequency]dataseries.DataSeries{}
 	}
@@ -75,47 +74,13 @@ func (b *BaseFeed) RegisterDataSeries(f InheritedFeedOps, key string, freq frequ
 	return nil
 }
 
-func (b *BaseFeed) GetNextValuesAndUpdateDS(f InheritedFeedOps) (*time.Time, *bar.Bars, []frequency.Frequency, error) {
-	dateTime, values, freqList, err := f.NextValues(f)
-	if err == nil {
-		if values == nil {
-			return nil, nil, nil, nil
-		}
-		keys := values.GetInstruments()
-		if keys == nil || len(keys) == 0 {
-			return nil, nil, nil, fmt.Errorf("no instruments found")
-		}
-		for _, k := range keys {
-			if v, ok := b.dataSeries[k]; !ok {
-				b.dataSeries[k] = make(map[frequency.Frequency]dataseries.DataSeries)
-			} else {
-				for _, freq := range freqList {
-					if v2, ok2 := v[freq]; ok2 {
-						for _, bar := range values.GetBarList(k) {
-							sequenceDS := v2.(*dataseries.SequenceDataSeries)
-							if err := sequenceDS.Append(bar); err != nil {
-								return nil, nil, nil, fmt.Errorf("error appeding bar")
-							}
-						}
-					} else {
-						b.dataSeries[k][freq] = f.CreateDataSeries(k, b.maxLen)
-					}
-				}
-			}
-		}
-	}
-	return dateTime, values, freqList, err
-}
-
-func (b *BaseFeed) NewValueChannel() *core.Channel {
+// NewValueChannel ...
+func (b *partialBaseFeed) NewValueChannel() core.Channel {
 	return b.newValueChannel
 }
 
-func (b *BaseFeed) MaxLen() int {
-	return b.maxLen
-}
-
-func (b *BaseFeed) Keys() []string {
+// Keys ...
+func (b *partialBaseFeed) Keys() []string {
 	var res []string
 	for k := range b.dataSeries {
 		res = append(res, k)
@@ -123,8 +88,10 @@ func (b *BaseFeed) Keys() []string {
 	return res
 }
 
-func (b *BaseFeed) Dispatch(f Feed) (bool, error) {
+// Dispatch ...
+func (b *partialBaseFeed) Dispatch(sub interface{}) (bool, error) {
 	// TODO: check if freq here is needed
+	f := sub.(BaseFeed)
 	dsTime, values, _, err := f.GetNextValuesAndUpdateDS(f)
 	if err != nil {
 		lg.Logger.Debug("GetNextValuesAndUpdateDS failed", zap.Error(err))
@@ -137,4 +104,40 @@ func (b *BaseFeed) Dispatch(f Feed) (bool, error) {
 		}))
 	}
 	return dsTime != nil, nil
+}
+
+// GetNextValuesAndUpdateDS ...
+func (b *partialBaseFeed) GetNextValuesAndUpdateDS(f BaseFeed) (*time.Time, interface{}, []frequency.Frequency, error) {
+	dateTime, nextValues, freqList, err := f.NextValues(f)
+	if err == nil {
+		if nextValues == nil {
+			return nil, nil, nil, nil
+		}
+		// currently we dont support other than Bars.
+		// TODO: add a more generic implementation for nextValues
+		values := nextValues.(bar.Bars)
+		keys := values.Instruments()
+		if keys == nil || len(keys) == 0 {
+			return nil, nil, nil, fmt.Errorf("no instruments found")
+		}
+		for _, k := range keys {
+			if v, ok := b.dataSeries[k]; !ok {
+				b.dataSeries[k] = make(map[frequency.Frequency]dataseries.DataSeries)
+			} else {
+				for _, freq := range freqList {
+					if v2, ok2 := v[freq]; ok2 {
+						for _, bar := range values.Items(k) {
+							sequenceDS := v2.(dataseries.SequenceDataSeries)
+							if err := sequenceDS.Append(bar); err != nil {
+								return nil, nil, nil, fmt.Errorf("error appeding bar")
+							}
+						}
+					} else {
+						b.dataSeries[k][freq] = f.CreateDataSeries(k, b.maxLen)
+					}
+				}
+			}
+		}
+	}
+	return dateTime, nextValues, freqList, err
 }
