@@ -26,10 +26,10 @@ type baseBarFetcher struct {
 	doneC        chan struct{}
 	errorC       chan error
 	pullInterval time.Duration
-	provider     barFetcherProvider
+	provider     BarFetcherProvider
 }
 
-type barFetcherProvider interface {
+type BarFetcherProvider interface {
 	init(instrument string, freqList []frequency.Frequency) error
 	connect() error
 	nextBars() (bar.Bars, error)
@@ -39,11 +39,11 @@ type barFetcherProvider interface {
 }
 
 // NewBaseBarFetcher ...
-func NewBaseBarFetcher(provider barFetcherProvider, pullInterval time.Duration) BarFetcher {
+func NewBaseBarFetcher(provider BarFetcherProvider, pullInterval time.Duration) BarFetcher {
 	return newBaseBarFetcher(provider, pullInterval)
 }
 
-func newBaseBarFetcher(provider barFetcherProvider, pullInterval time.Duration) *baseBarFetcher {
+func newBaseBarFetcher(provider BarFetcherProvider, pullInterval time.Duration) *baseBarFetcher {
 	b := &baseBarFetcher{
 		instrument:   "",
 		pendingBars:  make(chan bar.Bars, 1024),

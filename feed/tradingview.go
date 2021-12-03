@@ -1,10 +1,10 @@
-package fetcher
+package feed
 
 import (
 	"encoding/json"
 	"fmt"
-	"goalgotrade/common"
-	"goalgotrade/core"
+	"goalgotrade/bar"
+	"goalgotrade/consts/frequency"
 	lg "goalgotrade/logger"
 	"math/rand"
 	"net/http"
@@ -21,22 +21,24 @@ import (
 	"github.com/recws-org/recws"
 )
 
+// TradingViewSessionStringLength ...
 const (
 	TradingViewSessionStringLength = 12
 	TradingViewSignInUrl           = "https://www.tradingview.com/accounts/signin/"
 	TradingViewWebSocketUrl        = "wss://data.tradingview.com/socket.io/websocket"
 )
 
-var frequencyTable map[common_old.Frequency]string
+var frequencyTable map[frequency.Frequency]string
 
 func init() {
-	frequencyTable = map[common_old.Frequency]string{
-		common_old.Frequency_MINUTE: "1",
-		common_old.Frequency_HOUR:   "60",
-		common_old.Frequency_DAY:    "1D",
+	frequencyTable = map[frequency.Frequency]string{
+		frequency.MINUTE: "1",
+		frequency.HOUR:   "60",
+		frequency.DAY:    "1D",
 	}
 }
 
+// GetAuthToken ...
 func GetAuthToken(username, password string) (string, error) {
 	headers := req.Header{
 		"authority":  "www.tradingview.com",
@@ -75,11 +77,7 @@ func GetAuthToken(username, password string) (string, error) {
 	return "", fmt.Errorf("invalid response data. result: %v", result)
 }
 
-type TradingViewWSFetcherProvider struct {
-	// BarFetcherProvider & BaseBarFetcher are needed for every fetcher provider implementation
-	BarFetcherProvider
-	BaseBarFetcher
-
+type tradingViewWSFetcherProvider struct {
 	ws               recws.RecConn
 	username         string
 	password         string
@@ -87,25 +85,25 @@ type TradingViewWSFetcherProvider struct {
 	chatSessionName  string
 	authToken        string
 	instrument       string
-	freqList         []common_old.Frequency
+	freqList         []frequency.Frequency
 
-	barC chan common_old.Bar
+	barC chan bar.Bar
 }
 
-func NewTradingViewFetcher(username, password string) common_old.LiveBarFetcher {
-	res := &TradingViewWSFetcherProvider{
-		BaseBarFetcher:   *NewBaseBarFetcher(0), // required
+// NewTradingViewFetcherProvider ...
+func NewTradingViewFetcherProvider(username, password string) BarFetcherProvider {
+	res := &tradingViewWSFetcherProvider{
 		querySessionName: TVGenQuerySession(),
 		chatSessionName:  TVGenChatSession(),
 		username:         username,
 		password:         password,
 		authToken:        "",
-		barC:             make(chan common_old.Bar, 1024),
+		barC:             make(chan bar.Bar, 1024),
 	}
-	res.Self = res
 	return res
 }
 
+// TVGenSession ...
 func TVGenSession() string {
 	res := [TradingViewSessionStringLength]byte{}
 	rand.Seed(time.Now().UnixNano())
@@ -115,20 +113,24 @@ func TVGenSession() string {
 	return string(res[:])
 }
 
+// TVGenQuerySession ...
 func TVGenQuerySession() string {
 	res := TVGenSession()
 	return "qs_" + res
 }
 
+// TVGenChatSession ...
 func TVGenChatSession() string {
 	res := TVGenSession()
 	return "cs_" + res
 }
 
+// TVBuildMsgHdr ...
 func TVBuildMsgHdr(msg []byte) []byte {
 	return []byte(fmt.Sprintf("~m~%d~m~", len(msg)))
 }
 
+// TVBuildMsgBody ...
 func TVBuildMsgBody(methodName string, paramList []interface{}) ([]byte, error) {
 	if params, err := json.Marshal(map[string]interface{}{
 		"m": methodName,
@@ -139,6 +141,7 @@ func TVBuildMsgBody(methodName string, paramList []interface{}) ([]byte, error) 
 	return nil, fmt.Errorf("failed to marshal message body")
 }
 
+// TVBuildMsg ...
 func TVBuildMsg(methodName string, paramList []interface{}) ([]byte, error) {
 	if body, err := TVBuildMsgBody(methodName, paramList); err == nil {
 		header := TVBuildMsgHdr(body)
@@ -170,17 +173,17 @@ type pTypeDef struct {
 	} `json:"s1"`
 }
 
-func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common_old.Bar, error) {
-	var res []common_old.Bar
+func (t *tradingViewWSFetcherProvider) tvDataParse(data []byte) ([]bar.Bar, error) {
+	var res []bar.Bar
 	parsedData := dTypeDef{}
-	freq := common_old.Frequency_INVALID
+	freq := frequency.INVALID
 	for _, v := range t.freqList {
-		if v != common_old.Frequency_REALTIME {
+		if v != frequency.REALTIME {
 			freq = v
 			break
 		}
 	}
-	if freq == common_old.Frequency_INVALID {
+	if freq == frequency.INVALID {
 		lg.Logger.Fatal("invalid frequency")
 	}
 	if err := json.Unmarshal(data, &parsedData); err != nil {
@@ -202,9 +205,9 @@ func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common_old.Ba
 			}
 			for _, svalue := range parsedInnerData.S1.S {
 				// lg.Logger.Debug("parsed data", zap.Any("quote", svalue))
-				bar, err := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+				bar, err := bar.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
 					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
-					svalue.V[5], .0, common_old.Frequency_REALTIME)
+					svalue.V[5], .0, frequency.REALTIME)
 				if err != nil {
 					lg.Logger.Error("creating basic bar failed", zap.Error(err))
 					continue
@@ -229,7 +232,7 @@ func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common_old.Ba
 				return nil, fmt.Errorf("no data")
 			}
 			for _, svalue := range parsedInnerData.S1.S {
-				bar, err := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+				bar, err := bar.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
 					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
 					svalue.V[5], .0, freq)
 				if err != nil {
@@ -248,12 +251,12 @@ func (t *TradingViewWSFetcherProvider) tvDataParse(data []byte) ([]common_old.Ba
 	return nil, fmt.Errorf("invalid data 3")
 }
 
-func (t *TradingViewWSFetcherProvider) sendRawMessage(message []byte) error {
+func (t *tradingViewWSFetcherProvider) sendRawMessage(message []byte) error {
 	t.ws.WriteMessage(websocket.TextMessage, message)
 	return nil
 }
 
-func (t *TradingViewWSFetcherProvider) sendMessage(methodName string, paramList []interface{}) error {
+func (t *tradingViewWSFetcherProvider) sendMessage(methodName string, paramList []interface{}) error {
 	if data, err := TVBuildMsg(methodName, paramList); err == nil {
 		return t.sendRawMessage(data)
 	} else {
@@ -261,10 +264,10 @@ func (t *TradingViewWSFetcherProvider) sendMessage(methodName string, paramList 
 	}
 }
 
-func (t *TradingViewWSFetcherProvider) init(instrument string, freqList []common_old.Frequency) error {
+func (t *tradingViewWSFetcherProvider) init(instrument string, freqList []frequency.Frequency) error {
 	count := 0
 	for _, freq := range freqList {
-		if freq == common_old.Frequency_REALTIME {
+		if freq == frequency.REALTIME {
 			continue
 		}
 		if _, ok := frequencyTable[freq]; !ok {
@@ -281,15 +284,15 @@ func (t *TradingViewWSFetcherProvider) init(instrument string, freqList []common
 	return nil
 }
 
-func (t *TradingViewWSFetcherProvider) setupConnection() error {
-	freq := common_old.Frequency_INVALID
+func (t *tradingViewWSFetcherProvider) setupConnection() error {
+	freq := frequency.INVALID
 	for _, v := range t.freqList {
-		if v != common_old.Frequency_REALTIME {
+		if v != frequency.REALTIME {
 			freq = v
 			break
 		}
 	}
-	if freq == common_old.Frequency_INVALID {
+	if freq == frequency.INVALID {
 		lg.Logger.Fatal("invalid frequency")
 	}
 	lg.Logger.Info("initialize new connection")
@@ -336,7 +339,7 @@ func (t *TradingViewWSFetcherProvider) setupConnection() error {
 	return nil
 }
 
-func (t *TradingViewWSFetcherProvider) connect() error {
+func (t *tradingViewWSFetcherProvider) connect() error {
 	authToken, err := GetAuthToken(t.username, t.password)
 	if err != nil {
 		return err
@@ -358,11 +361,11 @@ func (t *TradingViewWSFetcherProvider) connect() error {
 	return nil
 }
 
-func (t *TradingViewWSFetcherProvider) stop() error {
+func (t *tradingViewWSFetcherProvider) stop() error {
 	return t.reset()
 }
 
-func (t *TradingViewWSFetcherProvider) reset() error {
+func (t *tradingViewWSFetcherProvider) reset() error {
 	t.querySessionName = TVGenQuerySession()
 	t.chatSessionName = TVGenChatSession()
 	if t.ws.IsConnected() {
@@ -371,21 +374,21 @@ func (t *TradingViewWSFetcherProvider) reset() error {
 	return nil
 }
 
-func (t *TradingViewWSFetcherProvider) datatype() series.Type {
+func (t *tradingViewWSFetcherProvider) datatype() series.Type {
 	return series.Float
 }
 
-func (t *TradingViewWSFetcherProvider) nextBars() (common_old.Bars, error) {
-	var tmp common_old.Bar
+func (t *tradingViewWSFetcherProvider) nextBars() (bar.Bars, error) {
+	var tmp bar.Bar
 
 	tmp = <-t.barC
 
-	res := core.NewBars()
-	res.AddBarList(t.instrument, []common_old.Bar{tmp})
+	res := bar.NewBars()
+	res.AddBarList(t.instrument, []bar.Bar{tmp})
 	return res, nil
 }
 
-func (t *TradingViewWSFetcherProvider) fetchBarsLoop() error {
+func (t *tradingViewWSFetcherProvider) fetchBarsLoop() error {
 	r := regexp.MustCompile("~m~\\d+~m~~h~\\d+$")
 	r2 := regexp.MustCompile("~m~\\d+~m~")
 	for {

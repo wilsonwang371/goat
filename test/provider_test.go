@@ -1,12 +1,10 @@
-package test_old
+package test
 
 import (
 	"flag"
 	"goalgotrade/broker"
-	"goalgotrade/common"
-	"goalgotrade/feed/barfeed"
-	"goalgotrade/feed/barfeed/fetcher"
-	"goalgotrade/old/common_old"
+	"goalgotrade/consts/frequency"
+	"goalgotrade/feed"
 	"goalgotrade/strategy"
 	"testing"
 	"time"
@@ -22,29 +20,30 @@ func init() {
 
 // pass "-username=<user> -password=<pass>" as arguments to test
 func TestTradingView(t *testing.T) {
-	freqList := []common_old.Frequency{common_old.Frequency_REALTIME, common_old.Frequency_MINUTE}
+	freqList := []frequency.Frequency{frequency.REALTIME, frequency.MINUTE}
 
 	if username == "" || password == "" {
 		t.Skip("username and/or password is empty")
 	}
-	tvf := fetcher.NewTradingViewFetcher(username, password)
+	tvf := feed.NewTradingViewFetcherProvider(username, password)
+	bbf := feed.NewBaseBarFetcher(tvf, 0)
 
-	if err := tvf.RegisterInstrument(symbol, freqList); err != nil {
+	if err := bbf.RegisterInstrument(symbol, freqList); err != nil {
 		t.Error(err)
 		return
 	}
 
-	lbf := barfeed.NewLiveBarFeed(tvf, 100)
+	lbf := feed.NewLiveBarFeed(bbf, 100)
 	if lbf == nil {
 		t.Error("cannot create live bar feed")
 	}
 
-	if err := tvf.Start(); err != nil {
+	if err := bbf.Start(); err != nil {
 		t.Error(err)
 		return
 	}
 
-	b := broker.NewBroker(lbf)
+	b := broker.NewBaseBroker(lbf)
 	s := strategy.NewBaseStrategy(lbf, b)
 
 	go func() {
@@ -58,7 +57,7 @@ func TestTradingView(t *testing.T) {
 
 		t.Log("terminating...")
 
-		if tvf.Stop() != nil {
+		if bbf.Stop() != nil {
 			t.Error(err)
 			return
 		}
@@ -69,7 +68,7 @@ func TestTradingView(t *testing.T) {
 		}
 	}()
 
-	err := s.Run()
+	err := s.Run(s)
 	if err != nil {
 		panic(err)
 	}
