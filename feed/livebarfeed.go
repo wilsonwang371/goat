@@ -13,8 +13,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// LiveBarFetcher ...
-type LiveBarFetcher interface {
+// BarFetcher ...
+type BarFetcher interface {
 	RegisterInstrument(instrument string, freqList []frequency.Frequency) error
 	GetInstrument() string
 	GetFrequencies() []frequency.Frequency
@@ -39,15 +39,15 @@ type liveBarFeed struct {
 	stopC      chan struct{}
 	doneC      chan struct{}
 	barsBuffer []bar.Bars
-	fetcher    LiveBarFetcher
+	fetcher    BarFetcher
 }
 
 // NewLiveBarFeed ...
-func NewLiveBarFeed(f LiveBarFetcher, maxLen int) LiveBarFeed {
+func NewLiveBarFeed(f BarFetcher, maxLen int) LiveBarFeed {
 	return newLiveBarFeed(f, maxLen)
 }
 
-func newLiveBarFeed(f LiveBarFetcher, maxLen int) *liveBarFeed {
+func newLiveBarFeed(f BarFetcher, maxLen int) *liveBarFeed {
 	if f == nil || len(f.GetInstrument()) == 0 || len(f.GetInstrument()) == 0 {
 		lg.Logger.Error("invalid fetcher was given")
 		return nil
