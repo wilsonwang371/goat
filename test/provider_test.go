@@ -23,7 +23,7 @@ func TestTradingView(t *testing.T) {
 	freqList := []frequency.Frequency{frequency.REALTIME, frequency.MINUTE}
 
 	tvf := feed.NewFakeFetcherProvider()
-	bbf := feed.NewBaseBarFetcher(tvf, 3 * time.Second)
+	bbf := feed.NewBaseBarFetcher(tvf, 3*time.Second)
 
 	if err := bbf.RegisterInstrument(symbol, freqList); err != nil {
 		t.Error(err)

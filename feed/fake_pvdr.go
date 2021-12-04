@@ -1,15 +1,16 @@
 package feed
 
 import (
-	"github.com/go-gota/gota/series"
 	"goalgotrade/bar"
 	"goalgotrade/consts/frequency"
 	"time"
+
+	"github.com/go-gota/gota/series"
 )
 
 type fakeFetcherProvider struct {
-	instrument       string
-	freqList         []frequency.Frequency
+	instrument string
+	freqList   []frequency.Frequency
 }
 
 func (f *fakeFetcherProvider) init(instrument string, freqList []frequency.Frequency) error {
