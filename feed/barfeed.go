@@ -6,6 +6,7 @@ import (
 	"goalgotrade/consts/frequency"
 	"goalgotrade/dataseries"
 	lg "goalgotrade/logger"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-gota/gota/series"
@@ -88,6 +89,7 @@ func (b *baseBarFeed) BarsHaveAdjClose(f BaseBarFeed) bool {
 
 // NextBars ...
 func (b *baseBarFeed) NextBars() (bar.Bars, error) {
+	debug.PrintStack()
 	panic("not implemented")
 }
 

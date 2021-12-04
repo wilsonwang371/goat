@@ -102,7 +102,7 @@ func (s *baseStrategy) OnStart() error {
 
 // OnIdle ...
 func (s *baseStrategy) OnIdle() error {
-	lg.Logger.Debug("OnIdle()")
+	// lg.Logger.Debug("OnIdle()")
 	return nil
 }
 
@@ -251,7 +251,7 @@ func (s *baseStrategy) Run(b Strategy) error {
 	}
 
 	err = s.dispatcher.IdleChannel().Subscribe(func(event core.Event) error {
-		lg.Logger.Debug("Idle Event!")
+		// lg.Logger.Debug("Idle Event!")
 		return b.OnIdle()
 	})
 	if err != nil {

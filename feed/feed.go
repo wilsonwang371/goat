@@ -55,7 +55,7 @@ func (b *baseFeed) Join() error {
 
 // Eof ...
 func (b *baseFeed) Eof() bool {
-	lg.Logger.Warn("baseFeed Eof() called")
+	lg.Logger.Debug("baseFeed Eof() called")
 	return true
 }
 

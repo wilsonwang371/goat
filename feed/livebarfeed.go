@@ -72,13 +72,13 @@ func (l *liveBarFeed) BarsHaveAdjClose(f BaseBarFeed) bool {
 }
 
 // GetCurrentDateTime ...
-func (l *liveBarFeed) GetCurrentDateTime() *time.Time {
+func (l *liveBarFeed) CurrentTime() *time.Time {
 	// TODO: implement me
 	return nil
 }
 
-// GetNextBars ...
-func (l *liveBarFeed) GetNextBars() (bar.Bars, error) {
+// NextBars ...
+func (l *liveBarFeed) NextBars() (bar.Bars, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if len(l.barsBuffer) != 0 {

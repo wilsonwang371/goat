@@ -22,11 +22,8 @@ func init() {
 func TestTradingView(t *testing.T) {
 	freqList := []frequency.Frequency{frequency.REALTIME, frequency.MINUTE}
 
-	if username == "" || password == "" {
-		t.Skip("username and/or password is empty")
-	}
-	tvf := feed.NewTradingViewFetcherProvider(username, password)
-	bbf := feed.NewBaseBarFetcher(tvf, 0)
+	tvf := feed.NewFakeFetcherProvider()
+	bbf := feed.NewBaseBarFetcher(tvf, 3 * time.Second)
 
 	if err := bbf.RegisterInstrument(symbol, freqList); err != nil {
 		t.Error(err)
@@ -49,7 +46,7 @@ func TestTradingView(t *testing.T) {
 	go func() {
 		var err error
 
-		timer := time.NewTimer(120 * time.Second)
+		timer := time.NewTimer(20 * time.Second)
 
 		select {
 		case <-timer.C:

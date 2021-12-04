@@ -40,7 +40,8 @@ func (b *baseBroker) Join() error {
 
 // Dispatch ...
 func (b *baseBroker) Dispatch(subject interface{}) (bool, error) {
-	panic("implement me")
+	// lg.Logger.Debug("baseBroker Dispatch() called")
+	return false, nil
 }
 
 // GetDispatchPriority ...
@@ -111,6 +112,6 @@ func (b *baseBroker) PeekDateTime() *time.Time {
 
 // Eof ...
 func (b *baseBroker) Eof() bool {
-	lg.Logger.Warn("baseBroker Eof() called")
+	// lg.Logger.Debug("baseBroker Eof() called")
 	return true
 }
