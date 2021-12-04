@@ -1,17 +1,78 @@
 package notifier
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	lg "goalgotrade/logger"
+	"strconv"
+
+	"gopkg.in/gomail.v2"
 
 	"github.com/twilio/twilio-go"
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
+	"go.uber.org/zap"
 )
 
 // Notifier ...
 type Notifier interface {
 	SendMessage(from, to, title, body string) (string, error)
 	Poke(from, to, message string) (string, error)
+}
+
+type smtpEmailNotifier struct {
+	host        string
+	port        int
+	username    string
+	password    string
+	defaultFrom string
+}
+
+// NewSMTPEmailNotifier ...
+func NewSMTPEmailNotifier(host, portStr, username, password, defaultFrom string) Notifier {
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		panic("invalid port")
+	}
+	return &smtpEmailNotifier{
+		host:        host,
+		port:        port,
+		username:    username,
+		password:    password,
+		defaultFrom: defaultFrom,
+	}
+}
+
+// SendMessage ...
+func (s *smtpEmailNotifier) SendMessage(from, to, title, body string) (string, error) {
+	if from == "" {
+		from = s.defaultFrom
+	}
+	if to == "" {
+		return "", fmt.Errorf("invalid target address")
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", from)
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", title)
+	m.SetBody("text/html", body)
+	// m.Attach("/home/Alex/lolcat.jpg")
+
+	d := gomail.NewDialer(s.host, s.port, s.username, s.password)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	// Send the email to Bob, Cora and Dan.
+	if err := d.DialAndSend(m); err != nil {
+		lg.Logger.Error("error sending email", zap.Error(err))
+		return "", err
+	}
+	return "", nil
+}
+
+// Poke ...
+func (s *smtpEmailNotifier) Poke(from, to, message string) (string, error) {
+	return s.SendMessage(from, to, "Poke!👉🏼", message)
 }
 
 type twilioNotifier struct {
