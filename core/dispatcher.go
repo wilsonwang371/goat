@@ -1,172 +1,157 @@
 package core
 
 import (
-	lg "goalgotrade/logger"
-	"sync"
+	"fmt"
+	"reflect"
 	"time"
-
-	"go.uber.org/zap"
 )
 
-// Subject ...
+// Subject interface
 type Subject interface {
 	Start() error
 	Stop() error
 	Join() error
 	Eof() bool
-	Dispatch(subject interface{}) (bool, error)
-	PeekDateTime() *time.Time
-	GetDispatchPriority() int
-	SetDispatchPriority(priority int)
-	OnDispatcherRegistered(dispatcher Dispatcher) error
+	Dispatch() bool
+	PeekDateTime() time.Time
 }
 
-// Dispatcher ...
+// Dispatcher interface
 type Dispatcher interface {
 	AddSubject(subject Subject)
 	Run()
-	Stop() error
-	StartChannel() Channel
-	IdleChannel() Channel
-	CurrentTime() *time.Time
+	Stop()
+	GetSubjects() []Subject
+}
+
+// EventHandler interface
+type EventHandler interface {
+	handle(args ...interface{}) error
+}
+
+// Event interface
+type Event interface {
+	Subscribe(handler EventHandler) error
+	Unsubscribe(handler EventHandler) error
+	Emit(args ...interface{})
 }
 
 type dispatcher struct {
-	mu       sync.RWMutex
-	subjects []Subject
-	stopC    chan struct{}
-
-	currentTime  *time.Time
-	startChannel Channel
-	idleChannel  Channel
+	subjects   []Subject
+	stopC      chan struct{}
+	startEvent Event
+	idleEvent  Event
+	lastTime   time.Time
 }
 
-// NewDispatcher ...
 func NewDispatcher() Dispatcher {
 	return &dispatcher{
-		subjects:     []Subject{},
-		stopC:        make(chan struct{}, 1),
-		currentTime:  nil,
-		startChannel: NewChannel(),
-		idleChannel:  NewChannel(),
+		stopC:      make(chan struct{}),
+		startEvent: NewEvent(),
+		idleEvent:  NewEvent(),
 	}
 }
 
-// AddSubject ...
 func (d *dispatcher) AddSubject(subject Subject) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
 	d.subjects = append(d.subjects, subject)
 }
 
-// Stop ...
-func (d *dispatcher) Stop() error {
-	d.stopC <- struct{}{}
-	return nil
-}
-
-// Run ...
-func (d *dispatcher) Run() {
-	d.mainDispatchLoop()
-}
-
-func (d *dispatcher) cleanup() {
-	for _, v := range d.subjects {
-		if err := v.Stop(); err != nil {
-			lg.Logger.Warn("error", zap.Error(err))
-		}
+func (d *dispatcher) dispatchSubject(subject Subject, smallestTime time.Time) bool {
+	if !subject.Eof() && subject.PeekDateTime().Before(smallestTime) {
+		return subject.Dispatch()
 	}
-	for _, v := range d.subjects {
-		if err := v.Join(); err != nil {
-			lg.Logger.Warn("error", zap.Error(err))
-		}
-	}
+	return false
 }
 
-func (d *dispatcher) dispatch() (eof bool, eventsDispatched bool) {
+func (d *dispatcher) dispatch() (eof bool, dispatched bool) {
 	eof = true
-	eventsDispatched = false
-	var smallestTime *time.Time = nil
-	wg := sync.WaitGroup{}
-
-	for _, v := range d.subjects {
-		if !v.Eof() {
+	dispatched = false
+	var smallestNewTime *time.Time
+	for _, subject := range d.subjects {
+		if !subject.Eof() {
 			eof = false
-			t := v.PeekDateTime()
-			if t == nil {
-				continue
-			}
-			if smallestTime == nil {
-				smallestTime = t
-			} else if smallestTime.After(*t) {
-				smallestTime = t
+			newTime := subject.PeekDateTime()
+			if smallestNewTime == nil || newTime.Before(*smallestNewTime) {
+				smallestNewTime = &newTime
 			}
 		}
 	}
 
 	if !eof {
-		d.currentTime = smallestTime
-		for _, v := range d.subjects {
-			wg.Add(1)
-			go func(sub Subject) {
-				defer wg.Done()
-				done, err := sub.Dispatch(sub)
-				if err != nil {
-					lg.Logger.Error("subject dispatch failed", zap.Error(err))
-				}
-				if done {
-					eventsDispatched = true
-				}
-			}(v)
+		if smallestNewTime != nil {
+			d.lastTime = *smallestNewTime
 		}
-		wg.Wait()
+		for _, subject := range d.subjects {
+			if d.dispatchSubject(subject, *smallestNewTime) {
+				dispatched = true
+			}
+		}
 	}
 	return
 }
 
-func (d *dispatcher) mainDispatchLoop() {
-	d.mu.RLock()
-	for _, v := range d.subjects {
-		if err := v.Start(); err != nil {
-			d.cleanup()
-			d.mu.RUnlock()
-			lg.Logger.Error("error starting subjects", zap.Error(err))
-			panic(err)
-		}
+func (d *dispatcher) Run() {
+	for _, subject := range d.subjects {
+		subject.Start()
 	}
-	d.mu.RUnlock()
-
-	d.StartChannel().Emit(NewBasicEvent("start", nil))
+	d.startEvent.Emit()
 
 	for {
 		select {
 		case <-d.stopC:
-			d.currentTime = nil
+			for _, subject := range d.subjects {
+				subject.Stop()
+			}
+			for _, subject := range d.subjects {
+				subject.Join()
+			}
 			return
 		default:
-		}
-		d.mu.RLock()
-		eof, eventDispatched := d.dispatch()
-		d.mu.RUnlock()
-		if eof {
-			d.stopC <- struct{}{}
-		} else if !eventDispatched {
-			d.IdleChannel().Emit(NewBasicEvent("idle", nil))
+			if eof, dispatched := d.dispatch(); eof {
+				d.stopC <- struct{}{}
+			} else {
+				if !dispatched {
+					d.idleEvent.Emit()
+				}
+			}
 		}
 	}
 }
 
-// StartChannel ...
-func (d *dispatcher) StartChannel() Channel {
-	return d.startChannel
+func (d *dispatcher) Stop() {
+	close(d.stopC)
 }
 
-// IdleChannel ...
-func (d *dispatcher) IdleChannel() Channel {
-	return d.idleChannel
+func (d *dispatcher) GetSubjects() []Subject {
+	return d.subjects
 }
 
-// CurrentTime ...
-func (d *dispatcher) CurrentTime() *time.Time {
-	return d.currentTime
+type event struct {
+	handlers []EventHandler
+}
+
+func NewEvent() Event {
+	return &event{}
+}
+
+func (e *event) Subscribe(handler EventHandler) error {
+	e.handlers = append(e.handlers, handler)
+	return nil
+}
+
+func (e *event) Unsubscribe(handler EventHandler) error {
+	for i := 0; i < len(e.handlers); i++ {
+		if reflect.ValueOf(e.handlers[i]).Pointer() == reflect.ValueOf(handler).Pointer() {
+			e.handlers = append(e.handlers[:i], e.handlers[i+1:]...)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("not found")
+}
+
+func (e *event) Emit(args ...interface{}) {
+	for _, handler := range e.handlers {
+		handler.handle(args...)
+	}
 }
