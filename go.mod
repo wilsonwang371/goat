@@ -9,6 +9,7 @@ require (
 	github.com/golang-module/carbon v1.5.5
 	github.com/gorilla/websocket v1.4.2
 	github.com/imroc/req v0.3.2
+	github.com/magiconair/properties v1.8.6
 	github.com/recws-org/recws v1.3.1
 	github.com/twilio/twilio-go v0.18.2
 	go.uber.org/zap v1.17.0

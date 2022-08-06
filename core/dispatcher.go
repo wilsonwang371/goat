@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -22,12 +23,12 @@ type Dispatcher interface {
 	Run()
 	Stop()
 	GetSubjects() []Subject
+	GetStartEvent() Event
+	GetIdleEvent() Event
 }
 
 // EventHandler interface
-type EventHandler interface {
-	handle(args ...interface{}) error
-}
+type EventHandler func(args ...interface{}) error
 
 // Event interface
 type Event interface {
@@ -39,17 +40,21 @@ type Event interface {
 type dispatcher struct {
 	subjects   []Subject
 	stopC      chan struct{}
+	stopCMutex sync.Mutex
+	isStopped  bool
 	startEvent Event
 	idleEvent  Event
 	lastTime   time.Time
 }
 
-func NewDispatcher() Dispatcher {
-	return &dispatcher{
-		stopC:      make(chan struct{}),
-		startEvent: NewEvent(),
-		idleEvent:  NewEvent(),
-	}
+// GetIdleEvent implements Dispatcher
+func (d *dispatcher) GetIdleEvent() Event {
+	return d.idleEvent
+}
+
+// GetStartEvent implements Dispatcher
+func (d *dispatcher) GetStartEvent() Event {
+	return d.startEvent
 }
 
 func (d *dispatcher) AddSubject(subject Subject) {
@@ -105,10 +110,11 @@ func (d *dispatcher) Run() {
 			for _, subject := range d.subjects {
 				subject.Join()
 			}
+			close(d.stopC)
 			return
 		default:
 			if eof, dispatched := d.dispatch(); eof {
-				d.stopC <- struct{}{}
+				d.Stop()
 			} else {
 				if !dispatched {
 					d.idleEvent.Emit()
@@ -119,11 +125,26 @@ func (d *dispatcher) Run() {
 }
 
 func (d *dispatcher) Stop() {
-	close(d.stopC)
+	d.stopCMutex.Lock()
+	defer d.stopCMutex.Unlock()
+	if !d.isStopped {
+		return
+	}
+	d.stopC <- struct{}{}
+	d.isStopped = true
 }
 
 func (d *dispatcher) GetSubjects() []Subject {
 	return d.subjects
+}
+
+func NewDispatcher() Dispatcher {
+	return &dispatcher{
+		stopC:      make(chan struct{}, 2),
+		stopCMutex: sync.Mutex{},
+		startEvent: NewEvent(),
+		idleEvent:  NewEvent(),
+	}
 }
 
 type event struct {
@@ -152,6 +173,6 @@ func (e *event) Unsubscribe(handler EventHandler) error {
 
 func (e *event) Emit(args ...interface{}) {
 	for _, handler := range e.handlers {
-		handler.handle(args...)
+		handler(args...)
 	}
 }
