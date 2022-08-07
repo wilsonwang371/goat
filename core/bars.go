@@ -71,7 +71,7 @@ func (b *bar) Volume() int64 {
 	return b.volume
 }
 
-func NewSimpleBar(open, high, low, close float64, volume int64, frequency Frequency, t time.Time) Bar {
+func NewBasicBar(open, high, low, close float64, volume int64, frequency Frequency, t time.Time) Bar {
 	return &bar{
 		open:      open,
 		high:      high,
