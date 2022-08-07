@@ -2,6 +2,7 @@ package feedgen
 
 import (
 	"goalgotrade/core"
+	"goalgotrade/logger"
 	lg "goalgotrade/logger"
 	"time"
 
@@ -27,6 +28,7 @@ type LiveBarFeedGenerator struct {
 
 // AppendNewValueToBuffer implements core.FeedGenerator
 func (l *LiveBarFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{}, f core.Frequency) error {
+	logger.Logger.Info("LiveBarFeedGenerator::AppendNewValueToBuffer", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
 	return l.bfg.AppendNewValueToBuffer(t, v, f)
 }
 
@@ -63,6 +65,11 @@ func NewLiveBarFeedGenerator(provider BarFetcherProvider, instrument string, fre
 
 func (l *LiveBarFeedGenerator) Run() error {
 	if err := l.provider.init(l.instrument, l.freq); err != nil {
+		logger.Logger.Error("failed to init provider", zap.Error(err))
+		return err
+	}
+	if err := l.provider.connect(); err != nil {
+		logger.Logger.Error("failed to connect provider", zap.Error(err))
 		return err
 	}
 

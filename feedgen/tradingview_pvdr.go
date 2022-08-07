@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-gota/gota/series"
+	"go.uber.org/zap"
 
 	"github.com/gorilla/websocket"
 
@@ -208,7 +209,7 @@ func (t *tradingViewWSFetcherProvider) tvDataParse(data []byte) ([]core.Bar, err
 			}
 			return res, nil
 		}
-		lg.Logger.Warn("no new data")
+		lg.Logger.Info("no new data")
 	} else if parsedData.M == "timescale_update" {
 		for _, pvalue := range parsedData.P {
 			data2, err := json.Marshal(pvalue)
@@ -269,6 +270,7 @@ func (t *tradingViewWSFetcherProvider) init(instrument string, freqList []core.F
 	t.instrument = instrument
 	t.freqList = freqList
 	t.reset()
+	lg.Logger.Info("tradingview fetcher init", zap.String("instrument", instrument), zap.Any("frequencies", freqList))
 	return nil
 }
 
@@ -328,6 +330,7 @@ func (t *tradingViewWSFetcherProvider) setupConnection() error {
 }
 
 func (t *tradingViewWSFetcherProvider) connect() error {
+	lg.Logger.Info("tradingview fetcher connecting")
 	authToken, err := GetAuthToken(t.username, t.password)
 	if err != nil {
 		return err

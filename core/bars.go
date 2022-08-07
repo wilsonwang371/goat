@@ -1,6 +1,9 @@
 package core
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Bar interface {
 	Open() float64
@@ -12,6 +15,7 @@ type Bar interface {
 	Frequency() Frequency
 	DateTime() time.Time
 	SetUseAdjustedValue(bool)
+	String() string
 }
 
 type bar struct {
@@ -24,6 +28,12 @@ type bar struct {
 	frequency   Frequency
 	dateTime    time.Time
 	useAdjusted bool
+}
+
+// String implements Bar
+func (b *bar) String() string {
+	return fmt.Sprintf("%s %f %f %f %f %d", b.dateTime.Format("2006-01-02 15:04:05"),
+		b.open, b.high, b.low, b.close, b.volume)
 }
 
 // AdjClose implements Bar
