@@ -75,7 +75,7 @@ func GetAuthToken(username, password string) (string, error) {
 	return "", fmt.Errorf("invalid response data. result: %v", result)
 }
 
-type tradingViewWSFetcherProvider struct {
+type tradingViewWSDataProvider struct {
 	ws               recws.RecConn
 	username         string
 	password         string
@@ -88,9 +88,9 @@ type tradingViewWSFetcherProvider struct {
 	barC chan core.Bar
 }
 
-// NewTradingViewFetcherProvider ...
-func NewTradingViewFetcherProvider(username, password string) BarFetcherProvider {
-	res := &tradingViewWSFetcherProvider{
+// NewTradingViewDataProvider ...
+func NewTradingViewDataProvider(username, password string) BarDataProvider {
+	res := &tradingViewWSDataProvider{
 		querySessionName: TVGenQuerySession(),
 		chatSessionName:  TVGenChatSession(),
 		username:         username,
@@ -171,7 +171,7 @@ type pTypeDef struct {
 	} `json:"s1"`
 }
 
-func (t *tradingViewWSFetcherProvider) tvDataParse(data []byte) ([]core.Bar, error) {
+func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error) {
 	var res []core.Bar
 	parsedData := dTypeDef{}
 	freq := core.INVALID
@@ -240,12 +240,12 @@ func (t *tradingViewWSFetcherProvider) tvDataParse(data []byte) ([]core.Bar, err
 	return nil, fmt.Errorf("invalid data 3")
 }
 
-func (t *tradingViewWSFetcherProvider) sendRawMessage(message []byte) error {
+func (t *tradingViewWSDataProvider) sendRawMessage(message []byte) error {
 	t.ws.WriteMessage(websocket.TextMessage, message)
 	return nil
 }
 
-func (t *tradingViewWSFetcherProvider) sendMessage(methodName string, paramList []interface{}) error {
+func (t *tradingViewWSDataProvider) sendMessage(methodName string, paramList []interface{}) error {
 	if data, err := TVBuildMsg(methodName, paramList); err == nil {
 		return t.sendRawMessage(data)
 	} else {
@@ -253,7 +253,7 @@ func (t *tradingViewWSFetcherProvider) sendMessage(methodName string, paramList 
 	}
 }
 
-func (t *tradingViewWSFetcherProvider) init(instrument string, freqList []core.Frequency) error {
+func (t *tradingViewWSDataProvider) init(instrument string, freqList []core.Frequency) error {
 	count := 0
 	for _, freq := range freqList {
 		if freq == core.REALTIME {
@@ -274,7 +274,7 @@ func (t *tradingViewWSFetcherProvider) init(instrument string, freqList []core.F
 	return nil
 }
 
-func (t *tradingViewWSFetcherProvider) setupConnection() error {
+func (t *tradingViewWSDataProvider) setupConnection() error {
 	freq := core.INVALID
 	for _, v := range t.freqList {
 		if v != core.REALTIME {
@@ -329,7 +329,7 @@ func (t *tradingViewWSFetcherProvider) setupConnection() error {
 	return nil
 }
 
-func (t *tradingViewWSFetcherProvider) connect() error {
+func (t *tradingViewWSDataProvider) connect() error {
 	lg.Logger.Info("tradingview fetcher connecting")
 	authToken, err := GetAuthToken(t.username, t.password)
 	if err != nil {
@@ -352,11 +352,11 @@ func (t *tradingViewWSFetcherProvider) connect() error {
 	return nil
 }
 
-func (t *tradingViewWSFetcherProvider) stop() error {
+func (t *tradingViewWSDataProvider) stop() error {
 	return t.reset()
 }
 
-func (t *tradingViewWSFetcherProvider) reset() error {
+func (t *tradingViewWSDataProvider) reset() error {
 	t.querySessionName = TVGenQuerySession()
 	t.chatSessionName = TVGenChatSession()
 	if t.ws.IsConnected() {
@@ -365,11 +365,11 @@ func (t *tradingViewWSFetcherProvider) reset() error {
 	return nil
 }
 
-func (t *tradingViewWSFetcherProvider) datatype() series.Type {
+func (t *tradingViewWSDataProvider) datatype() series.Type {
 	return series.Float
 }
 
-func (t *tradingViewWSFetcherProvider) nextBars() (map[string]core.Bar, error) {
+func (t *tradingViewWSDataProvider) nextBars() (map[string]core.Bar, error) {
 	var tmp core.Bar
 
 	tmp = <-t.barC
@@ -379,7 +379,7 @@ func (t *tradingViewWSFetcherProvider) nextBars() (map[string]core.Bar, error) {
 	return res, nil
 }
 
-func (t *tradingViewWSFetcherProvider) fetchBarsLoop() error {
+func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
 	r := regexp.MustCompile("~m~\\d+~m~~h~\\d+$")
 	r2 := regexp.MustCompile("~m~\\d+~m~")
 	for {

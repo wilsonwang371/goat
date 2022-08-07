@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type BarFetcherProvider interface {
+type BarDataProvider interface {
 	init(instrument string, freqList []core.Frequency) error
 	connect() error
 	nextBars() (map[string]core.Bar, error)
@@ -21,7 +21,7 @@ type BarFetcherProvider interface {
 
 type LiveBarFeedGenerator struct {
 	bfg        core.FeedGenerator
-	provider   BarFetcherProvider
+	provider   BarDataProvider
 	instrument string
 	freq       []core.Frequency
 }
@@ -52,7 +52,7 @@ func (l *LiveBarFeedGenerator) PopNextValues() (time.Time, map[string]interface{
 	return l.bfg.PopNextValues()
 }
 
-func NewLiveBarFeedGenerator(provider BarFetcherProvider, instrument string, freq []core.Frequency, maxLen int) core.FeedGenerator {
+func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string, freq []core.Frequency, maxLen int) core.FeedGenerator {
 	return &LiveBarFeedGenerator{
 		bfg:        core.NewBarFeedGenerator(freq, maxLen),
 		provider:   provider,
