@@ -41,7 +41,6 @@ func TestSimpleStrategy(t *testing.T) {
 			"b": NewSimpleBar(1.0, 2.0, 3.0, 1.2, 100, HOUR, time.Now()),
 		},
 		HOUR)
-	gen.Finish()
 
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
@@ -49,6 +48,7 @@ func TestSimpleStrategy(t *testing.T) {
 	}(wg)
 
 	time.Sleep(time.Second * 2)
+	gen.Finish()
 
 	wg.Wait()
 }

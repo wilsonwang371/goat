@@ -95,6 +95,11 @@ func (d *dispatcher) dispatch() (eof bool, dispatched bool) {
 		}
 	}
 
+	if smallestNewTime != nil {
+		// we dont have any data yet
+		return
+	}
+
 	if !eof {
 		if smallestNewTime != nil {
 			d.lastTime = *smallestNewTime
