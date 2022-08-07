@@ -2,34 +2,105 @@ package core
 
 import (
 	"fmt"
+	"goalgotrade/logger"
+	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // interface for feed value generator
 type FeedGenerator interface {
-	NextValues() (time.Time, map[string]interface{}, Frequency, error)
+	PopNextValues() (time.Time, map[string]interface{}, Frequency, error)
 	CreateDataSeries(key string, maxLen int) DataSeries
+	PeekNextTime() *time.Time
+	Finish()
+	AppendNewValueToBuffer(time.Time, map[string]interface{}, Frequency) error
 }
 
 type barFeedGenerator struct {
-	freq   []Frequency
-	maxLen int
+	freq         []Frequency
+	maxLen       int
+	dataBuf      []*BarFeedGeneratorData
+	dataBufMutex sync.Mutex
+	eof          bool
+}
+
+// PeekNextTime implements FeedGenerator
+func (b *barFeedGenerator) PeekNextTime() *time.Time {
+	b.dataBufMutex.Lock()
+	defer b.dataBufMutex.Unlock()
+	if len(b.dataBuf) == 0 {
+		return nil
+	}
+	elem := b.dataBuf[0]
+	t := elem.t
+	return &t
+}
+
+type BarFeedGeneratorData struct {
+	t time.Time
+	d map[string]interface{}
+	f Frequency
 }
 
 // CreateDataSeries implements FeedGenerator
-func (*barFeedGenerator) CreateDataSeries(key string, maxLen int) DataSeries {
-	panic("unimplemented")
+func (b *barFeedGenerator) CreateDataSeries(key string, maxLen int) DataSeries {
+	bds := NewBarDataSeries(maxLen, false)
+	return bds
 }
 
 // NextValues implements FeedGenerator
-func (*barFeedGenerator) NextValues() (time.Time, map[string]interface{}, Frequency, error) {
-	panic("unimplemented")
+// NOTE: we cannot simply wait here because it is called inside dispatch loop
+func (b *barFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, Frequency, error) {
+	b.dataBufMutex.Lock()
+	defer b.dataBufMutex.Unlock()
+	if b.eof {
+		return time.Time{}, nil, 0, fmt.Errorf("feed generator is EOF")
+	}
+	if len(b.dataBuf) == 0 {
+		return time.Time{}, nil, 0, nil
+	}
+	elem := b.dataBuf[0]
+	b.dataBuf = b.dataBuf[1:]
+	return elem.t, elem.d, elem.f, nil
+}
+
+func (b *barFeedGenerator) Finish() {
+	b.eof = true
+}
+
+func (b *barFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{}, f Frequency) error {
+	found := false
+	for i := 0; i < len(b.freq); i++ {
+		if b.freq[i] == f {
+			found = true
+		}
+	}
+	if !found {
+		return fmt.Errorf("frequency %d not valid for generator", f)
+	}
+	if b.eof {
+		return fmt.Errorf("feed generator is closed")
+	}
+
+	b.dataBufMutex.Lock()
+	defer b.dataBufMutex.Unlock()
+	b.dataBuf = append(b.dataBuf, &BarFeedGeneratorData{
+		t: t,
+		d: v,
+		f: f,
+	})
+	return nil
 }
 
 func NewBarFeedGenerator(freq []Frequency, maxLen int) FeedGenerator {
 	return &barFeedGenerator{
-		freq:   freq,
-		maxLen: maxLen,
+		freq:         freq,
+		maxLen:       maxLen,
+		dataBuf:      make([]*BarFeedGeneratorData, 0),
+		dataBufMutex: sync.Mutex{},
+		eof:          false,
 	}
 }
 
@@ -43,6 +114,7 @@ type genericDataFeed struct {
 	newValueEvent     Event
 	dataSeriesManager *dataSeriesManager
 	feedGenerator     FeedGenerator
+	eof               bool
 }
 
 // CreateDataSeries implements DataFeed
@@ -58,20 +130,24 @@ func (d *genericDataFeed) Dispatch() bool {
 		            self.__event.emit(dateTime, values)
 		        return dateTime is not None
 	*/
-	if t, v, f, err := d.feedGenerator.NextValues(); err != nil {
+	logger.Logger.Info("Dispatch")
+	if t, v, f, err := d.feedGenerator.PopNextValues(); err != nil {
+		d.eof = true
 		return false
-	} else {
+	} else if v != nil {
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 			panic(err)
 		}
+		logger.Logger.Info("emit new value", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
 		d.newValueEvent.Emit(t, v)
+		return true
 	}
-	return true
+	return false
 }
 
 // Eof implements DataFeed
 func (d *genericDataFeed) Eof() bool {
-	return true
+	return d.eof
 }
 
 // Join implements DataFeed
@@ -80,8 +156,9 @@ func (d *genericDataFeed) Join() error {
 }
 
 // PeekDateTime implements DataFeed
-func (d *genericDataFeed) PeekDateTime() time.Time {
-	return time.Now().UTC()
+func (d *genericDataFeed) PeekDateTime() *time.Time {
+	// NOTE: we need to read data
+	return d.feedGenerator.PeekNextTime()
 }
 
 // Start implements DataFeed
@@ -96,6 +173,7 @@ func (d *genericDataFeed) Stop() error {
 
 // GetNewValueEvent implements DataFeed
 func (d *genericDataFeed) GetNewValueEvent() Event {
+	logger.Logger.Info("GetNewValueEvent")
 	return d.newValueEvent
 }
 
@@ -104,6 +182,7 @@ func NewGenericDataFeed(fg FeedGenerator, maxLen int) DataFeed {
 	df := &genericDataFeed{
 		newValueEvent: NewEvent(),
 		feedGenerator: fg,
+		eof:           false,
 	}
 	df.dataSeriesManager = newDataSeriesManager(df, maxLen)
 	return df

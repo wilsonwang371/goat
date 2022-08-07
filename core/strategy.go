@@ -8,10 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type Bar interface{}
-
-type Bars interface{}
-
 type Order interface{}
 
 type OrderEvent interface {
@@ -24,12 +20,56 @@ type StrategyEventListener interface {
 	OnStart(args ...interface{}) error
 	OnIdle() error
 	OnFinish(args ...interface{}) error
-	OnBars(bars Bars) error
+	OnBars(bars map[string]Bar) error
 	OnOrderUpdated(order Order) error
 	OnOrderEvent(orderEvent OrderEvent) error
 }
 
-type StrategyController interface{}
+type StrategyController interface {
+	Run()
+}
+
+type strategyEventListener struct{}
+
+// OnBars implements StrategyEventListener
+func (s *strategyEventListener) OnBars(bars map[string]Bar) error {
+	logger.Logger.Info("onBars", zap.Any("bars", bars))
+	return nil
+}
+
+// OnFinish implements StrategyEventListener
+func (s *strategyEventListener) OnFinish(args ...interface{}) error {
+	logger.Logger.Info("onFinish")
+	return nil
+}
+
+// OnIdle implements StrategyEventListener
+func (s *strategyEventListener) OnIdle() error {
+	// logger.Logger.Info("onIdle")
+	return nil
+}
+
+// OnOrderEvent implements StrategyEventListener
+func (s *strategyEventListener) OnOrderEvent(orderEvent OrderEvent) error {
+	logger.Logger.Info("onOrderEvent", zap.Any("orderEvent", orderEvent))
+	return nil
+}
+
+// OnOrderUpdated implements StrategyEventListener
+func (s *strategyEventListener) OnOrderUpdated(order Order) error {
+	logger.Logger.Info("onOrderUpdated", zap.Any("order", order))
+	return nil
+}
+
+// OnStart implements StrategyEventListener
+func (s *strategyEventListener) OnStart(args ...interface{}) error {
+	// logger.Logger.Info("onStart")
+	return nil
+}
+
+func NewSimpleStrategyEventListener() StrategyEventListener {
+	return &strategyEventListener{}
+}
 
 type strategyController struct {
 	listener StrategyEventListener
@@ -47,7 +87,7 @@ func (s *strategyController) onStart(args ...interface{}) error {
 }
 
 func (s *strategyController) onIdle(args ...interface{}) error {
-	logger.Logger.Info("onIdle")
+	// logger.Logger.Info("onIdle")
 	/*
 			# Force a resample check to avoid depending solely on the underlying
 		        # barfeed events.
@@ -64,7 +104,11 @@ func (s *strategyController) onBars(args ...interface{}) error {
 	}
 
 	currentTime := args[0].(time.Time)
-	bars := args[1].(Bars)
+	data := args[1].(map[string]interface{})
+	bars := make(map[string]Bar, len(data))
+	for k, v := range data {
+		bars[k] = v.(Bar)
+	}
 
 	logger.Logger.Info("onBars",
 		zap.Time("time", currentTime),
@@ -106,6 +150,15 @@ func (s *strategyController) onOrderEvent(args ...interface{}) error {
 	s.listener.OnOrderEvent(orderEvent)
 
 	return nil
+}
+
+func (s *strategyController) Run() {
+	s.dispatcher.Run()
+	s.listener.OnFinish()
+}
+
+func (s *strategyController) Stop() {
+	s.dispatcher.Stop()
 }
 
 func NewStrategyController(strategyEventListener StrategyEventListener,

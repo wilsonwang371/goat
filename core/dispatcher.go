@@ -2,9 +2,12 @@ package core
 
 import (
 	"fmt"
+	"goalgotrade/logger"
 	"reflect"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // Subject interface
@@ -14,7 +17,7 @@ type Subject interface {
 	Join() error
 	Eof() bool
 	Dispatch() bool
-	PeekDateTime() time.Time
+	PeekDateTime() *time.Time // it can be nil if no data is available
 }
 
 // Dispatcher interface
@@ -62,8 +65,17 @@ func (d *dispatcher) AddSubject(subject Subject) {
 }
 
 func (d *dispatcher) dispatchSubject(subject Subject, smallestTime time.Time) bool {
-	if !subject.Eof() && subject.PeekDateTime().Before(smallestTime) {
+	t := subject.PeekDateTime()
+	if t == nil {
+		logger.Logger.Info("no data available yet", zap.String("subject", reflect.TypeOf(subject).String()))
+		return false
+	}
+	if !subject.Eof() && !t.Before(smallestTime) {
 		return subject.Dispatch()
+	} else {
+		logger.Logger.Info("data not dispatched", zap.Any("eof", subject.Eof()),
+			zap.Any("smallestTime", smallestTime),
+			zap.Any("PeekDateTime", t))
 	}
 	return false
 }
@@ -72,12 +84,13 @@ func (d *dispatcher) dispatch() (eof bool, dispatched bool) {
 	eof = true
 	dispatched = false
 	var smallestNewTime *time.Time
+
 	for _, subject := range d.subjects {
 		if !subject.Eof() {
 			eof = false
 			newTime := subject.PeekDateTime()
-			if smallestNewTime == nil || newTime.Before(*smallestNewTime) {
-				smallestNewTime = &newTime
+			if newTime != nil && (smallestNewTime == nil || newTime.Before(*smallestNewTime)) {
+				smallestNewTime = newTime
 			}
 		}
 	}
