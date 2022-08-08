@@ -37,7 +37,7 @@ I want to make some small changes to meet my own needs.
 ### Run Strategy JS Script
 
 ```bash
-./goalgotrade run -s sample/simple.js
+./goalgotrade run -s samples/simple.js
 ```
 
 
