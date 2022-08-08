@@ -33,7 +33,7 @@ type runtime struct {
 
 // NotifyEvent implements Runtime
 func (r *runtime) NotifyEvent(eventName string, args ...interface{}) error {
-	if handler, ok := r.eventListeners[strings.ToUpper(eventName)]; ok {
+	if handler, ok := r.eventListeners[strings.ToLower(eventName)]; ok {
 		if _, err := handler.Call(otto.NullValue(), args...); err != nil {
 			logger.Logger.Error("failed to call handler", zap.Error(err))
 			return err
@@ -85,12 +85,12 @@ func (r *runtime) addEventListener(call otto.FunctionCall) otto.Value {
 	eventName := call.Argument(0).String()
 	handler := call.Argument(1)
 
-	if !contains(supportedEvents, eventName) {
+	if !contains(supportedEvents, strings.ToLower(eventName)) {
 		logger.Logger.Error("unsupported event", zap.String("event", eventName))
 		os.Exit(1)
 	}
 
-	r.eventListeners[strings.ToUpper(eventName)] = handler
+	r.eventListeners[strings.ToLower(eventName)] = handler
 	return otto.TrueValue()
 }
 
