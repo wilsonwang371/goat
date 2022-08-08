@@ -9,6 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
+var supportedEvents []string = []string{
+	"onbars",
+	"onstart",
+	"onfinish",
+	"onidle",
+}
+
 type RuntimeFunc func(call otto.FunctionCall) otto.Value
 
 type Runtime interface {
@@ -78,6 +85,11 @@ func (r *runtime) addEventListener(call otto.FunctionCall) otto.Value {
 	eventName := call.Argument(0).String()
 	handler := call.Argument(1)
 
+	if !contains(supportedEvents, eventName) {
+		logger.Logger.Error("unsupported event", zap.String("event", eventName))
+		os.Exit(1)
+	}
+
 	r.eventListeners[strings.ToUpper(eventName)] = handler
 	return otto.TrueValue()
 }
@@ -88,4 +100,13 @@ func (r *runtime) setupStrategyAPIs() {
 			logger.Logger.Error("failed to register API", zap.Error(err))
 		}
 	}
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }

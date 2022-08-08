@@ -31,8 +31,8 @@ func TestRuntimeSimple(t *testing.T) {
 func TestRuntimeSimple2(t *testing.T) {
 	rt := NewRuntime()
 	script, err := rt.Compile(`
-	addEventListener("onbar", function(e) {
-		console.log("onbar", e);
+	addEventListener("onbars", function(e) {
+		console.log("onbars", e);
 	});
 `)
 	if err != nil {
@@ -44,5 +44,5 @@ func TestRuntimeSimple2(t *testing.T) {
 	}
 	logger.Logger.Info("result:", zap.Any("val", val))
 
-	rt.NotifyEvent("onbar", "foo")
+	rt.NotifyEvent("onbars", "foo")
 }

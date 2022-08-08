@@ -35,6 +35,7 @@ var (
 					} else {
 						fmt.Println(val)
 					}
+					// TODO: we need to generate events and send them to the runtime
 				}
 			}
 		},
