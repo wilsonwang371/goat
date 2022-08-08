@@ -370,9 +370,7 @@ func (t *tradingViewWSDataProvider) datatype() series.Type {
 }
 
 func (t *tradingViewWSDataProvider) nextBars() (map[string]core.Bar, error) {
-	var tmp core.Bar
-
-	tmp = <-t.barC
+	tmp := <-t.barC
 
 	res := make(map[string]core.Bar)
 	res[t.instrument] = tmp
