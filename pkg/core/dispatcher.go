@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"goalgotrade/logger"
+	"goalgotrade/pkg/logger"
 	"reflect"
 	"sync"
 	"time"

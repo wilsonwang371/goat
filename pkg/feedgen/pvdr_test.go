@@ -1,7 +1,7 @@
 package feedgen
 
 import (
-	"goalgotrade/core"
+	"goalgotrade/pkg/core"
 	"os"
 	"testing"
 	"time"

@@ -1,9 +1,9 @@
 package feedgen
 
 import (
-	"goalgotrade/core"
-	"goalgotrade/logger"
-	lg "goalgotrade/logger"
+	"goalgotrade/pkg/core"
+	"goalgotrade/pkg/logger"
+	lg "goalgotrade/pkg/logger"
 	"time"
 
 	"github.com/go-gota/gota/series"

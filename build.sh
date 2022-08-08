@@ -1,3 +1,3 @@
 #!/bin/bash
 
-go build -v ./...
+go build -v -o ./goalgotrade ./main.go
