@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"fmt"
 	"goalgotrade/core"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 type fakeDataProvider struct {
 	instrument string
 	freqList   []core.Frequency
+	stopped    bool
 }
 
 func (f *fakeDataProvider) init(instrument string, freqList []core.Frequency) error {
@@ -23,6 +25,9 @@ func (f *fakeDataProvider) connect() error {
 }
 
 func (f *fakeDataProvider) nextBars() (map[string]core.Bar, error) {
+	if f.stopped {
+		return nil, fmt.Errorf("fake data provider is stopped")
+	}
 	basicBar := core.NewBasicBar(.1, .2, .3, .4, 5, f.freqList[0], time.Now())
 	time.Sleep(time.Second)
 	res := make(map[string]core.Bar)
@@ -35,6 +40,7 @@ func (f *fakeDataProvider) reset() error {
 }
 
 func (f *fakeDataProvider) stop() error {
+	f.stopped = true
 	return nil
 }
 
@@ -43,5 +49,7 @@ func (f *fakeDataProvider) datatype() series.Type {
 }
 
 func NewFakeDataProvider() BarDataProvider {
-	return &fakeDataProvider{}
+	return &fakeDataProvider{
+		stopped: false,
+	}
 }
