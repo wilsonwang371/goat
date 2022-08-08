@@ -1,5 +1,7 @@
 # GoAlgoTrade
 
+This repo is currently a work in progress.
+
 ## Introduction
 
 GoAlgoTrade is a Go implementation of PyAlgoTrade. Currently it is under development.
@@ -20,7 +22,22 @@ I want to make some small changes to meet my own needs.
 
 ## Build
 
+```bash
+./build.sh
+```
+
 ## Run
+
+```bash
+./goalgotrade
+```
+
+### Run Strategy JS Script
+
+```bash
+./goalgotrade run -s sample/simple.js
+```
+
 
 ## Contributions
 
