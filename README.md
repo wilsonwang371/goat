@@ -25,13 +25,13 @@ I want to make some small changes to meet my own needs.
 ## Build
 
 ```bash
-make build
+build.sh build
 ```
 
 ## Test
 
 ```bash
-make test
+build.sh test
 ```
 
 ## Run Strategy

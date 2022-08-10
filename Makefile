@@ -13,6 +13,8 @@ test:
 format:
 	@echo "Formatting..."
 	@go fmt ./...
+	@goimports -w ./
+	@gofumpt -l -w ./
 	@echo "Formatting done."
 
 clean:

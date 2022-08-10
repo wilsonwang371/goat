@@ -2,12 +2,13 @@ package feedgen
 
 import (
 	"encoding/csv"
-	"goalgotrade/pkg/core"
-	lg "goalgotrade/pkg/logger"
 	"io"
 	"os"
 	"strconv"
 	"time"
+
+	"goalgotrade/pkg/core"
+	lg "goalgotrade/pkg/logger"
 
 	"github.com/araddon/dateparse"
 	"github.com/golang-module/carbon"

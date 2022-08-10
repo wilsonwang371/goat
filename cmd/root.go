@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"goalgotrade/pkg/logger"
 	"os"
+
+	"goalgotrade/pkg/logger"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

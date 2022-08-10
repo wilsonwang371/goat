@@ -18,6 +18,7 @@ require (
 	github.com/twilio/twilio-go v0.18.2
 	go.uber.org/zap v1.17.0
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
+	golang.org/x/tools v0.1.12 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v2 v2.4.0 // indirect

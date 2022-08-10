@@ -2,10 +2,11 @@ package core
 
 import (
 	"fmt"
-	"goalgotrade/pkg/logger"
 	"reflect"
 	"sync"
 	"time"
+
+	"goalgotrade/pkg/logger"
 
 	"go.uber.org/zap"
 )

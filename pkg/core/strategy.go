@@ -2,8 +2,9 @@ package core
 
 import (
 	"fmt"
-	"goalgotrade/pkg/logger"
 	"time"
+
+	"goalgotrade/pkg/logger"
 
 	"go.uber.org/zap"
 )
@@ -163,7 +164,8 @@ func (s *strategyController) Stop() {
 }
 
 func NewStrategyController(strategyEventListener StrategyEventListener,
-	broker Broker, dataFeed DataFeed) StrategyController {
+	broker Broker, dataFeed DataFeed,
+) StrategyController {
 	controller := &strategyController{
 		listener:          strategyEventListener,
 		broker:            broker,

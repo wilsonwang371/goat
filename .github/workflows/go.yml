@@ -12,14 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.18
+    
+    - name: Set up Docker
+      uses: docker-practice/actions-setup-docker@master
 
     - name: Build
-      run: make build
+      run: ./build.sh build
 
     - name: Test
-      run: make test
+      run: ./build.sh test

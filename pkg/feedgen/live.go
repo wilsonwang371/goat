@@ -1,10 +1,11 @@
 package feedgen
 
 import (
+	"time"
+
 	"goalgotrade/pkg/core"
 	"goalgotrade/pkg/logger"
 	lg "goalgotrade/pkg/logger"
-	"time"
 
 	"github.com/go-gota/gota/series"
 	"go.uber.org/zap"

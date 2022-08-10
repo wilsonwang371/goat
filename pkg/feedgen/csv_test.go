@@ -1,9 +1,10 @@
 package feedgen
 
 import (
-	"goalgotrade/pkg/core"
 	"testing"
 	"time"
+
+	"goalgotrade/pkg/core"
 )
 
 func TestCSVSimple(t *testing.T) {

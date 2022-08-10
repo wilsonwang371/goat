@@ -3,12 +3,13 @@ package feedgen
 import (
 	"encoding/json"
 	"fmt"
-	"goalgotrade/pkg/core"
-	lg "goalgotrade/pkg/logger"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"time"
+
+	"goalgotrade/pkg/core"
+	lg "goalgotrade/pkg/logger"
 
 	"github.com/go-gota/gota/series"
 	"go.uber.org/zap"

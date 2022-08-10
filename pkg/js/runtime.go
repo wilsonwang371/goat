@@ -1,9 +1,10 @@
 package js
 
 import (
-	"goalgotrade/pkg/logger"
 	"os"
 	"strings"
+
+	"goalgotrade/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
