@@ -17,7 +17,10 @@ var rootCmd = &cobra.Command{
 It is a tool for trading.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("goalgotrade is a tool for trading")
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(0)
+		}
 	},
 }
 
