@@ -10,5 +10,15 @@ test:
 	@go test ./...
 	@echo "Testing done."
 
-all: build test
+format:
+	@echo "Formatting..."
+	@go fmt ./...
+	@echo "Formatting done."
+
+clean:
+	@echo "Cleaning..."
+	@rm -rf ./goalgotrade
+	@echo "Cleaning done."
+
+all: format build test
 	@echo "All done."

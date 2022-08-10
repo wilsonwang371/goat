@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"honnef.co/go/tools/config"
 )
 
 var rootCmd = &cobra.Command{
@@ -34,11 +33,31 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goalgotrade.yaml)")
+	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+}
+
+type Config struct {
+	Live struct {
+		TradingView struct {
+			User string `mapstructure:"user"`
+			Pass string `mapstructure:"password"`
+		} `mapstructure:"tradingview"`
+	} `mapstructure:"live"`
+	Notification struct {
+		Twilio struct {
+			Sid   string `mapstructure:"sid"`
+			Token string `mapstructure:"token"`
+		} `mapstructure:"twilio"`
+		PushOver struct {
+			Key   string `mapstructure:"key"`
+			Token string `mapstructure:"token"`
+		} `mapstructure:"pushover"`
+	} `mapstructure:"notification"`
 }
 
 var (
 	cfgFile string
-	cfg     config.Config
+	cfg     Config
 )
 
 func initConfig() {
@@ -46,7 +65,7 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		viper.SetConfigName(".goalgotrade")
-		viper.SetConfigType("yaml")
+		viper.SetConfigType("json")
 		viper.AddConfigPath("$HOME")
 	}
 	viper.AutomaticEnv()

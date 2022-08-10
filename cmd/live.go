@@ -16,6 +16,7 @@ import (
 
 var (
 	feedProvider string
+	symbol       string
 
 	liveCmd = &cobra.Command{
 		Use:   "live",
@@ -66,6 +67,9 @@ func GetLiveFeedGenerator() core.FeedGenerator {
 	var provider feedgen.BarDataProvider
 	if strings.EqualFold(feedProvider, "fake") {
 		provider = feedgen.NewFakeDataProvider()
+	} else if strings.EqualFold(feedProvider, "tradingview") {
+		provider = feedgen.NewTradingViewDataProvider(cfg.Live.TradingView.User,
+			cfg.Live.TradingView.Pass)
 	} else {
 		logger.Logger.Error("unknown live feed provider", zap.String("provider", feedProvider))
 		os.Exit(1)
@@ -84,5 +88,6 @@ func init() {
 		"strategy js script file")
 	liveCmd.MarkPersistentFlagRequired("strategy")
 	liveCmd.PersistentFlags().StringVarP(&feedProvider, "provider", "p", "", "live feed data provider name")
+	liveCmd.PersistentFlags().StringVarP(&symbol, "symbol", "S", "", "live feed data symbol name")
 	rootCmd.AddCommand(liveCmd)
 }
