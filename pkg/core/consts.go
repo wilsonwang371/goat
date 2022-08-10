@@ -16,6 +16,7 @@ const (
 	// * **Frequency.MONTH**: The bar summarizes the trading activity during 1 month.
 
 	// It is important for frequency values to get bigger for bigger windows.
+	UNKNOWN  Frequency = -9999
 	INVALID  Frequency = -999
 	RESET    Frequency = -99
 	TRADE    Frequency = -1

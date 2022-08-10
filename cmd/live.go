@@ -8,26 +8,25 @@ import (
 	"goalgotrade/pkg/logger"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var (
-	scriptFile string
-	dataType   string
-	dataSource string
+	feedProvider string
 
-	runCmd = &cobra.Command{
-		Use:   "run",
-		Short: "run command executes the specified strategy script",
-		Long: `run command executes the specified strategy script.
+	liveCmd = &cobra.Command{
+		Use:   "live",
+		Short: "live command executes the specified strategy script using live data",
+		Long: `live command executes the specified strategy script using live data.
 	`,
-		Run: RunFunction,
+		Run: runLiveCmd,
 	}
 )
 
-func RunFunction(cmd *cobra.Command, args []string) {
+func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 
 	rt := js.NewRuntime()
@@ -47,7 +46,7 @@ func RunFunction(cmd *cobra.Command, args []string) {
 			fmt.Println(val)
 		}
 
-		gen := GetFeedGenerator()
+		gen := GetLiveFeedGenerator()
 		if gen == nil {
 			logger.Logger.Error("failed to create feed generator")
 			os.Exit(1)
@@ -63,27 +62,27 @@ func RunFunction(cmd *cobra.Command, args []string) {
 	}
 }
 
-func GetFeedGenerator() core.FeedGenerator {
-	if dataType == "csv" {
-		return feedgen.NewCSVBarFeedGenerator(dataSource, "SYMBOL", core.UNKNOWN)
+func GetLiveFeedGenerator() core.FeedGenerator {
+	var provider feedgen.BarDataProvider
+	if strings.EqualFold(feedProvider, "fake") {
+		provider = feedgen.NewFakeDataProvider()
 	} else {
-		logger.Logger.Error("unknown data type", zap.String("dataType", dataType))
+		logger.Logger.Error("unknown live feed provider", zap.String("provider", feedProvider))
 		os.Exit(1)
 	}
-	return nil
+	gen := feedgen.NewLiveBarFeedGenerator(
+		provider,
+		"XAUUSD",
+		[]core.Frequency{core.REALTIME, core.DAY},
+		100)
+	go gen.Run()
+	return gen
 }
 
 func init() {
-	runCmd.PersistentFlags().StringVarP(&scriptFile, "script", "s", "",
+	liveCmd.PersistentFlags().StringVarP(&scriptFile, "script", "s", "",
 		"strategy js script file")
-	runCmd.MarkPersistentFlagRequired("script")
-
-	runCmd.PersistentFlags().StringVarP(&dataType, "datatype", "t", "",
-		"data type")
-	runCmd.MarkPersistentFlagRequired("dataType")
-	runCmd.PersistentFlags().StringVarP(&dataSource, "datasource", "s", "",
-		"data source")
-	runCmd.MarkPersistentFlagRequired("dataSource")
-
-	rootCmd.AddCommand(runCmd)
+	liveCmd.MarkPersistentFlagRequired("script")
+	liveCmd.PersistentFlags().StringVarP(&feedProvider, "provider", "p", "", "live feed data provider name")
+	rootCmd.AddCommand(liveCmd)
 }

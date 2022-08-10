@@ -28,7 +28,7 @@ func (f *fakeDataProvider) nextBars() (map[string]core.Bar, error) {
 	if f.stopped {
 		return nil, fmt.Errorf("fake data provider is stopped")
 	}
-	basicBar := core.NewBasicBar(.1, .2, .3, .4, 5, f.freqList[0], time.Now())
+	basicBar := core.NewBasicBar(time.Now(), .1, .2, .3, .4, .4, 5, f.freqList[0])
 	time.Sleep(time.Second)
 	res := make(map[string]core.Bar)
 	res[f.instrument] = basicBar

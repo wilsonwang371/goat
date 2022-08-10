@@ -203,8 +203,9 @@ func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error)
 			}
 			for _, svalue := range parsedInnerData.S1.S {
 				// lg.Logger.Debug("parsed data", zap.Any("quote", svalue))
-				bar := core.NewBasicBar(svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
-					int64(svalue.V[5]), core.REALTIME, time.Unix(int64(svalue.V[0]), 0))
+				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4], svalue.V[4],
+					int64(svalue.V[5]), core.REALTIME)
 				res = append(res, bar)
 			}
 			return res, nil
@@ -225,9 +226,9 @@ func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error)
 				return nil, fmt.Errorf("no data")
 			}
 			for _, svalue := range parsedInnerData.S1.S {
-				bar := core.NewBasicBar(
-					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4],
-					int64(svalue.V[5]), freq, time.Unix(int64(svalue.V[0]), 0))
+				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
+					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4], svalue.V[4],
+					int64(svalue.V[5]), core.REALTIME)
 				res = append(res, bar)
 			}
 			return res, nil

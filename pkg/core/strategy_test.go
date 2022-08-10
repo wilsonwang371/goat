@@ -19,26 +19,26 @@ func TestSimpleStrategy(t *testing.T) {
 
 	gen.AppendNewValueToBuffer(time.Now(),
 		map[string]interface{}{
-			"a": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, REALTIME, time.Now()),
-			"b": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, REALTIME, time.Now()),
+			"a": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, REALTIME),
+			"b": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, REALTIME),
 		},
 		REALTIME)
 	gen.AppendNewValueToBuffer(time.Now(),
 		map[string]interface{}{
-			"a": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, DAY, time.Now()),
-			"b": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, DAY, time.Now()),
+			"a": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, DAY),
+			"b": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, DAY),
 		},
 		DAY)
 	gen.AppendNewValueToBuffer(time.Now(),
 		map[string]interface{}{
-			"a": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, REALTIME, time.Now()),
-			"b": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, REALTIME, time.Now()),
+			"a": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, REALTIME),
+			"b": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, REALTIME),
 		},
 		REALTIME)
 	gen.AppendNewValueToBuffer(time.Now(),
 		map[string]interface{}{
-			"a": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, HOUR, time.Now()),
-			"b": NewBasicBar(1.0, 2.0, 3.0, 1.2, 100, HOUR, time.Now()),
+			"a": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, HOUR),
+			"b": NewBasicBar(time.Now(), 1.0, 2.0, 3.0, 1.2, 1.2, 100, HOUR),
 		},
 		HOUR)
 
