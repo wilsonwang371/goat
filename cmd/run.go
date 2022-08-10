@@ -26,11 +26,11 @@ var (
 		Short: "run command executes the specified script",
 		Long: `run command executes the specified script.
 	`,
-		Run: Command,
+		Run: RunFunction,
 	}
 )
 
-func Command(cmd *cobra.Command, args []string) {
+func RunFunction(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 
 	rt := js.NewRuntime()
