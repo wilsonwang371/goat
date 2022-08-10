@@ -54,4 +54,4 @@ build.sh test
 
 ## Contributions
 
-If you are interested in this project, please contact me.
+If you are interested in this project and want to contribute, please contact me.
