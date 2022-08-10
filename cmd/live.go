@@ -80,9 +80,9 @@ func GetLiveFeedGenerator() core.FeedGenerator {
 }
 
 func init() {
-	liveCmd.PersistentFlags().StringVarP(&scriptFile, "script", "s", "",
+	liveCmd.PersistentFlags().StringVarP(&scriptFile, "strategy", "f", "",
 		"strategy js script file")
-	liveCmd.MarkPersistentFlagRequired("script")
+	liveCmd.MarkPersistentFlagRequired("strategy")
 	liveCmd.PersistentFlags().StringVarP(&feedProvider, "provider", "p", "", "live feed data provider name")
 	rootCmd.AddCommand(liveCmd)
 }

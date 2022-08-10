@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -29,15 +28,6 @@ type bar struct {
 	frequency   Frequency `json:"frequency"`
 	dateTime    time.Time `json:"dateTime"`
 	useAdjusted bool      `json:"useAdjusted"`
-}
-
-// ToJSON implements Bar
-func (b *bar) ToJSON() string {
-	if data, err := json.Marshal(b); err == nil {
-		return string(data)
-	} else {
-		return ""
-	}
 }
 
 // String implements Bar

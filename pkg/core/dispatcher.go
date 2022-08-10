@@ -143,9 +143,10 @@ func (d *dispatcher) Run() {
 }
 
 func (d *dispatcher) Stop() {
+	logger.Logger.Debug("dispatcher stopped")
 	d.stopCMutex.Lock()
 	defer d.stopCMutex.Unlock()
-	if !d.isStopped {
+	if d.isStopped {
 		return
 	}
 	d.stopC <- struct{}{}
@@ -162,6 +163,7 @@ func NewDispatcher() Dispatcher {
 		stopCMutex: sync.Mutex{},
 		startEvent: NewEvent(),
 		idleEvent:  NewEvent(),
+		isStopped:  false,
 	}
 }
 

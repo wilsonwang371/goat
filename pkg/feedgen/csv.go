@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/golang-module/carbon"
 	"go.uber.org/zap"
 )
@@ -18,13 +19,15 @@ type ColumnName string
 
 // ColumnDateTime ...
 const (
-	ColumnDateTime ColumnName = "dateTime"
-	ColumnOpen     ColumnName = "open"
-	ColumnHigh     ColumnName = "high"
-	ColumnLow      ColumnName = "low"
-	ColumnClose    ColumnName = "close"
-	ColumnVolume   ColumnName = "volume"
-	ColumnAdjClose ColumnName = "adj_close"
+	ColumnDateTime  ColumnName = "dateTime"
+	ColumnOpen      ColumnName = "open"
+	ColumnHigh      ColumnName = "high"
+	ColumnLow       ColumnName = "low"
+	ColumnClose     ColumnName = "close"
+	ColumnVolume    ColumnName = "volume"
+	ColumnAdjClose  ColumnName = "adj_close"
+	ColumnSymbol    ColumnName = "symbol"
+	ColumnFrequency ColumnName = "frequency"
 )
 
 type CSVFeedGenerator struct {
@@ -59,7 +62,7 @@ func (c *CSVFeedGenerator) PeekNextTime() *time.Time {
 
 // PopNextValues implements core.FeedGenerator
 func (c *CSVFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, core.Frequency, error) {
-	panic("unimplemented")
+	return c.barfeed.PopNextValues()
 }
 
 func NewCSVBarFeedGenerator(path string, instrument string, freq core.Frequency) core.FeedGenerator {
@@ -68,13 +71,15 @@ func NewCSVBarFeedGenerator(path string, instrument string, freq core.Frequency)
 		path:           path,
 		dateTimeFormat: "%Y-%m-%d %H:%M:%S",
 		columnNames: map[ColumnName]string{
-			ColumnDateTime: "Date Time",
-			ColumnOpen:     "Open",
-			ColumnHigh:     "High",
-			ColumnLow:      "Low",
-			ColumnClose:    "Close",
-			ColumnVolume:   "Volume",
-			ColumnAdjClose: "Adj Close",
+			ColumnDateTime:  "Date",
+			ColumnOpen:      "Open",
+			ColumnHigh:      "High",
+			ColumnLow:       "Low",
+			ColumnClose:     "Close",
+			ColumnVolume:    "Volume",
+			ColumnAdjClose:  "Adj Close",
+			ColumnSymbol:    "Symbol",
+			ColumnFrequency: "Frequency",
 		},
 		haveAdjClose: false,
 		frequency:    freq,
@@ -122,18 +127,18 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 					lg.Logger.Warn("header not found", zap.Int("index", i), zap.String("value", v))
 				}
 			}
-			bar, err := c.parseRawToBar(data)
+			symbol, bar, err := c.parseRawToBar(data)
 			if err != nil {
 				lg.Logger.Error("parse error", zap.Error(err))
 				os.Exit(1)
 			}
-			c.AppendNewValueToBuffer(bar.DateTime(), map[string]interface{}{c.instrument: bar}, c.frequency)
+			c.barfeed.AppendNewValueToBuffer(bar.DateTime(), map[string]interface{}{symbol: bar}, bar.Frequency())
 		}
 	}
 	c.Finish()
 }
 
-func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (core.Bar, error) {
+func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.Bar, error) {
 	dateTimeRaw := dict[c.columnNames[ColumnDateTime]]
 	openRaw := dict[c.columnNames[ColumnOpen]]
 	highRaw := dict[c.columnNames[ColumnHigh]]
@@ -147,38 +152,66 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (core.Bar, erro
 	if adjCloseRaw != "" {
 		c.haveAdjClose = true
 	}
+
+	var symbol string
+	if val, ok := dict[c.columnNames[ColumnSymbol]]; ok {
+		symbol = val
+	} else {
+		symbol = c.instrument
+	}
+
+	var frequency core.Frequency
+	if valStr, ok := dict[c.columnNames[ColumnFrequency]]; ok {
+		val, err := strconv.ParseInt(valStr, 10, 64)
+		if err != nil {
+			lg.Logger.Error("parse frequency error", zap.Error(err))
+			os.Exit(1)
+		} else {
+			frequency = core.Frequency(val)
+		}
+	} else {
+		frequency = c.frequency
+	}
+
+	dateTime := time.Time{}
 	carbonResult := carbon.ParseByFormat(c.dateTimeFormat, dateTimeRaw)
 	if carbonResult.Error != nil {
-		return nil, carbonResult.Error
+		lg.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
+		if val, err := dateparse.ParseAny(dateTimeRaw); err == nil {
+			dateTime = val
+		} else {
+			return "", nil, err
+		}
+	} else {
+		dateTime = carbonResult.Carbon2Time()
 	}
-	dateTime := carbonResult.Carbon2Time()
 	open, err := strconv.ParseFloat(openRaw, 64)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	high, err := strconv.ParseFloat(highRaw, 64)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	low, err := strconv.ParseFloat(lowRaw, 64)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	closeVal, err := strconv.ParseFloat(closeRaw, 64)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	volume, err := strconv.ParseFloat(volumeRaw, 64)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	adjClose, err := strconv.ParseFloat(adjCloseRaw, 64)
 	if err != nil {
 		adjClose = .0
 	}
-	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, adjClose, int64(volume), c.frequency)
+	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, adjClose, int64(volume), frequency)
 	if c.haveAdjClose {
 		bar.SetUseAdjustedValue(true)
 	}
-	return bar, nil
+	return symbol, bar, nil
 }

@@ -28,16 +28,15 @@ I want to make some small changes to meet my own needs.
 ./build.sh
 ```
 
-## Run
+## Run Strategy
+
+
+### Run A Simple Strategy
 
 ```bash
-./goalgotrade
-```
 
-### Run Strategy JS Script
+./goalgotrade run -f samples/strategies/simple.js -t csv -s samples/data/DBC-2007-yahoofinance.csv 
 
-```bash
-./goalgotrade run -s samples/simple.js
 ```
 
 

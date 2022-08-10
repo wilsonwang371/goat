@@ -74,16 +74,17 @@ func GetFeedGenerator() core.FeedGenerator {
 }
 
 func init() {
-	runCmd.PersistentFlags().StringVarP(&scriptFile, "script", "s", "",
+	runCmd.PersistentFlags().StringVarP(&scriptFile, "strategy", "f", "",
 		"strategy js script file")
-	runCmd.MarkPersistentFlagRequired("script")
+	runCmd.MarkPersistentFlagRequired("strategy")
 
 	runCmd.PersistentFlags().StringVarP(&dataType, "datatype", "t", "",
-		"data type")
-	runCmd.MarkPersistentFlagRequired("dataType")
+		"data type(csv)")
+	runCmd.MarkPersistentFlagRequired("datatype")
+
 	runCmd.PersistentFlags().StringVarP(&dataSource, "datasource", "s", "",
 		"data source")
-	runCmd.MarkPersistentFlagRequired("dataSource")
+	runCmd.MarkPersistentFlagRequired("datasource")
 
 	rootCmd.AddCommand(runCmd)
 }
