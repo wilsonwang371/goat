@@ -45,6 +45,12 @@ make test
 
 ```
 
+### Run A Strategy Live
+
+```bash
+./goalgotrade live -p fake -f samples/strategies/simple.js -S XAUUSD
+```
+
 
 ## Contributions
 
