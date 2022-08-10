@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"goalgotrade/pkg/logger"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 var rootCmd = &cobra.Command{
@@ -33,7 +35,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.goalgotrade.yaml)")
-	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 }
 
 type Config struct {
@@ -71,8 +72,10 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
+		logger.Logger.Error("failed to read config file", zap.Error(err))
 		return
 	}
+
 	if err := viper.Unmarshal(&cfg); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

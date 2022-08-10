@@ -1,0 +1,18 @@
+{
+  "live": {
+    "tradingview": {
+      "user": "1",
+      "password": "2"
+    }
+  },
+  "notification": {
+    "twilio": {
+      "sid": "3",
+      "token": "4"
+    },
+    "pushover": {
+      "key": "5",
+      "token": "6"
+    }
+  }
+}
