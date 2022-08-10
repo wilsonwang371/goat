@@ -139,10 +139,10 @@ func (d *genericDataFeed) Dispatch() bool {
 		}
 		for key, val := range v {
 			if b, ok := val.(Bar); ok {
-				logger.Logger.Info("Dispatch a bar", zap.String("key", key), zap.Stringer("bar", b))
+				logger.Logger.Debug("Dispatch a bar", zap.String("key", key), zap.Stringer("bar", b))
 			}
 		}
-		logger.Logger.Info("emit new value", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
+		logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
 		d.newValueEvent.Emit(t, v)
 		return true
 	}

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -19,15 +20,24 @@ type Bar interface {
 }
 
 type bar struct {
-	open        float64
-	high        float64
-	low         float64
-	close       float64
-	volume      int64
-	adjClose    float64
-	frequency   Frequency
-	dateTime    time.Time
-	useAdjusted bool
+	open        float64   `json:"open"`
+	high        float64   `json:"high"`
+	low         float64   `json:"low"`
+	close       float64   `json:"close"`
+	volume      int64     `json:"volume"`
+	adjClose    float64   `json:"adjClose"`
+	frequency   Frequency `json:"frequency"`
+	dateTime    time.Time `json:"dateTime"`
+	useAdjusted bool      `json:"useAdjusted"`
+}
+
+// ToJSON implements Bar
+func (b *bar) ToJSON() string {
+	if data, err := json.Marshal(b); err == nil {
+		return string(data)
+	} else {
+		return ""
+	}
 }
 
 // String implements Bar

@@ -22,7 +22,7 @@ func TestTradingViewSimple(t *testing.T) {
 	feed := core.NewGenericDataFeed(gen, 100)
 	disp.AddSubject(feed)
 
-	go gen.(*LiveBarFeedGenerator).Run()
+	go gen.Run()
 	go disp.Run()
 
 	time.Sleep(time.Second * 5)
@@ -39,7 +39,7 @@ func TestFakeSimple(t *testing.T) {
 	feed := core.NewGenericDataFeed(gen, 100)
 	disp.AddSubject(feed)
 
-	go gen.(*LiveBarFeedGenerator).Run()
+	go gen.Run()
 	go disp.Run()
 
 	time.Sleep(time.Second * 5)

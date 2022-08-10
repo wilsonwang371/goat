@@ -27,6 +27,7 @@ type StrategyEventListener interface {
 
 type StrategyController interface {
 	Run()
+	Stop()
 }
 
 type strategyEventListener struct{}
@@ -82,7 +83,7 @@ type strategyController struct {
 }
 
 func (s *strategyController) onStart(args ...interface{}) error {
-	logger.Logger.Info("onStart")
+	logger.Logger.Debug("onStart")
 	return s.listener.OnStart()
 }
 
@@ -98,7 +99,7 @@ func (s *strategyController) onIdle(args ...interface{}) error {
 }
 
 func (s *strategyController) onBars(args ...interface{}) error {
-	logger.Logger.Info("onBars")
+	logger.Logger.Debug("StrategyController onBars is called.")
 	if len(args) != 2 {
 		return fmt.Errorf("onBars args length should be 2")
 	}
@@ -110,7 +111,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 		bars[k] = v.(Bar)
 	}
 
-	logger.Logger.Info("onBars",
+	logger.Logger.Debug("onBars",
 		zap.Time("time", currentTime),
 		zap.Any("bars", bars))
 

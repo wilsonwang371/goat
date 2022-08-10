@@ -28,7 +28,7 @@ type LiveBarFeedGenerator struct {
 
 // AppendNewValueToBuffer implements core.FeedGenerator
 func (l *LiveBarFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{}, f core.Frequency) error {
-	logger.Logger.Info("LiveBarFeedGenerator::AppendNewValueToBuffer", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
+	logger.Logger.Debug("LiveBarFeedGenerator::AppendNewValueToBuffer", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
 	return l.bfg.AppendNewValueToBuffer(t, v, f)
 }
 
@@ -52,7 +52,7 @@ func (l *LiveBarFeedGenerator) PopNextValues() (time.Time, map[string]interface{
 	return l.bfg.PopNextValues()
 }
 
-func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string, freq []core.Frequency, maxLen int) core.FeedGenerator {
+func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string, freq []core.Frequency, maxLen int) *LiveBarFeedGenerator {
 	return &LiveBarFeedGenerator{
 		bfg:        core.NewBarFeedGenerator(freq, maxLen),
 		provider:   provider,

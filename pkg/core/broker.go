@@ -55,7 +55,7 @@ func (e *dummyBroker) GetOrderUpdatedEvent() Event {
 }
 
 func (e *dummyBroker) onBars(args ...interface{}) error {
-	logger.Logger.Info("broker onBars")
+	logger.Logger.Debug("broker onBars")
 	if len(args) != 2 {
 		return fmt.Errorf("onBars args length should be 2")
 	}
@@ -67,7 +67,7 @@ func (e *dummyBroker) onBars(args ...interface{}) error {
 		bars[k] = v.(Bar)
 	}
 
-	logger.Logger.Info("onBars",
+	logger.Logger.Debug("onBars",
 		zap.Time("time", currentTime),
 		zap.Any("bars", bars))
 

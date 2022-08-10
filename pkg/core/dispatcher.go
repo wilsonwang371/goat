@@ -73,7 +73,7 @@ func (d *dispatcher) dispatchSubject(subject Subject, smallestTime time.Time) bo
 	if !subject.Eof() && !t.Before(smallestTime) {
 		return subject.Dispatch()
 	} else {
-		logger.Logger.Info("data not dispatched", zap.Any("eof", subject.Eof()),
+		logger.Logger.Debug("subject not dispatched", zap.Any("eof", subject.Eof()),
 			zap.Any("smallestTime", smallestTime),
 			zap.Any("PeekDateTime", t))
 	}
