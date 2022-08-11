@@ -47,3 +47,23 @@ func TestRuntimeSimple2(t *testing.T) {
 
 	rt.NotifyEvent("onbars", "foo")
 }
+
+func TestRuntimeKV(t *testing.T) {
+	rt := NewRuntime("")
+	script, err := rt.Compile(`
+	addEventListener("onbars", function(e) {
+		store("foo", "bar");
+		console.log(load("foo"));
+	});
+`)
+	if err != nil {
+		t.Error(err)
+	}
+	val, err := rt.Execute(script)
+	if err != nil {
+		t.Error(err)
+	}
+	logger.Logger.Info("result:", zap.Any("val", val))
+
+	rt.NotifyEvent("onbars", "foo")
+}
