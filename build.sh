@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 BUILD_IMG=golang:1.18
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

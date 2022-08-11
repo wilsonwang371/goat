@@ -10,7 +10,7 @@ import (
 )
 
 func TestRuntimeSimple(t *testing.T) {
-	rt := NewRuntime()
+	rt := NewRuntime("")
 	err := rt.RegisterHostCall("test_print", func(call otto.FunctionCall) otto.Value {
 		logger.Logger.Info("test_print is called")
 		return otto.NullValue()
@@ -30,7 +30,7 @@ func TestRuntimeSimple(t *testing.T) {
 }
 
 func TestRuntimeSimple2(t *testing.T) {
-	rt := NewRuntime()
+	rt := NewRuntime("")
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		console.log("onbars", e);
