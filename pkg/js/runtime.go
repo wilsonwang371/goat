@@ -100,16 +100,14 @@ func (r *runtime) storeState(call otto.FunctionCall) otto.Value {
 		logger.Logger.Debug("storeState needs 2 arguments")
 		return otto.FalseValue()
 	}
-	key, err := call.Argument(0).ToString()
-	if err != nil {
-		logger.Logger.Debug("failed to convert key to string", zap.Error(err))
-		return otto.FalseValue()
+	for i := 0; i < len(call.ArgumentList); i++ {
+		if !call.ArgumentList[i].IsString() {
+			logger.Logger.Debug("storeState needs string arguments")
+			return otto.FalseValue()
+		}
 	}
-	data, err := call.Argument(1).ToString()
-	if err != nil {
-		logger.Logger.Debug("failed to convert data to string", zap.Error(err))
-		return otto.FalseValue()
-	}
+	key := call.Argument(0).String()
+	data := call.Argument(1).String()
 	if err := r.dbStoreState([]byte(key), []byte(data)); err != nil {
 		logger.Logger.Debug("failed to store state", zap.Error(err))
 		return otto.FalseValue()
@@ -121,6 +119,12 @@ func (r *runtime) loadState(call otto.FunctionCall) otto.Value {
 	if len(call.ArgumentList) != 1 {
 		logger.Logger.Debug("loadState needs 1 argument")
 		return otto.NullValue()
+	}
+	for i := 0; i < len(call.ArgumentList); i++ {
+		if !call.ArgumentList[i].IsString() {
+			logger.Logger.Debug("loadState needs string arguments")
+			return otto.NullValue()
+		}
 	}
 	key := call.Argument(0).String()
 	data, err := r.dbLoadState([]byte(key))
