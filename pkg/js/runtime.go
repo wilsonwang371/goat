@@ -1,6 +1,8 @@
 package js
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
 
 	"goalgotrade/pkg/logger"
@@ -50,7 +52,14 @@ func (r *runtime) NotifyEvent(eventName string, args ...interface{}) error {
 // RegisterHostCall implements Runtime
 func (r *runtime) RegisterHostCall(name string, fn RuntimeFunc) error {
 	return r.vm.Set(name, func(call otto.FunctionCall) otto.Value {
-		return fn(call)
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Logger.Debug("runtime panic", zap.Any("panic", r))
+			}
+		}()
+		rtn := otto.NullValue()
+		rtn = fn(call)
+		return rtn
 	})
 }
 
@@ -93,6 +102,32 @@ func NewRuntime(dbFilePath string) Runtime {
 	res.apiHandlers["addEventListener"] = res.addEventListener
 	res.apiHandlers["store"] = res.storeState
 	res.apiHandlers["load"] = res.loadState
+	for _, talibMethod := range AllTALibMethods() {
+		name := fmt.Sprintf("%s_%s", "talib", talibMethod.Name)
+		logger.Logger.Debug("registering talib method", zap.String("method", name))
+		res.apiHandlers[name] = func(call otto.FunctionCall) otto.Value {
+			logger.Logger.Debug("calling talib method", zap.String("method", name))
+			numArgs := talibMethod.Type.NumIn()
+			args := make([]reflect.Value, numArgs)
+
+			// convert otto.Value to reflect.Value
+			for i := 0; i < numArgs; i++ {
+				// TODO: pass the correct type
+				args[i] = reflect.ValueOf(call.Argument(i).String())
+			}
+
+			rtn := talibMethod.Func.Call(args)
+			if len(rtn) != 1 {
+				logger.Logger.Error("talib method returned more than one value", zap.String("method", talibMethod.Name))
+			}
+			if val, err := otto.ToValue(rtn[0].Interface()); err != nil {
+				logger.Logger.Error("talib method returned invalid value", zap.String("method", talibMethod.Name))
+				return otto.NullValue()
+			} else {
+				return val
+			}
+		}
+	}
 
 	res.setupStrategyAPIs()
 
