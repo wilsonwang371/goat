@@ -1,0 +1,4 @@
+package js
+
+func init() {
+}

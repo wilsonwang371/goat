@@ -8,6 +8,8 @@ import (
 	badger "github.com/dgraph-io/badger/v3"
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
+
+	talib "github.com/wilsonwang371/go-talib"
 )
 
 var supportedEvents []string = []string{
@@ -31,6 +33,7 @@ type runtime struct {
 	db             *badger.DB
 	eventListeners map[string]otto.Value
 	apiHandlers    map[string]RuntimeFunc
+	talib          *talib.TALib
 }
 
 // NotifyEvent implements Runtime
@@ -70,6 +73,7 @@ func NewRuntime(dbFilePath string) Runtime {
 		vm:             otto.New(),
 		apiHandlers:    make(map[string]RuntimeFunc),
 		eventListeners: make(map[string]otto.Value),
+		talib:          talib.NewTALib(),
 	}
 
 	if dbFilePath != "" {
