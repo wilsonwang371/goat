@@ -1,6 +1,5 @@
-
 addEventListener("onBars", function (bar) {
-  console.log("global:" + talib_Atr());
+  console.log(talib_Atr(1, 2, 3));
 });
 
 addEventListener("onStart", function () {
