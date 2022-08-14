@@ -1,6 +1,8 @@
 package apis
 
 import (
+	"time"
+
 	"goalgotrade/pkg/logger"
 
 	"github.com/dgraph-io/badger/v3"
@@ -13,6 +15,8 @@ type KVObject struct {
 	DBPath string
 	DB     *badger.DB
 }
+
+var CleanUpDuration = time.Second * 30
 
 func NewKVObject(vm *otto.Otto, dbFilePath string) (*KVObject, error) {
 	kv := &KVObject{
@@ -40,10 +44,24 @@ func NewKVObject(vm *otto.Otto, dbFilePath string) (*KVObject, error) {
 	if err != nil {
 		return nil, err
 	}
-	kvObj.Set("store", kv.StoreState)
+	kvObj.Set("save", kv.SaveState)
 	kvObj.Set("load", kv.LoadState)
 
+	go kv.cleanup()
+
 	return kv, nil
+}
+
+func (kv *KVObject) cleanup() {
+	ticker := time.NewTicker(CleanUpDuration)
+	defer ticker.Stop()
+	for range ticker.C {
+	again:
+		err := kv.DB.RunValueLogGC(0.7)
+		if err == nil {
+			goto again
+		}
+	}
 }
 
 func (kv *KVObject) DBLoadState(key []byte) ([]byte, error) {
@@ -65,27 +83,27 @@ func (kv *KVObject) DBLoadState(key []byte) ([]byte, error) {
 	return data, nil
 }
 
-func (kv *KVObject) DBStoreState(key []byte, data []byte) error {
+func (kv *KVObject) DBSaveState(key []byte, data []byte) error {
 	return kv.DB.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, data)
 	})
 }
 
-func (kv *KVObject) StoreState(call otto.FunctionCall) otto.Value {
+func (kv *KVObject) SaveState(call otto.FunctionCall) otto.Value {
 	if len(call.ArgumentList) != 2 {
-		logger.Logger.Debug("storeState needs 2 arguments")
+		logger.Logger.Debug("saveState needs 2 arguments")
 		return otto.FalseValue()
 	}
 	for i := 0; i < len(call.ArgumentList); i++ {
 		if !call.ArgumentList[i].IsString() {
-			logger.Logger.Debug("storeState needs string arguments")
+			logger.Logger.Debug("saveState needs string arguments")
 			return otto.FalseValue()
 		}
 	}
 	key := call.Argument(0).String()
 	data := call.Argument(1).String()
-	if err := kv.DBStoreState([]byte(key), []byte(data)); err != nil {
-		logger.Logger.Debug("failed to store state", zap.Error(err))
+	if err := kv.DBSaveState([]byte(key), []byte(data)); err != nil {
+		logger.Logger.Debug("failed to save state", zap.Error(err))
 		return otto.FalseValue()
 	}
 	return otto.TrueValue()

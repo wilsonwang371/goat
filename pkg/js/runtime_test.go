@@ -52,7 +52,7 @@ func TestRuntimeKV(t *testing.T) {
 	rt := NewRuntime("")
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
-		kvstorage.store("foo", "bar");
+		kvstorage.save("foo", "bar");
 		console.log(load("foo"));
 	});
 `)
