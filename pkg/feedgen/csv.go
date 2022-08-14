@@ -2,11 +2,12 @@ package feedgen
 
 import (
 	"encoding/csv"
-	"goalgotrade/pkg/core"
 	"io"
 	"os"
 	"strconv"
 	"time"
+
+	"goalgotrade/pkg/core"
 
 	lg "goalgotrade/pkg/logger"
 

@@ -2,8 +2,9 @@ package feedgen
 
 import (
 	"fmt"
-	"goalgotrade/pkg/core"
 	"time"
+
+	"goalgotrade/pkg/core"
 
 	"github.com/go-gota/gota/series"
 )

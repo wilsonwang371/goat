@@ -1,10 +1,11 @@
 package js
 
 import (
-	"goalgotrade/pkg/js/apis"
-	"goalgotrade/pkg/logger"
 	"runtime/debug"
 	"strings"
+
+	"goalgotrade/pkg/js/apis"
+	"goalgotrade/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
