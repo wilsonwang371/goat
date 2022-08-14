@@ -2,7 +2,6 @@ package js
 
 import (
 	"encoding/json"
-
 	"goalgotrade/pkg/core"
 	"goalgotrade/pkg/logger"
 

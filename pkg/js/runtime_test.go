@@ -1,9 +1,8 @@
 package js
 
 import (
-	"testing"
-
 	"goalgotrade/pkg/logger"
+	"testing"
 
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
@@ -52,7 +51,7 @@ func TestRuntimeKV(t *testing.T) {
 	rt := NewRuntime("")
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
-		store("foo", "bar");
+		kvstorage.store("foo", "bar");
 		console.log(load("foo"));
 	});
 `)

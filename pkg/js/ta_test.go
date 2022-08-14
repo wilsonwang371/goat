@@ -1,9 +1,8 @@
 package js
 
 import (
-	"testing"
-
 	"goalgotrade/pkg/logger"
+	"testing"
 )
 
 func TestTALibMethods(t *testing.T) {

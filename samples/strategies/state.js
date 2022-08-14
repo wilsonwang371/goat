@@ -1,6 +1,6 @@
 
 addEventListener("onBars", function (bar) {
-  var value = load("counter");
+  var value = kvstorage.load("counter");
   if (value == null) {
     console.log("no previous value");
     value = 0;
@@ -8,7 +8,7 @@ addEventListener("onBars", function (bar) {
     value = parseInt(value);
   }
   value = value + 1;
-  store("counter", ''+value);
+  kvstorage.store("counter", ''+value);
   console.log("onBars is called " + value + " times. Data: " + bar);
 });
 

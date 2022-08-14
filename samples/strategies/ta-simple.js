@@ -1,5 +1,6 @@
 addEventListener("onBars", function (bar) {
-  console.log(talib_Atr(1, 2, 3));
+  console.log(talib.Atr(1, 2, 3));
+  console.log(talib.Wma(1, 2, 3));
 });
 
 addEventListener("onStart", function () {

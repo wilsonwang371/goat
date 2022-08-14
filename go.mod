@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/go-gota/gota v0.12.0
 	github.com/gobuffalo/envy v1.10.1 // indirect
