@@ -24,3 +24,8 @@ clean:
 
 all: format build test
 	@echo "All done."
+
+docs:
+	@echo "Generating documentation..."
+	@mkdocs build
+	@echo "Generating documentation done."
