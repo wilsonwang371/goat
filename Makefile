@@ -20,6 +20,7 @@ format:
 clean:
 	@echo "Cleaning..."
 	@rm -rf ./goalgotrade
+	@git clean -fdX
 	@echo "Cleaning done."
 
 all: format build test
