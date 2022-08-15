@@ -1,8 +1,9 @@
 package js
 
 import (
-	"goalgotrade/pkg/logger"
 	"testing"
+
+	"goalgotrade/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
@@ -53,6 +54,26 @@ func TestRuntimeKV(t *testing.T) {
 	addEventListener("onbars", function(e) {
 		kvstorage.save("foo", "bar");
 		console.log(load("foo"));
+	});
+`)
+	if err != nil {
+		t.Error(err)
+	}
+	val, err := rt.Execute(script)
+	if err != nil {
+		t.Error(err)
+	}
+	logger.Logger.Info("result:", zap.Any("val", val))
+
+	rt.NotifyEvent("onbars", "foo")
+}
+
+func TestRuntimeTALibSimple(t *testing.T) {
+	rt := NewRuntime("")
+	script, err := rt.Compile(`
+	addEventListener("onbars", function(e) {
+		res = talib.Ema([.1,.2,.3,.4,.5,.6,.7,.8], 4);
+		console.log("res"+res);
 	});
 `)
 	if err != nil {
