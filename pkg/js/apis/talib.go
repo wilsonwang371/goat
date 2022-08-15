@@ -124,7 +124,9 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 			logger.Logger.Error("talib method returned more than one value",
 				zap.String("method", name))
 		}
-		if val, err := otto.ToValue(rtn[0].Interface()); err != nil {
+
+		// TODO: convert return value back to otto.Value
+		if val, err := t.VM.ToValue(rtn); err != nil {
 			logger.Logger.Error("talib method returned invalid value",
 				zap.String("method", name))
 			return otto.NullValue()
