@@ -1,10 +1,11 @@
 package feedgen
 
 import (
-	"goalgotrade/pkg/core"
 	"os"
 	"testing"
 	"time"
+
+	"goalgotrade/pkg/core"
 )
 
 func TestTradingViewSimple(t *testing.T) {

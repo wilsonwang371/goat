@@ -1,8 +1,9 @@
 package apis
 
 import (
-	"goalgotrade/pkg/logger"
 	"time"
+
+	"goalgotrade/pkg/logger"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/robertkrimen/otto"

@@ -1,8 +1,9 @@
 package apis
 
 import (
-	"goalgotrade/pkg/logger"
 	"reflect"
+
+	"goalgotrade/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 	"github.com/wilsonwang371/go-talib"
