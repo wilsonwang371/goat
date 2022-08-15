@@ -1,9 +1,8 @@
 package apis
 
 import (
-	"reflect"
-
 	"goalgotrade/pkg/logger"
+	"reflect"
 
 	"github.com/robertkrimen/otto"
 	"github.com/wilsonwang371/go-talib"
@@ -120,13 +119,13 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 		}
 
 		rtn := method.Func.Call(args)
-		if len(rtn) != 1 {
-			logger.Logger.Error("talib method returned more than one value",
-				zap.String("method", name))
+
+		rtnVal := []interface{}{}
+		for _, v := range rtn {
+			rtnVal = append(rtnVal, v.Interface())
 		}
 
-		// TODO: convert return value back to otto.Value
-		if val, err := t.VM.ToValue(rtn); err != nil {
+		if val, err := t.VM.ToValue(rtnVal); err != nil {
 			logger.Logger.Error("talib method returned invalid value",
 				zap.String("method", name))
 			return otto.NullValue()

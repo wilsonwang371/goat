@@ -1,5 +1,10 @@
 addEventListener("onBars", function (bar) {
-  console.log("" + talib.Wma([1, 2, 3, 4, 5], 4));
+  res = talib.HtSine([
+    1, 2, 3, 4, 5, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4,
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1,
+    2, 3, 4,
+  ]);
+  console.log(res[0] + "  " + res[1]);
 });
 
 addEventListener("onStart", function () {

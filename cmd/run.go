@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-
 	"goalgotrade/pkg/core"
 	"goalgotrade/pkg/feedgen"
 	"goalgotrade/pkg/js"
 	"goalgotrade/pkg/logger"
+	"io/ioutil"
+	"os"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"

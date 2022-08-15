@@ -1,10 +1,9 @@
 package feedgen
 
 import (
-	"time"
-
 	"goalgotrade/pkg/core"
 	"goalgotrade/pkg/logger"
+	"time"
 
 	lg "goalgotrade/pkg/logger"
 

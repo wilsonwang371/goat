@@ -1,9 +1,8 @@
 package js
 
 import (
-	"testing"
-
 	"goalgotrade/pkg/logger"
+	"testing"
 
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"

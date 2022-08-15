@@ -3,12 +3,11 @@ package feedgen
 import (
 	"encoding/json"
 	"fmt"
+	"goalgotrade/pkg/core"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"time"
-
-	"goalgotrade/pkg/core"
 
 	lg "goalgotrade/pkg/logger"
 
