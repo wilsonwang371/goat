@@ -33,6 +33,7 @@ type runtime struct {
 	vm             *otto.Otto
 	kv             *apis.KVObject
 	tl             *apis.TALib
+	sys            *apis.SysObject
 	eventListeners map[string]otto.Value
 	apiHandlers    map[string]RuntimeFunc
 	talib          *talib.TALib
@@ -78,7 +79,7 @@ func (r *runtime) Compile(source string) (*otto.Script, error) {
 	return compiled, nil
 }
 
-func NewRuntime(dbFilePath string) Runtime {
+func NewRuntime(dbFilePath string, cb apis.StartCallback) Runtime {
 	var err error
 
 	res := &runtime{
@@ -98,6 +99,11 @@ func NewRuntime(dbFilePath string) Runtime {
 	res.tl, err = apis.NewTALibObject(res.vm)
 	if err != nil {
 		logger.Logger.Error("failed to create talib object", zap.Error(err))
+		panic(err)
+	}
+	res.sys, err = apis.NewSysObject(res.vm, cb)
+	if err != nil {
+		logger.Logger.Error("failed to create sys object", zap.Error(err))
 		panic(err)
 	}
 

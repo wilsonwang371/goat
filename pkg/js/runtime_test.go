@@ -10,7 +10,7 @@ import (
 )
 
 func TestRuntimeSimple(t *testing.T) {
-	rt := NewRuntime("")
+	rt := NewRuntime("", nil)
 	err := rt.RegisterHostCall("test_print", func(call otto.FunctionCall) otto.Value {
 		logger.Logger.Info("test_print is called")
 		return otto.NullValue()
@@ -30,7 +30,7 @@ func TestRuntimeSimple(t *testing.T) {
 }
 
 func TestRuntimeSimple2(t *testing.T) {
-	rt := NewRuntime("")
+	rt := NewRuntime("", nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		console.log("onbars", e);
@@ -49,7 +49,7 @@ func TestRuntimeSimple2(t *testing.T) {
 }
 
 func TestRuntimeKV(t *testing.T) {
-	rt := NewRuntime("")
+	rt := NewRuntime("", nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		kvstorage.save("foo", "bar");
@@ -69,7 +69,7 @@ func TestRuntimeKV(t *testing.T) {
 }
 
 func TestRuntimeTALibSimple(t *testing.T) {
-	rt := NewRuntime("")
+	rt := NewRuntime("", nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		res = talib.Ema([.1,.2,.3,.4,.5,.6,.7,.8], 4);

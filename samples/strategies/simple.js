@@ -17,4 +17,4 @@ addEventListener("onIdle", function () {
   //console.log("onIdle is called.");
 });
 
-start_live()
+system.start()

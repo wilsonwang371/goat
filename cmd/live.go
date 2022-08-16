@@ -12,7 +12,6 @@ import (
 	"goalgotrade/pkg/js"
 	"goalgotrade/pkg/logger"
 
-	"github.com/robertkrimen/otto"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -30,11 +29,20 @@ var (
 	}
 )
 
+func startLive() error {
+	logger.Logger.Info("start live strategy data feed")
+	if runWg == nil {
+		panic("runWg is nil")
+	}
+	runWg.Done()
+	return nil
+}
+
 func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Live.Symbol))
 
-	rt := js.NewRuntime(cfg.DB)
+	rt := js.NewRuntime(cfg.DB, startLive)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -44,18 +52,6 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		err := rt.RegisterHostCall("start_live", func(call otto.FunctionCall) otto.Value {
-			logger.Logger.Info("start live strategy data feed")
-			if runWg == nil {
-				panic("runWg is nil")
-			}
-			runWg.Done()
-			return otto.TrueValue()
-		})
-		if err != nil {
-			logger.Logger.Error("failed to register host call", zap.Error(err))
-		}
-
 		gen, wg := GetLiveFeedGenerator()
 		if gen == nil {
 			logger.Logger.Error("failed to create feed generator")
@@ -64,7 +60,6 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		runWg = wg
 
 		feed := core.NewGenericDataFeed(gen, 100)
-
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
 		strategy := core.NewStrategyController(sel, broker, feed)
