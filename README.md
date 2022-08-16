@@ -45,7 +45,7 @@ build.sh test
 ./goalgotrade run -f samples/strategies/simple.js -s file://$(pwd)/samples/data/DBC-2007-yahoofinance.csv
 
 # read data from yahoo finance
-./goalgotrade run -f samples/strategies/simple.js -s yahoo:// -S GLD
+./goalgotrade run -f samples/strategies/simple.js -s remote://yahoo -S GLD
 
 # By default, if the source is not an url, it will try to treat it at a file path.
  ./goalgotrade run -f samples/strategies/simple.js -s samples/data/DBC-2007-yahoofinance.csv

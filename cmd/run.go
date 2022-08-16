@@ -86,8 +86,15 @@ func GetFeedGenerator() core.FeedGenerator {
 				logger.Logger.Error("unsupported file type", zap.String("fileType", ext))
 				return nil
 			}
-		case "yahoo":
-			return feedgen.NewYahooBarFeedGenerator(cfg.Symbol, core.UNKNOWN)
+		case "remote":
+			switch u.Host {
+			case "yahoo":
+				return feedgen.NewYahooBarFeedGenerator(cfg.Symbol, core.UNKNOWN)
+			default:
+				logger.Logger.Error("unsupported remote data source",
+					zap.String("dataSource", u.Host))
+				return nil
+			}
 		default:
 			logger.Logger.Error("unknown data source", zap.String("dataSource", dataSource))
 			return nil
