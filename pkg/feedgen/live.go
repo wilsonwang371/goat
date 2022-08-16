@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"sync"
 	"time"
 
 	"goalgotrade/pkg/core"
@@ -26,6 +27,7 @@ type LiveBarFeedGenerator struct {
 	provider   BarDataProvider
 	instrument string
 	freq       []core.Frequency
+	stopped    bool
 }
 
 // AppendNewValueToBuffer implements core.FeedGenerator
@@ -54,18 +56,36 @@ func (l *LiveBarFeedGenerator) PopNextValues() (time.Time, map[string]interface{
 	return l.bfg.PopNextValues()
 }
 
-func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string, freq []core.Frequency, maxLen int) *LiveBarFeedGenerator {
-	return &LiveBarFeedGenerator{
+func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string, freq []core.Frequency,
+	maxLen int,
+) *LiveBarFeedGenerator {
+	res := &LiveBarFeedGenerator{
 		bfg:        core.NewBarFeedGenerator(freq, maxLen),
 		provider:   provider,
 		instrument: instrument,
 		freq:       freq,
+		stopped:    false,
 	}
+	return res
 }
 
 // start from here, we implement liveBarFeedGenerator specific functions
 
+func (l *LiveBarFeedGenerator) SetInstrument(instrument string) {
+	l.instrument = instrument
+}
+
+func (l *LiveBarFeedGenerator) DeferredRun(wg *sync.WaitGroup) error {
+	wg.Wait()
+	l.Run()
+	return nil
+}
+
 func (l *LiveBarFeedGenerator) Run() error {
+	if l.provider == nil {
+		panic("provider is nil")
+	}
+
 	if err := l.provider.init(l.instrument, l.freq); err != nil {
 		logger.Logger.Error("failed to init provider", zap.Error(err))
 		return err
@@ -76,6 +96,9 @@ func (l *LiveBarFeedGenerator) Run() error {
 	}
 
 	for {
+		if l.stopped {
+			break
+		}
 		if bars, err := l.provider.nextBars(); err != nil {
 			lg.Logger.Error("nextBars failed", zap.Error(err))
 			return err
@@ -101,11 +124,13 @@ func (l *LiveBarFeedGenerator) Run() error {
 			l.AppendNewValueToBuffer(time.Time{}, res, *freq)
 		}
 	}
+	return nil
 }
 
 func (l *LiveBarFeedGenerator) Stop() error {
 	if err := l.provider.stop(); err != nil {
 		return err
 	}
+	l.stopped = true
 	return nil
 }

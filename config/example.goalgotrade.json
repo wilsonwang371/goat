@@ -1,5 +1,7 @@
 {
+  "db": "",
   "live": {
+    "symbol": "XAUUSD",
     "tradingview": {
       "user": "1",
       "password": "2"

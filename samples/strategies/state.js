@@ -23,3 +23,5 @@ addEventListener("onFinish", function () {
 addEventListener("onIdle", function () {
   //console.log("onIdle is called.");
 });
+
+start_live()

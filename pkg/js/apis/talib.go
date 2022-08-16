@@ -138,7 +138,7 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 
 func (t *TALib) registerMethods(obj *otto.Object) {
 	for k, v := range t.Methods {
-		logger.Logger.Debug("registering talib method", zap.String("method", k))
+		// logger.Logger.Debug("registering talib method", zap.String("method", k))
 		t.registerSingleMethod(obj, k, v)
 	}
 }

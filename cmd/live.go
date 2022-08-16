@@ -5,19 +5,21 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 
 	"goalgotrade/pkg/core"
 	"goalgotrade/pkg/feedgen"
 	"goalgotrade/pkg/js"
 	"goalgotrade/pkg/logger"
 
+	"github.com/robertkrimen/otto"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var (
 	feedProvider string
-	symbol       string
+	runWg        *sync.WaitGroup
 
 	liveCmd = &cobra.Command{
 		Use:   "live",
@@ -30,8 +32,9 @@ var (
 
 func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
+	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Live.Symbol))
 
-	rt := js.NewRuntime(dbFile)
+	rt := js.NewRuntime(cfg.DB)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -41,18 +44,24 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		if val, err := rt.Execute(compiledScript); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		} else {
-			fmt.Println(val)
+		err := rt.RegisterHostCall("start_live", func(call otto.FunctionCall) otto.Value {
+			logger.Logger.Info("start live strategy data feed")
+			if runWg == nil {
+				panic("runWg is nil")
+			}
+			runWg.Done()
+			return otto.TrueValue()
+		})
+		if err != nil {
+			logger.Logger.Error("failed to register host call", zap.Error(err))
 		}
 
-		gen := GetLiveFeedGenerator()
+		gen, wg := GetLiveFeedGenerator()
 		if gen == nil {
 			logger.Logger.Error("failed to create feed generator")
 			os.Exit(1)
 		}
+		runWg = wg
 
 		feed := core.NewGenericDataFeed(gen, 100)
 
@@ -60,11 +69,18 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		broker := core.NewDummyBroker(feed)
 		strategy := core.NewStrategyController(sel, broker, feed)
 
+		if val, err := rt.Execute(compiledScript); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			fmt.Println(val)
+		}
+
 		strategy.Run()
 	}
 }
 
-func GetLiveFeedGenerator() core.FeedGenerator {
+func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
 	var provider feedgen.BarDataProvider
 	if strings.EqualFold(feedProvider, "fake") {
 		provider = feedgen.NewFakeDataProvider()
@@ -77,11 +93,16 @@ func GetLiveFeedGenerator() core.FeedGenerator {
 	}
 	gen := feedgen.NewLiveBarFeedGenerator(
 		provider,
-		"XAUUSD",
+		cfg.Live.Symbol,
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	go gen.Run()
-	return gen
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	go gen.DeferredRun(wg)
+
+	return gen, wg
 }
 
 func init() {
@@ -89,6 +110,5 @@ func init() {
 		"strategy js script file")
 	liveCmd.MarkPersistentFlagRequired("strategy")
 	liveCmd.PersistentFlags().StringVarP(&feedProvider, "provider", "p", "", "live feed data provider name")
-	liveCmd.PersistentFlags().StringVarP(&symbol, "symbol", "S", "", "live feed data symbol name")
 	rootCmd.AddCommand(liveCmd)
 }

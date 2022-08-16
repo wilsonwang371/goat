@@ -31,7 +31,7 @@ var (
 func RunFunction(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 
-	rt := js.NewRuntime(dbFile)
+	rt := js.NewRuntime(cfg.DB)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))

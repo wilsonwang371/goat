@@ -88,6 +88,8 @@ func NewRuntime(dbFilePath string) Runtime {
 		talib:          talib.NewTALib(),
 	}
 
+	logger.Logger.Info("using db file.", zap.String("db", dbFilePath))
+
 	res.kv, err = apis.NewKVObject(res.vm, dbFilePath)
 	if err != nil {
 		logger.Logger.Error("failed to create kv object", zap.Error(err))
