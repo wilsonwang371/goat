@@ -36,8 +36,20 @@ build.sh test
 
 ## Run Strategy
 
+### Live Mode
 
-### Run A Simple Strategy
+In live mode, the strategy will be executed in real time.
+
+```bash
+
+# This part is not complete yet.
+./goalgotrade live -p fake -f samples/strategies/simple.js -S GLD
+
+```
+
+### Backtest Mode
+
+In backtest mode, the strategy will be executed with historical data.
 
 ```bash
 
@@ -48,14 +60,8 @@ build.sh test
 ./goalgotrade run -f samples/strategies/simple.js -s remote://yahoo -S GLD
 
 # By default, if the source is not an url, it will try to treat it at a file path.
- ./goalgotrade run -f samples/strategies/simple.js -s samples/data/DBC-2007-yahoofinance.csv
+./goalgotrade run -f samples/strategies/simple.js -s samples/data/DBC-2007-yahoofinance.csv
 
-```
-
-### Run A Strategy Live
-
-```bash
-./goalgotrade live -p fake -f samples/strategies/simple.js -S XAUUSD
 ```
 
 
