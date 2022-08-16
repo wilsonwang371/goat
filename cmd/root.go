@@ -34,13 +34,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.goalgotrade.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&cfg.DB, "strategy-db", "d", "", "state db file used for strategy (default is using in-memory db)")
-	rootCmd.PersistentFlags().StringVarP(&cfg.Live.Symbol, "symbol", "S", "", "live feed data symbol name")
+	rootCmd.PersistentFlags().StringVarP(&cfg.Symbol, "symbol", "S", "", "live feed data symbol name")
 }
 
 type Config struct {
-	DB   string `mapstructure:"db"`
-	Live struct {
-		Symbol      string `mapstructure:"symbol"`
+	DB     string `mapstructure:"db"`
+	Symbol string `mapstructure:"symbol"`
+	Live   struct {
 		TradingView struct {
 			User string `mapstructure:"user"`
 			Pass string `mapstructure:"password"`
@@ -72,7 +72,7 @@ func initConfig() {
 		viper.AddConfigPath("$HOME")
 	}
 	viper.AutomaticEnv()
-	viper.BindPFlag("live.symbol", rootCmd.PersistentFlags().Lookup("symbol"))
+	viper.BindPFlag("symbol", rootCmd.PersistentFlags().Lookup("symbol"))
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("no config file found")

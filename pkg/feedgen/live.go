@@ -46,6 +46,10 @@ func (l *LiveBarFeedGenerator) Finish() {
 	l.bfg.Finish()
 }
 
+func (l *LiveBarFeedGenerator) IsComplete() bool {
+	return l.bfg.IsComplete()
+}
+
 // PeekNextTime implements core.FeedGenerator
 func (l *LiveBarFeedGenerator) PeekNextTime() *time.Time {
 	return l.bfg.PeekNextTime()

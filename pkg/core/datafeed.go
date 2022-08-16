@@ -16,6 +16,7 @@ type FeedGenerator interface {
 	CreateDataSeries(key string, maxLen int) DataSeries
 	PeekNextTime() *time.Time
 	Finish()
+	IsComplete() bool
 	AppendNewValueToBuffer(time.Time, map[string]interface{}, Frequency) error
 }
 
@@ -25,6 +26,11 @@ type barFeedGenerator struct {
 	dataBuf      []*BarFeedGeneratorData
 	dataBufMutex sync.Mutex
 	eof          bool
+}
+
+// IsComplete implements FeedGenerator
+func (b *barFeedGenerator) IsComplete() bool {
+	return b.eof
 }
 
 // PeekNextTime implements FeedGenerator
@@ -101,7 +107,6 @@ func NewBarFeedGenerator(freq []Frequency, maxLen int) FeedGenerator {
 		maxLen:       maxLen,
 		dataBuf:      make([]*BarFeedGeneratorData, 0),
 		dataBufMutex: sync.Mutex{},
-		eof:          false,
 	}
 }
 
@@ -115,7 +120,6 @@ type genericDataFeed struct {
 	newValueEvent     Event
 	dataSeriesManager *dataSeriesManager
 	feedGenerator     FeedGenerator
-	eof               bool
 }
 
 // CreateDataSeries implements DataFeed
@@ -132,7 +136,6 @@ func (d *genericDataFeed) Dispatch() bool {
 		        return dateTime is not None
 	*/
 	if t, v, f, err := d.feedGenerator.PopNextValues(); err != nil {
-		d.eof = true
 		return false
 	} else if v != nil {
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
@@ -152,7 +155,8 @@ func (d *genericDataFeed) Dispatch() bool {
 
 // Eof implements DataFeed
 func (d *genericDataFeed) Eof() bool {
-	return d.eof
+	// logger.Logger.Debug("feed eof", zap.Bool("eof", d.eof))
+	return d.feedGenerator.IsComplete()
 }
 
 // Join implements DataFeed
@@ -187,7 +191,6 @@ func NewGenericDataFeed(fg FeedGenerator, maxLen int) DataFeed {
 	df := &genericDataFeed{
 		newValueEvent: NewEvent(),
 		feedGenerator: fg,
-		eof:           false,
 	}
 	df.dataSeriesManager = newDataSeriesManager(df, maxLen)
 	return df

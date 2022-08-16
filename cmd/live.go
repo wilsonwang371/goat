@@ -40,7 +40,7 @@ func startLive() error {
 
 func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
-	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Live.Symbol))
+	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
 	rt := js.NewRuntime(cfg.DB, startLive)
 	script, err := ioutil.ReadFile(scriptFile)
@@ -88,7 +88,7 @@ func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
 	}
 	gen := feedgen.NewLiveBarFeedGenerator(
 		provider,
-		cfg.Live.Symbol,
+		cfg.Symbol,
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
 

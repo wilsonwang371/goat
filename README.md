@@ -41,7 +41,9 @@ build.sh test
 
 ```bash
 
-./goalgotrade run -f samples/strategies/simple.js -t csv -s samples/data/DBC-2007-yahoofinance.csv 
+./goalgotrade run -f samples/strategies/simple.js -s csv://samples/data/DBC-2007-yahoofinance.csv 
+
+./goalgotrade run -f samples/strategies/simple.js -s yahoo:// -S GLD
 
 ```
 

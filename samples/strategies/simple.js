@@ -14,7 +14,7 @@ addEventListener("onFinish", function () {
 });
 
 addEventListener("onIdle", function () {
-  //console.log("onIdle is called.");
+  // console.log("onIdle is called.");
 });
 
 system.start()

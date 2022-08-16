@@ -39,7 +39,12 @@ type CSVFeedGenerator struct {
 	columnNames    map[ColumnName]string
 	haveAdjClose   bool
 	frequency      core.Frequency
-	instrument     string
+	instrument     string // default instrument name in case of no symbol column
+}
+
+// IsComplete implements core.FeedGenerator
+func (c *CSVFeedGenerator) IsComplete() bool {
+	return c.barfeed.IsComplete()
 }
 
 // AppendNewValueToBuffer implements core.FeedGenerator

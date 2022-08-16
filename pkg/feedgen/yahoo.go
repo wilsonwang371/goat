@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"fmt"
 	"time"
 
 	"goalgotrade/pkg/core"
@@ -18,11 +19,17 @@ type YahooFeedGenerator struct {
 	instrument   string
 }
 
+// IsComplete implements core.FeedGenerator
+func (y *YahooFeedGenerator) IsComplete() bool {
+	return y.barfeed.IsComplete()
+}
+
 var freqMapping = map[core.Frequency]datetime.Interval{
-	core.DAY:   datetime.OneDay,
-	core.WEEK:  datetime.FiveDay,
-	core.MONTH: datetime.OneMonth,
-	core.YEAR:  datetime.OneYear,
+	core.DAY:     datetime.OneDay,
+	core.WEEK:    datetime.FiveDay,
+	core.MONTH:   datetime.OneMonth,
+	core.YEAR:    datetime.OneYear,
+	core.UNKNOWN: datetime.OneDay, // by default we use one day
 }
 
 // AppendNewValueToBuffer implements core.FeedGenerator
@@ -60,35 +67,47 @@ func NewYahooBarFeedGenerator(instrument string, freq core.Frequency) core.FeedG
 
 	params := &chart.Params{
 		Symbol:   instrument,
-		Start:    datetime.FromUnix(int(time.Now().AddDate(-10, 0, 0).Unix())),
+		Start:    datetime.FromUnix(int(time.Now().AddDate(-1, 0, 0).Unix())),
 		End:      datetime.FromUnix(int(time.Now().Unix())),
 		Interval: freqMapping[freq],
 	}
-	iter := chart.Get(params)
+	if interval, ok := freqMapping[freq]; ok {
+		params.Interval = interval
+	} else {
+		logger.Logger.Info("unknown frequency, use default one day", zap.String("instrument", instrument),
+			zap.String("frequency", fmt.Sprintf("%v", freq)))
+		params.Interval = datetime.OneDay
+	}
 
-	for iter.Next() {
-		// logger.Logger.Info("yahoo", zap.String("bar", fmt.Sprintf("%+v", iter.Bar())))
-		ts := iter.Bar().Timestamp
-		err := rtn.barfeed.AppendNewValueToBuffer(time.Unix(int64(ts), 0), map[string]interface{}{
-			rtn.instrument: core.NewBasicBar(
-				time.Unix(int64(ts), 0),
-				iter.Bar().Open.InexactFloat64(),
-				iter.Bar().High.InexactFloat64(),
-				iter.Bar().Low.InexactFloat64(),
-				iter.Bar().Close.InexactFloat64(),
-				iter.Bar().AdjClose.InexactFloat64(),
-				int64(iter.Bar().Volume), rtn.frequency),
-		}, rtn.frequency)
-		if err != nil {
-			logger.Logger.Error("yahoo", zap.Error(err))
-			panic(err)
+	go func() {
+		iter := chart.Get(params)
+
+		for iter.Next() {
+			// logger.Logger.Info("yahoo", zap.String("bar", fmt.Sprintf("%+v", iter.Bar())))
+			ts := iter.Bar().Timestamp
+			err := rtn.barfeed.AppendNewValueToBuffer(time.Unix(int64(ts), 0), map[string]interface{}{
+				rtn.instrument: core.NewBasicBar(
+					time.Unix(int64(ts), 0),
+					iter.Bar().Open.InexactFloat64(),
+					iter.Bar().High.InexactFloat64(),
+					iter.Bar().Low.InexactFloat64(),
+					iter.Bar().Close.InexactFloat64(),
+					iter.Bar().AdjClose.InexactFloat64(),
+					int64(iter.Bar().Volume), rtn.frequency),
+			}, rtn.frequency)
+			if err != nil {
+				logger.Logger.Error("yahoo", zap.Error(err))
+				panic(err)
+			}
 		}
-	}
 
-	if err := iter.Err(); err != nil {
-		logger.Logger.Error("yahoo", zap.Error(err))
-		return nil
-	}
+		rtn.Finish()
+
+		if err := iter.Err(); err != nil {
+			logger.Logger.Error("yahoo", zap.Error(err))
+			return
+		}
+	}()
 
 	return rtn
 }

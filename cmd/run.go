@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 
 	"goalgotrade/pkg/core"
@@ -16,7 +17,6 @@ import (
 
 var (
 	scriptFile string
-	dataType   string
 	dataSource string
 
 	runCmd = &cobra.Command{
@@ -65,13 +65,20 @@ func RunFunction(cmd *cobra.Command, args []string) {
 }
 
 func GetFeedGenerator() core.FeedGenerator {
-	if dataType == "csv" {
-		return feedgen.NewCSVBarFeedGenerator(dataSource, "SYMBOL", core.UNKNOWN)
+	if u, err := url.ParseRequestURI(dataSource); err != nil {
+		logger.Logger.Error("failed to parse data source", zap.Error(err))
+		return nil
 	} else {
-		logger.Logger.Error("unknown data type", zap.String("dataType", dataType))
-		os.Exit(1)
+		switch u.Scheme {
+		case "csv":
+			return feedgen.NewCSVBarFeedGenerator(dataSource, "SYMBOL", core.UNKNOWN)
+		case "yahoo":
+			return feedgen.NewYahooBarFeedGenerator(cfg.Symbol, core.UNKNOWN)
+		default:
+			logger.Logger.Error("unknown data source", zap.String("dataSource", dataSource))
+			return nil
+		}
 	}
-	return nil
 }
 
 func init() {
@@ -79,12 +86,8 @@ func init() {
 		"strategy js script file")
 	runCmd.MarkPersistentFlagRequired("strategy")
 
-	runCmd.PersistentFlags().StringVarP(&dataType, "datatype", "t", "",
-		"data type(csv)")
-	runCmd.MarkPersistentFlagRequired("datatype")
-
 	runCmd.PersistentFlags().StringVarP(&dataSource, "datasource", "s", "",
-		"data source")
+		"data source(support url scheme: csv, yahoo) e.g. csv:///path/to/file.csv or yahoo://")
 	runCmd.MarkPersistentFlagRequired("datasource")
 
 	rootCmd.AddCommand(runCmd)
