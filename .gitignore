@@ -3,3 +3,4 @@
 goalgotrade
 .vscode/*
 site/**
+coverage.out

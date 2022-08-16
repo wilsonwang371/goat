@@ -16,6 +16,7 @@ func TestSimpleStrategy(t *testing.T) {
 	strategy := NewStrategyController(sel, broker, feed)
 
 	wg := &sync.WaitGroup{}
+	wg.Add(1)
 
 	gen.AppendNewValueToBuffer(time.Now(),
 		map[string]interface{}{
