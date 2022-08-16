@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"goalgotrade/pkg/core"
 	"goalgotrade/pkg/feedgen"
@@ -66,12 +67,25 @@ func RunFunction(cmd *cobra.Command, args []string) {
 
 func GetFeedGenerator() core.FeedGenerator {
 	if u, err := url.ParseRequestURI(dataSource); err != nil {
-		logger.Logger.Error("failed to parse data source", zap.Error(err))
-		return nil
+		ext := filepath.Ext(dataSource)
+		switch ext {
+		case ".csv":
+			return feedgen.NewCSVBarFeedGenerator(dataSource, "symbol", core.UNKNOWN)
+		default:
+			logger.Logger.Error("unsupported file type", zap.String("fileType", ext))
+			return nil
+		}
 	} else {
 		switch u.Scheme {
-		case "csv":
-			return feedgen.NewCSVBarFeedGenerator(dataSource, "SYMBOL", core.UNKNOWN)
+		case "file":
+			ext := filepath.Ext(u.Path)
+			switch ext {
+			case ".csv":
+				return feedgen.NewCSVBarFeedGenerator(u.Path, "symbol", core.UNKNOWN)
+			default:
+				logger.Logger.Error("unsupported file type", zap.String("fileType", ext))
+				return nil
+			}
 		case "yahoo":
 			return feedgen.NewYahooBarFeedGenerator(cfg.Symbol, core.UNKNOWN)
 		default:

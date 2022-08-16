@@ -129,12 +129,6 @@ func (d *genericDataFeed) CreateDataSeries(key string, maxLen int) DataSeries {
 
 // Dispatch implements DataFeed
 func (d *genericDataFeed) Dispatch() bool {
-	/*
-			dateTime, values, _ = self.getNextValuesAndUpdateDS()
-		        if dateTime is not None:
-		            self.__event.emit(dateTime, values)
-		        return dateTime is not None
-	*/
 	if t, v, f, err := d.feedGenerator.PopNextValues(); err != nil {
 		return false
 	} else if v != nil {
