@@ -53,7 +53,7 @@ func TestRuntimeKV(t *testing.T) {
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		kvstorage.save("foo", "bar");
-		console.log(load("foo"));
+		console.log(kvstorage.load("foo"));
 	});
 `)
 	if err != nil {

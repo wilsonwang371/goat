@@ -143,7 +143,7 @@ func (d *genericDataFeed) Dispatch() bool {
 				logger.Logger.Debug("dispatch a bar", zap.String("key", key), zap.Stringer("bar", b))
 			}
 		}
-		logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
+		// logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", fmt.Sprintf("%+v", v)), zap.Any("f", f))
 		d.newValueEvent.Emit(t, v)
 		return true
 	}

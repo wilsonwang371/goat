@@ -12,8 +12,10 @@ require (
 	github.com/golang-module/carbon v1.5.5
 	github.com/gorilla/websocket v1.4.2
 	github.com/imroc/req v0.3.2
+	github.com/piquette/finance-go v1.0.0
 	github.com/recws-org/recws v1.3.1
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/twilio/twilio-go v0.18.2

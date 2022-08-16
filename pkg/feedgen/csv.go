@@ -178,7 +178,7 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.B
 	dateTime := time.Time{}
 	carbonResult := carbon.ParseByFormat(c.dateTimeFormat, dateTimeRaw)
 	if carbonResult.Error != nil {
-		lg.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
+		// lg.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
 		if val, err := dateparse.ParseAny(dateTimeRaw); err == nil {
 			dateTime = val
 		} else {

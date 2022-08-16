@@ -14,6 +14,7 @@ const (
 	// * **Frequency.DAY**: The bar summarizes the trading activity during 1 day.
 	// * **Frequency.WEEK**: The bar summarizes the trading activity during 1 week.
 	// * **Frequency.MONTH**: The bar summarizes the trading activity during 1 month.
+	// * **Frequency.YEAR**: The bar summarizes the trading activity during 1 year.
 
 	// It is important for frequency values to get bigger for bigger windows.
 	UNKNOWN  Frequency = -9999
@@ -28,4 +29,5 @@ const (
 	DAY      Frequency = 24 * 60 * 60
 	WEEK     Frequency = 24 * 60 * 60 * 7
 	MONTH    Frequency = 24 * 60 * 60 * 31
+	YEAR     Frequency = 24 * 60 * 60 * 365
 )
