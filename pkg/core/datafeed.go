@@ -30,7 +30,7 @@ type barFeedGenerator struct {
 
 // IsComplete implements FeedGenerator
 func (b *barFeedGenerator) IsComplete() bool {
-	return b.eof
+	return b.eof && len(b.dataBuf) == 0
 }
 
 // PeekNextTime implements FeedGenerator
@@ -62,10 +62,10 @@ func (b *barFeedGenerator) CreateDataSeries(key string, maxLen int) DataSeries {
 func (b *barFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, Frequency, error) {
 	b.dataBufMutex.Lock()
 	defer b.dataBufMutex.Unlock()
-	if b.eof {
-		return time.Time{}, nil, 0, fmt.Errorf("feed generator is EOF")
-	}
 	if len(b.dataBuf) == 0 {
+		if b.eof {
+			return time.Time{}, nil, 0, fmt.Errorf("feed generator is EOF")
+		}
 		return time.Time{}, nil, 0, nil
 	}
 	elem := b.dataBuf[0]

@@ -67,7 +67,7 @@ func NewYahooBarFeedGenerator(instrument string, freq core.Frequency) core.FeedG
 
 	params := &chart.Params{
 		Symbol:   instrument,
-		Start:    datetime.FromUnix(int(time.Now().AddDate(-1, 0, 0).Unix())),
+		Start:    datetime.FromUnix(int(time.Now().AddDate(-5, 0, 0).Unix())),
 		End:      datetime.FromUnix(int(time.Now().Unix())),
 		Interval: freqMapping[freq],
 	}
