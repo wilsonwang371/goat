@@ -1,4 +1,3 @@
-
 addEventListener("onBars", function (bar) {
   var value = kvstorage.load("counter");
   if (value == null) {
@@ -8,7 +7,7 @@ addEventListener("onBars", function (bar) {
     value = parseInt(value);
   }
   value = value + 1;
-  kvstorage.save("counter", ''+value);
+  kvstorage.save("counter", "" + value);
   console.log("onBars is called " + value + " times. Data: " + bar);
 });
 
@@ -24,4 +23,4 @@ addEventListener("onIdle", function () {
   //console.log("onIdle is called.");
 });
 
-system.start()
+system.start();

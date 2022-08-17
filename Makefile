@@ -16,6 +16,7 @@ format:
 	@go fmt ./...
 	@goimports -w ./
 	@gofumpt -l -w ./
+	@prettier --write "**/*.js"
 	@echo "Formatting done."
 
 clean:
