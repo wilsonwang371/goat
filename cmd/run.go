@@ -32,7 +32,7 @@ var (
 func RunFunction(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 
-	rt := js.NewRuntime(cfg.KVDB, nil)
+	rt := js.NewRuntime(&cfg, nil)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -59,7 +59,7 @@ func RunFunction(cmd *cobra.Command, args []string) {
 
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
-		strategy := core.NewStrategyController(sel, broker, feed)
+		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
 
 		strategy.Run()
 	}

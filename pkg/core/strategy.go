@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"goat/pkg/config"
+	"goat/pkg/db"
 	"goat/pkg/logger"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type Order interface{}
@@ -74,6 +77,8 @@ func NewSimpleStrategyEventListener() StrategyEventListener {
 }
 
 type strategyController struct {
+	cfg      *config.Config
+	dumpDB   *gorm.DB
 	listener StrategyEventListener
 	broker   Broker
 	dataFeed DataFeed
@@ -115,6 +120,20 @@ func (s *strategyController) onBars(args ...interface{}) error {
 	logger.Logger.Debug("onBars",
 		zap.Time("time", currentTime),
 		zap.Any("bars", bars))
+	if s.dumpDB != nil {
+		for _, bar := range bars {
+			s.dumpDB.Create(&db.BarData{
+				DateTime:  bar.DateTime().Unix(),
+				Open:      bar.Open(),
+				High:      bar.High(),
+				Low:       bar.Low(),
+				Close:     bar.Close(),
+				Volume:    bar.Volume(),
+				AdjClose:  bar.AdjClose(),
+				Frequency: int64(bar.Frequency()),
+			})
+		}
+	}
 
 	s.listener.OnBars(bars)
 	s.barProcessedEvent.Emit(bars)
@@ -163,15 +182,21 @@ func (s *strategyController) Stop() {
 	s.dispatcher.Stop()
 }
 
-func NewStrategyController(strategyEventListener StrategyEventListener,
+func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEventListener,
 	broker Broker, dataFeed DataFeed,
 ) StrategyController {
 	controller := &strategyController{
+		cfg:               cfg,
+		dumpDB:            nil,
 		listener:          strategyEventListener,
 		broker:            broker,
 		dataFeed:          dataFeed,
 		dispatcher:        NewDispatcher(),
 		barProcessedEvent: NewEvent(),
+	}
+
+	if cfg.BarDumpDB != "" {
+		controller.dumpDB = db.NewSQLiteDataBase(cfg.BarDumpDB)
 	}
 
 	controller.dispatcher.AddSubject(controller.broker)

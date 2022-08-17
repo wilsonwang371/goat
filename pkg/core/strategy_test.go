@@ -4,16 +4,19 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"goat/pkg/config"
 )
 
 func TestSimpleStrategy(t *testing.T) {
+	cfg := &config.Config{}
 	gen := NewBarFeedGenerator(
 		[]Frequency{REALTIME, DAY, HOUR},
 		100)
 	feed := NewGenericDataFeed(gen, 100)
 	sel := NewSimpleStrategyEventListener()
 	broker := NewDummyBroker(feed)
-	strategy := NewStrategyController(sel, broker, feed)
+	strategy := NewStrategyController(cfg, sel, broker, feed)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

@@ -4,6 +4,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"goat/pkg/config"
 	"goat/pkg/js/apis"
 	"goat/pkg/logger"
 
@@ -30,6 +31,7 @@ type Runtime interface {
 }
 
 type runtime struct {
+	cfg            *config.Config
 	vm             *otto.Otto
 	kv             *apis.KVObject
 	tl             *apis.TALib
@@ -79,19 +81,20 @@ func (r *runtime) Compile(source string) (*otto.Script, error) {
 	return compiled, nil
 }
 
-func NewRuntime(kvdbFilePath string, cb apis.StartCallback) Runtime {
+func NewRuntime(cfg *config.Config, cb apis.StartCallback) Runtime {
 	var err error
 
 	res := &runtime{
+		cfg:            cfg,
 		vm:             otto.New(),
 		apiHandlers:    make(map[string]RuntimeFunc),
 		eventListeners: make(map[string]otto.Value),
 		talib:          talib.NewTALib(),
 	}
 
-	logger.Logger.Info("using kvdb file.", zap.String("kvdb", kvdbFilePath))
+	logger.Logger.Info("using kvdb file.", zap.String("kvdb", cfg.KVDB))
 
-	res.kv, err = apis.NewKVObject(res.vm, kvdbFilePath)
+	res.kv, err = apis.NewKVObject(res.vm, cfg.KVDB)
 	if err != nil {
 		logger.Logger.Error("failed to create kv object", zap.Error(err))
 		panic(err)

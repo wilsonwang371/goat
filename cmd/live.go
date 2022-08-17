@@ -42,7 +42,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
-	rt := js.NewRuntime(cfg.KVDB, startLive)
+	rt := js.NewRuntime(&cfg, startLive)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -62,7 +62,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		feed := core.NewGenericDataFeed(gen, 100)
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
-		strategy := core.NewStrategyController(sel, broker, feed)
+		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
 
 		if val, err := rt.Execute(compiledScript); err != nil {
 			fmt.Println(err)

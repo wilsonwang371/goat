@@ -4,3 +4,4 @@ goat
 .vscode/*
 site/**
 coverage.out
+*.db
