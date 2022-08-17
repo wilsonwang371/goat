@@ -2,7 +2,7 @@ PHONY: all
 
 build:
 	@echo "Building..."
-	@go build -o ./goalgotrade ./main.go
+	@go build -o ./goat ./main.go
 	@echo "Building done."
 
 test:
@@ -20,7 +20,7 @@ format:
 
 clean:
 	@echo "Cleaning..."
-	@rm -rf ./goalgotrade
+	@rm -rf ./goat
 	@git clean -fdX
 	@echo "Cleaning done."
 
