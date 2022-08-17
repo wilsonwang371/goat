@@ -1,4 +1,4 @@
-# GoAlgoTrade
+# GoAT
 ![Coverage](https://img.shields.io/badge/Coverage-53.0%25-yellow)
 
 [![Go](https://github.com/wilsonwang371/goalgotrade/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goalgotrade/actions/workflows/go.yml)
@@ -7,11 +7,11 @@ This repo is currently a work in progress.
 
 ## Introduction
 
-GoAlgoTrade is a Go implementation of PyAlgoTrade. Currently it is under development.
+GoAT(Go Algo Trade) is inspired by PyAlgoTrade. It added support for live strategy execution. Currently it is under development.
 
 ## Design
 
-There are several reasons for me proposing this GoAlgoTrade as a GO alternative of PyAlgoTrade.
+There are several reasons for me proposing this GoAT as a GO alternative of PyAlgoTrade.
 
 * Python code debugging at runtime is a headache
 * Python is slow
@@ -44,7 +44,7 @@ In live mode, the strategy will be executed in real time.
 ```bash
 
 # This part is not complete yet.
-./goalgotrade live -p fake -f samples/strategies/simple.js -S GLD
+./goat live -p fake -f samples/strategies/simple.js -S GLD
 
 ```
 
@@ -55,13 +55,13 @@ In backtest mode, the strategy will be executed with historical data.
 ```bash
 
 # Run a simple strategy with a csv file
-./goalgotrade run -f samples/strategies/simple.js -s file://$(pwd)/samples/data/DBC-2007-yahoofinance.csv
+./goat run -f samples/strategies/simple.js -s file://$(pwd)/samples/data/DBC-2007-yahoofinance.csv
 
 # read data from yahoo finance
-./goalgotrade run -f samples/strategies/simple.js -s remote://yahoo -S GLD
+./goat run -f samples/strategies/simple.js -s remote://yahoo -S GLD
 
 # By default, if the source is not an url, it will try to treat it at a file path.
-./goalgotrade run -f samples/strategies/simple.js -s samples/data/DBC-2007-yahoofinance.csv
+./goat run -f samples/strategies/simple.js -s samples/data/DBC-2007-yahoofinance.csv
 
 ```
 
