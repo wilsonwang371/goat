@@ -1,7 +1,6 @@
 package notify
 
-type twilioNotifier struct {
-}
+type twilioNotifier struct{}
 
 // Send implements Notifier
 func (*twilioNotifier) Send() error {

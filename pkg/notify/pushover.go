@@ -1,7 +1,6 @@
 package notify
 
-type pushoverNotifier struct {
-}
+type pushoverNotifier struct{}
 
 // Send implements Notifier
 func (*pushoverNotifier) Send() error {

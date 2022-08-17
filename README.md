@@ -26,13 +26,13 @@ I want to make some small changes to meet my own needs.
 ## Build
 
 ```bash
-build.sh build
+run.sh build
 ```
 
 ## Test
 
 ```bash
-build.sh test
+run.sh test
 ```
 
 ## Run Strategy

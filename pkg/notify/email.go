@@ -2,6 +2,7 @@ package notify
 
 import (
 	"crypto/tls"
+
 	"goat/pkg/config"
 
 	"gopkg.in/gomail.v2"
