@@ -19,5 +19,13 @@ type Config struct {
 			Key   string `mapstructure:"key"`
 			Token string `mapstructure:"token"`
 		} `mapstructure:"pushover"`
+		Email struct {
+			Host     string   `mapstructure:"host"`
+			Port     int      `mapstructure:"port"`
+			From     string   `mapstructure:"from"`
+			To       []string `mapstructure:"to"`
+			User     string   `mapstructure:"user"`
+			Password string   `mapstructure:"password"`
+		} `mapstructure:"email"`
 	} `mapstructure:"notification"`
 }
