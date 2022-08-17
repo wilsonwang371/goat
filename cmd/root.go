@@ -36,8 +36,10 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
 		"config file (default is $HOME/.goat.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&cfg.KVDB, "kvdb", "d", "",
-		"state kvdb file used for strategy (default is using in-memory kvdb)")
+	rootCmd.PersistentFlags().StringVarP(&cfg.KVDB, "kv-db", "d", "",
+		"state key-value db file used for strategy (default is using in-memory db)")
+	rootCmd.PersistentFlags().StringVarP(&cfg.BarDumpDB, "bar-dump", "b", "",
+		"sqlite file used for bar dump in execution (leave empty to disable bar dump during execution)")
 	rootCmd.PersistentFlags().StringVarP(&cfg.Symbol, "symbol", "S", "",
 		"live feed data symbol name")
 }
