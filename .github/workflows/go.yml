@@ -17,10 +17,10 @@ jobs:
       uses: docker-practice/actions-setup-docker@master
 
     - name: Build
-      run: ./run.sh build
+      run: ./run-build.sh build
 
     - name: Test
-      run: ./run.sh test
+      run: ./run-build.sh test
 
     - name: Go Coverage Badge
       uses: tj-actions/coverage-badge-go@v1
