@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"goalgotrade/pkg/core"
-	"goalgotrade/pkg/logger"
+	"goat/pkg/core"
+	"goat/pkg/logger"
 
 	"github.com/piquette/finance-go/chart"
 	"github.com/piquette/finance-go/datetime"

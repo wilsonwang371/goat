@@ -3,8 +3,8 @@ package js
 import (
 	"encoding/json"
 
-	"goalgotrade/pkg/core"
-	"goalgotrade/pkg/logger"
+	"goat/pkg/core"
+	"goat/pkg/logger"
 
 	"go.uber.org/zap"
 )

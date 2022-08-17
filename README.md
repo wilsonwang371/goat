@@ -1,7 +1,7 @@
 # GoAT
 ![Coverage](https://img.shields.io/badge/Coverage-53.0%25-yellow)
 
-[![Go](https://github.com/wilsonwang371/goalgotrade/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goalgotrade/actions/workflows/go.yml)
+[![Go](https://github.com/wilsonwang371/goat/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/go.yml)
 
 This repo is currently a work in progress.
 

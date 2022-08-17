@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"goalgotrade/pkg/core"
+	"goat/pkg/core"
 
 	"github.com/go-gota/gota/series"
 )

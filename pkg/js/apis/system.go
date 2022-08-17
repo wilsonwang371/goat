@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"goalgotrade/pkg/logger"
+	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 )

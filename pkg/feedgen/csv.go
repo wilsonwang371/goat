@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"goalgotrade/pkg/core"
-
-	lg "goalgotrade/pkg/logger"
+	"goat/pkg/core"
+	"goat/pkg/logger"
 
 	"github.com/araddon/dateparse"
 	"github.com/golang-module/carbon"
@@ -102,7 +101,7 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 
 	file, err := os.Open(c.path)
 	if err != nil {
-		lg.Logger.Error("open file failed", zap.Error(err))
+		logger.Logger.Error("open file failed", zap.Error(err))
 		os.Exit(1)
 	}
 
@@ -114,7 +113,7 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 			break
 		}
 		if err != nil {
-			lg.Logger.Error("read error", zap.Error(err))
+			logger.Logger.Error("read error", zap.Error(err))
 			os.Exit(1)
 		}
 
@@ -123,7 +122,7 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 			isHeader = false
 		} else {
 			if headers == nil {
-				lg.Logger.Error("invalid headers")
+				logger.Logger.Error("invalid headers")
 				os.Exit(1)
 			}
 			data := map[string]string{}
@@ -131,12 +130,12 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 				if i < len(headers) {
 					data[headers[i]] = v
 				} else {
-					lg.Logger.Warn("header not found", zap.Int("index", i), zap.String("value", v))
+					logger.Logger.Warn("header not found", zap.Int("index", i), zap.String("value", v))
 				}
 			}
 			symbol, bar, err := c.parseRawToBar(data)
 			if err != nil {
-				lg.Logger.Error("parse error", zap.Error(err))
+				logger.Logger.Error("parse error", zap.Error(err))
 				os.Exit(1)
 			}
 			c.barfeed.AppendNewValueToBuffer(bar.DateTime(), map[string]interface{}{symbol: bar}, bar.Frequency())
@@ -171,7 +170,7 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.B
 	if valStr, ok := dict[c.columnNames[ColumnFrequency]]; ok {
 		val, err := strconv.ParseInt(valStr, 10, 64)
 		if err != nil {
-			lg.Logger.Error("parse frequency error", zap.Error(err))
+			logger.Logger.Error("parse frequency error", zap.Error(err))
 			os.Exit(1)
 		} else {
 			frequency = core.Frequency(val)
@@ -183,7 +182,7 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.B
 	dateTime := time.Time{}
 	carbonResult := carbon.ParseByFormat(c.dateTimeFormat, dateTimeRaw)
 	if carbonResult.Error != nil {
-		// lg.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
+		// logger.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
 		if val, err := dateparse.ParseAny(dateTimeRaw); err == nil {
 			dateTime = val
 		} else {

@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"goalgotrade/pkg/core"
-	"goalgotrade/pkg/feedgen"
-	"goalgotrade/pkg/js"
-	"goalgotrade/pkg/logger"
+	"goat/pkg/core"
+	"goat/pkg/feedgen"
+	"goat/pkg/js"
+	"goat/pkg/logger"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -32,7 +32,7 @@ var (
 func RunFunction(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 
-	rt := js.NewRuntime(cfg.DB, nil)
+	rt := js.NewRuntime(cfg.KVDB, nil)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))

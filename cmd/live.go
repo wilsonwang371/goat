@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"goalgotrade/pkg/core"
-	"goalgotrade/pkg/feedgen"
-	"goalgotrade/pkg/js"
-	"goalgotrade/pkg/logger"
+	"goat/pkg/core"
+	"goat/pkg/feedgen"
+	"goat/pkg/js"
+	"goat/pkg/logger"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -42,7 +42,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
-	rt := js.NewRuntime(cfg.DB, startLive)
+	rt := js.NewRuntime(cfg.KVDB, startLive)
 	script, err := ioutil.ReadFile(scriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"goalgotrade/pkg/core"
+	"goat/pkg/core"
 )
 
 func TestCSVSimple(t *testing.T) {

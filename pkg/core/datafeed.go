@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"goalgotrade/pkg/logger"
+	"goat/pkg/logger"
 
 	"go.uber.org/zap"
 )

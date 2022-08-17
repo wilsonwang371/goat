@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"goalgotrade/pkg/core"
+	"goat/pkg/core"
 )
 
 func TestTradingViewSimple(t *testing.T) {

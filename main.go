@@ -1,6 +1,6 @@
 package main
 
-import "goalgotrade/cmd"
+import "goat/cmd"
 
 func main() {
 	cmd.Execute()

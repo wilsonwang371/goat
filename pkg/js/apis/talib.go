@@ -3,7 +3,7 @@ package apis
 import (
 	"reflect"
 
-	"goalgotrade/pkg/logger"
+	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 	"github.com/wilsonwang371/go-talib"

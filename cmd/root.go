@@ -9,9 +9,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "goalgotrade",
-	Short: "goalgotrade is a tool for trading",
-	Long: `goalgotrade is a tool for trading.
+	Use:   "goat",
+	Short: "goat is a tool for trading",
+	Long: `goat is a tool for trading.
 
 It is a tool for trading.
 `,
@@ -32,15 +32,19 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.goalgotrade.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&cfg.DB, "strategy-db", "d", "", "state db file used for strategy (default is using in-memory db)")
-	rootCmd.PersistentFlags().StringVarP(&cfg.Symbol, "symbol", "S", "", "live feed data symbol name")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
+		"config file (default is $HOME/.goat.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfg.KVDB, "kvdb", "d", "",
+		"state kvdb file used for strategy (default is using in-memory kvdb)")
+	rootCmd.PersistentFlags().StringVarP(&cfg.Symbol, "symbol", "S", "",
+		"live feed data symbol name")
 }
 
 type Config struct {
-	DB     string `mapstructure:"db"`
-	Symbol string `mapstructure:"symbol"`
-	Live   struct {
+	KVDB      string `mapstructure:"kvdb"`
+	Symbol    string `mapstructure:"symbol"`
+	BarDumpDB string `mapstructure:"bardumpdb"` // name of db to dump live feed data, leave empty to disable
+	Live      struct {
 		TradingView struct {
 			User string `mapstructure:"user"`
 			Pass string `mapstructure:"password"`
@@ -67,7 +71,7 @@ func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		viper.SetConfigName(".goalgotrade")
+		viper.SetConfigName(".goat")
 		viper.SetConfigType("json")
 		viper.AddConfigPath("$HOME")
 	}

@@ -3,7 +3,7 @@ package apis
 import (
 	"time"
 
-	"goalgotrade/pkg/logger"
+	"goat/pkg/logger"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/robertkrimen/otto"
@@ -11,33 +11,33 @@ import (
 )
 
 type KVObject struct {
-	VM     *otto.Otto
-	DBPath string
-	DB     *badger.DB
+	VM       *otto.Otto
+	KVDBPath string
+	KVDB     *badger.DB
 }
 
 var CleanUpDuration = time.Second * 30
 
-func NewKVObject(vm *otto.Otto, dbFilePath string) (*KVObject, error) {
+func NewKVObject(vm *otto.Otto, kvdbFilePath string) (*KVObject, error) {
 	kv := &KVObject{
-		VM:     vm,
-		DBPath: dbFilePath,
+		VM:       vm,
+		KVDBPath: kvdbFilePath,
 	}
 
-	if dbFilePath != "" {
-		db, err := badger.Open(badger.DefaultOptions(dbFilePath))
+	if kvdbFilePath != "" {
+		kvdb, err := badger.Open(badger.DefaultOptions(kvdbFilePath))
 		if err != nil {
-			logger.Logger.Fatal("failed to open badger db file", zap.Error(err))
+			logger.Logger.Fatal("failed to open badger kvdb file", zap.Error(err))
 			return nil, err
 		}
-		kv.DB = db
+		kv.KVDB = kvdb
 	} else {
-		db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+		kvdb, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 		if err != nil {
-			logger.Logger.Fatal("failed to open in-memory badger db", zap.Error(err))
+			logger.Logger.Fatal("failed to open in-memory badger kvdb", zap.Error(err))
 			return nil, err
 		}
-		kv.DB = db
+		kv.KVDB = kvdb
 	}
 
 	kvObj, err := kv.VM.Object(`kvstorage = {}`)
@@ -57,7 +57,7 @@ func (kv *KVObject) cleanup() {
 	defer ticker.Stop()
 	for range ticker.C {
 	again:
-		err := kv.DB.RunValueLogGC(0.7)
+		err := kv.KVDB.RunValueLogGC(0.7)
 		if err == nil {
 			goto again
 		}
@@ -66,7 +66,7 @@ func (kv *KVObject) cleanup() {
 
 func (kv *KVObject) DBLoadState(key []byte) ([]byte, error) {
 	var data []byte
-	err := kv.DB.View(func(txn *badger.Txn) error {
+	err := kv.KVDB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
 			return err
@@ -84,7 +84,7 @@ func (kv *KVObject) DBLoadState(key []byte) ([]byte, error) {
 }
 
 func (kv *KVObject) DBSaveState(key []byte, data []byte) error {
-	return kv.DB.Update(func(txn *badger.Txn) error {
+	return kv.KVDB.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, data)
 	})
 }

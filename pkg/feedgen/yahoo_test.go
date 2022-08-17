@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"goalgotrade/pkg/core"
+	"goat/pkg/core"
 )
 
 func TestYahooSimple(t *testing.T) {

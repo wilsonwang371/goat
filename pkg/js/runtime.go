@@ -4,8 +4,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"goalgotrade/pkg/js/apis"
-	"goalgotrade/pkg/logger"
+	"goat/pkg/js/apis"
+	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
@@ -79,7 +79,7 @@ func (r *runtime) Compile(source string) (*otto.Script, error) {
 	return compiled, nil
 }
 
-func NewRuntime(dbFilePath string, cb apis.StartCallback) Runtime {
+func NewRuntime(kvdbFilePath string, cb apis.StartCallback) Runtime {
 	var err error
 
 	res := &runtime{
@@ -89,9 +89,9 @@ func NewRuntime(dbFilePath string, cb apis.StartCallback) Runtime {
 		talib:          talib.NewTALib(),
 	}
 
-	logger.Logger.Info("using db file.", zap.String("db", dbFilePath))
+	logger.Logger.Info("using kvdb file.", zap.String("kvdb", kvdbFilePath))
 
-	res.kv, err = apis.NewKVObject(res.vm, dbFilePath)
+	res.kv, err = apis.NewKVObject(res.vm, kvdbFilePath)
 	if err != nil {
 		logger.Logger.Error("failed to create kv object", zap.Error(err))
 		panic(err)

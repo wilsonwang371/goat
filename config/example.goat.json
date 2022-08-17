@@ -1,6 +1,7 @@
 {
-  "db": "",
+  "kvdb": "",
   "symbol": "XAUUSD",
+  "bardumpdb": "dump.db",
   "live": {
     "tradingview": {
       "user": "1",

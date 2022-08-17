@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"time"
 
-	"goalgotrade/pkg/core"
+	"goat/pkg/core"
 
-	lg "goalgotrade/pkg/logger"
+	lg "goat/pkg/logger"
 
 	"github.com/go-gota/gota/series"
 	"go.uber.org/zap"
