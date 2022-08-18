@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"goat/pkg/core"
+	"goat/pkg/logger"
+
+	"go.uber.org/zap"
 )
 
 func TestTradingViewSimple(t *testing.T) {
@@ -52,7 +55,7 @@ func TestFx678StringGen(t *testing.T) {
 
 	for {
 		if bar, err := getABar("XAU"); err != nil {
-			t.Error(err)
+			logger.Logger.Info("error getting a bar", zap.Error(err))
 			count++
 			time.Sleep(time.Second * 5)
 		} else {
