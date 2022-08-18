@@ -7,7 +7,7 @@ build:
 
 test:
 	@echo "Testing..."
-	@go test ./... -covermode=count -coverprofile=coverage.out -coverpkg=./...
+	@go test -v ./... -covermode=count -coverprofile=coverage.out -coverpkg=./...
 	@[ -f coverage.out ] && go tool cover -func=coverage.out -o=coverage.out
 	@echo "Testing done."
 
