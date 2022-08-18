@@ -12,8 +12,10 @@ type Config struct {
 	} `mapstructure:"live"`
 	Notification struct {
 		Twilio struct {
-			Sid   string `mapstructure:"sid"`
-			Token string `mapstructure:"token"`
+			SID   string   `mapstructure:"sid"`
+			Token string   `mapstructure:"token"`
+			From  string   `mapstructure:"from"`
+			To    []string `mapstructure:"to"`
 		} `mapstructure:"twilio"`
 		Pushover struct {
 			Token string   `mapstructure:"token"`

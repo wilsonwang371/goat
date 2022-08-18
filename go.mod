@@ -20,6 +20,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.1
+	github.com/twilio/twilio-go v0.26.0
 	github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c
 	go.uber.org/zap v1.17.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

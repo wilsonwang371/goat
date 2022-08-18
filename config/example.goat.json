@@ -11,7 +11,9 @@
   "notification": {
     "twilio": {
       "sid": "3",
-      "token": "4"
+      "token": "4",
+      "from": "9",
+      "to": ["10"]
     },
     "pushover": {
       "token": "5",
