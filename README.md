@@ -35,6 +35,14 @@ run-build.sh build
 run-build.sh test
 ```
 
+## Format Code
+
+```bash
+
+# format go and js code
+run-build.sh format
+```
+
 ## Run Strategy
 
 ### Live Mode
@@ -49,7 +57,6 @@ In live mode, the strategy will be executed in real time.
 # Run strategy with real data
 ./goat live -p fx678 -f samples/strategies/simple.js -S XAU
 
-```
 
 ```
 
