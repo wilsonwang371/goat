@@ -22,6 +22,16 @@ type twilioNotifier struct {
 	message string
 }
 
+// FeatureFlags implements Notifier
+func (*twilioNotifier) FeatureFlags() uint64 {
+	return config.NotifyIsMobileFlag
+}
+
+// Level implements Notifier
+func (*twilioNotifier) Level() int {
+	return config.ErrorLevel
+}
+
 // Send implements Notifier
 func (t *twilioNotifier) Send() error {
 	if len(t.to) == 0 {

@@ -1,8 +1,10 @@
 package apis
 
 import (
+	"fmt"
 	"time"
 
+	"goat/pkg/config"
 	"goat/pkg/logger"
 
 	"github.com/dgraph-io/badger/v3"
@@ -11,6 +13,7 @@ import (
 )
 
 type KVObject struct {
+	cfg      *config.Config
 	VM       *otto.Otto
 	KVDBPath string
 	KVDB     *badger.DB
@@ -18,8 +21,13 @@ type KVObject struct {
 
 var CleanUpDuration = time.Second * 30
 
-func NewKVObject(vm *otto.Otto, kvdbFilePath string) (*KVObject, error) {
+func NewKVObject(cfg *config.Config, vm *otto.Otto, kvdbFilePath string) (*KVObject, error) {
+	if cfg == nil || vm == nil {
+		return nil, fmt.Errorf("invalid config or vm")
+	}
+
 	kv := &KVObject{
+		cfg:      cfg,
 		VM:       vm,
 		KVDBPath: kvdbFilePath,
 	}

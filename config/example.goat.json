@@ -10,16 +10,22 @@
   },
   "notification": {
     "twilio": {
+      "enabled": false,
+      "level": 3,
       "sid": "3",
       "token": "4",
       "from": "9",
       "to": ["10"]
     },
     "pushover": {
+      "enabled": false,
+      "level": 2,
       "token": "5",
       "keys": ["6"]
     },
     "email": {
+      "enabled": false,
+      "level": 1,
       "host": "smtp.gmail.com",
       "port": 587,
       "user": "7",

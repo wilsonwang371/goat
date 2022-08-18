@@ -1,6 +1,9 @@
 package apis
 
 import (
+	"fmt"
+
+	"goat/pkg/config"
 	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
@@ -9,14 +12,20 @@ import (
 type StartCallback func() error
 
 type SysObject struct {
-	VM *otto.Otto
-	Cb StartCallback
+	cfg *config.Config
+	VM  *otto.Otto
+	Cb  StartCallback
 }
 
-func NewSysObject(vm *otto.Otto, startCb StartCallback) (*SysObject, error) {
+func NewSysObject(cfg *config.Config, vm *otto.Otto, startCb StartCallback) (*SysObject, error) {
+	if cfg == nil || vm == nil {
+		return nil, fmt.Errorf("invalid config or vm")
+	}
+
 	sys := &SysObject{
-		VM: vm,
-		Cb: startCb,
+		cfg: cfg,
+		VM:  vm,
+		Cb:  startCb,
 	}
 
 	sysObj, err := sys.VM.Object(`system = {}`)

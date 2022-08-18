@@ -18,6 +18,16 @@ type emailNotifier struct {
 	content    string
 }
 
+// FeatureFlags implements Notifier
+func (*emailNotifier) FeatureFlags() uint64 {
+	return config.NotifyIsEmailFlag
+}
+
+// Level implements Notifier
+func (*emailNotifier) Level() int {
+	return config.InfoLevel
+}
+
 // Send implements Notifier
 func (e *emailNotifier) Send() error {
 	if len(e.recipients) == 0 {
