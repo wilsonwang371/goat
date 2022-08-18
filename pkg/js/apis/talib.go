@@ -1,8 +1,10 @@
 package apis
 
 import (
+	"fmt"
 	"reflect"
 
+	"goat/pkg/config"
 	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
@@ -11,14 +13,20 @@ import (
 )
 
 type TALib struct {
+	cfg     *config.Config
 	VM      *otto.Otto
 	Methods map[string]reflect.Method
 	TALib   *talib.TALib
 }
 
-func NewTALibObject(vm *otto.Otto) (*TALib, error) {
+func NewTALibObject(cfg *config.Config, vm *otto.Otto) (*TALib, error) {
+	if cfg == nil || vm == nil {
+		return nil, fmt.Errorf("invalid config or vm")
+	}
+
 	t := &TALib{
-		VM: vm,
+		cfg: cfg,
+		VM:  vm,
 	}
 	t.populateMethods()
 	obj, err := t.VM.Object(`talib = {}`)

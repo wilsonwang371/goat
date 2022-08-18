@@ -1,5 +1,17 @@
 package config
 
+const (
+	DebugLevel = iota + 1
+	InfoLevel
+	WarnLevel
+	ErrorLevel
+)
+
+const (
+	NotifyIsMobileFlag = 1 << iota
+	NotifyIsEmailFlag
+)
+
 type Config struct {
 	KVDB      string `mapstructure:"kvdb"`
 	Symbol    string `mapstructure:"symbol"`
@@ -12,16 +24,22 @@ type Config struct {
 	} `mapstructure:"live"`
 	Notification struct {
 		Twilio struct {
-			SID   string   `mapstructure:"sid"`
-			Token string   `mapstructure:"token"`
-			From  string   `mapstructure:"from"`
-			To    []string `mapstructure:"to"`
+			Enabled bool     `mapstructure:"enabled"`
+			Level   int      `mapstructure:"level"`
+			SID     string   `mapstructure:"sid"`
+			Token   string   `mapstructure:"token"`
+			From    string   `mapstructure:"from"`
+			To      []string `mapstructure:"to"`
 		} `mapstructure:"twilio"`
 		Pushover struct {
-			Token string   `mapstructure:"token"`
-			Keys  []string `mapstructure:"keys"`
+			Enabled bool     `mapstructure:"enabled"`
+			Level   int      `mapstructure:"level"`
+			Token   string   `mapstructure:"token"`
+			Keys    []string `mapstructure:"keys"`
 		} `mapstructure:"pushover"`
 		Email struct {
+			Enabled  bool     `mapstructure:"enabled"`
+			Level    int      `mapstructure:"level"`
 			Host     string   `mapstructure:"host"`
 			Port     int      `mapstructure:"port"`
 			From     string   `mapstructure:"from"`

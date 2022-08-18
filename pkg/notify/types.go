@@ -5,4 +5,6 @@ type Notifier interface {
 	SetRecipients([]string) error
 	SetContent(string) error
 	Send() error
+	Level() int
+	FeatureFlags() uint64
 }

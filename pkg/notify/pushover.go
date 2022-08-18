@@ -17,6 +17,16 @@ type pushoverNotifier struct {
 	recipients []string
 }
 
+// FeatureFlags implements Notifier
+func (*pushoverNotifier) FeatureFlags() uint64 {
+	return config.NotifyIsMobileFlag
+}
+
+// Level implements Notifier
+func (*pushoverNotifier) Level() int {
+	return config.ErrorLevel
+}
+
 // Send implements Notifier
 func (p *pushoverNotifier) Send() error {
 	app := pushover.New(p.cfg.Notification.Pushover.Token)

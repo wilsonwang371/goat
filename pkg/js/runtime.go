@@ -36,6 +36,7 @@ type runtime struct {
 	kv             *apis.KVObject
 	tl             *apis.TALib
 	sys            *apis.SysObject
+	alert          *apis.AlertObject
 	eventListeners map[string]otto.Value
 	apiHandlers    map[string]RuntimeFunc
 	talib          *talib.TALib
@@ -94,19 +95,24 @@ func NewRuntime(cfg *config.Config, cb apis.StartCallback) Runtime {
 
 	logger.Logger.Info("using kvdb file.", zap.String("kvdb", cfg.KVDB))
 
-	res.kv, err = apis.NewKVObject(res.vm, cfg.KVDB)
+	res.kv, err = apis.NewKVObject(cfg, res.vm, cfg.KVDB)
 	if err != nil {
 		logger.Logger.Error("failed to create kv object", zap.Error(err))
 		panic(err)
 	}
-	res.tl, err = apis.NewTALibObject(res.vm)
+	res.tl, err = apis.NewTALibObject(cfg, res.vm)
 	if err != nil {
 		logger.Logger.Error("failed to create talib object", zap.Error(err))
 		panic(err)
 	}
-	res.sys, err = apis.NewSysObject(res.vm, cb)
+	res.sys, err = apis.NewSysObject(cfg, res.vm, cb)
 	if err != nil {
 		logger.Logger.Error("failed to create sys object", zap.Error(err))
+		panic(err)
+	}
+	res.alert, err = apis.NewAlertObject(cfg, res.vm)
+	if err != nil {
+		logger.Logger.Error("failed to create alert object", zap.Error(err))
 		panic(err)
 	}
 
