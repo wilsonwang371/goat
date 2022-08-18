@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  Build Binary:
+  build-binary:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -19,12 +19,14 @@ jobs:
     - name: Build
       run: ./run-build.sh build
 
-  Unit Test:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
+    
     - name: Set up Docker
       uses: docker-practice/actions-setup-docker@master
-      
+
     - name: Test
       run: ./run-build.sh test
 
