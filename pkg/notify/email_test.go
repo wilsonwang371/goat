@@ -80,3 +80,14 @@ func TestEmailSimple(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestEmailFailure(t *testing.T) {
+	cfg := &config.Config{}
+	n := NewEmailNotifier(cfg)
+	n.SetSubject("Test Email")
+	n.SetContent("This is a test email")
+	if err := n.Send(); err != nil {
+		return
+	}
+	t.Error("expected error, got nil")
+}

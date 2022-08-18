@@ -35,3 +35,15 @@ func TestPushoverSimple(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPushoverFailure(t *testing.T) {
+	cfg := &config.Config{}
+	notifier := NewPushoverNotifier(cfg)
+	notifier.SetContent("this is a test")
+	notifier.SetSubject("subject")
+	err := notifier.Send()
+	if err != nil {
+		return
+	}
+	t.Error("expected error, got nil")
+}

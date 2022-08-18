@@ -30,6 +30,10 @@ func (p *pushoverNotifier) Send() error {
 		recipients = p.cfg.Notification.Pushover.Keys
 	}
 
+	if len(recipients) == 0 {
+		return fmt.Errorf("no recipients for pushover notification")
+	}
+
 	for _, recipient := range recipients {
 		recipient := pushover.NewRecipient(recipient)
 		response, err := app.SendMessage(message, recipient)

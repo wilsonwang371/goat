@@ -2,6 +2,7 @@ package notify
 
 import (
 	"crypto/tls"
+	"fmt"
 
 	"goat/pkg/config"
 
@@ -19,6 +20,10 @@ type emailNotifier struct {
 
 // Send implements Notifier
 func (e *emailNotifier) Send() error {
+	if len(e.recipients) == 0 {
+		return fmt.Errorf("no recipients for email notification")
+	}
+
 	m := gomail.NewMessage()
 	m.SetHeader("From", e.from)
 	m.SetHeader("To", e.recipients...)
