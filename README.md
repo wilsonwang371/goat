@@ -43,8 +43,13 @@ In live mode, the strategy will be executed in real time.
 
 ```bash
 
-# This part is not complete yet.
+# Generate some fake data
 ./goat live -p fake -f samples/strategies/simple.js -S GLD
+
+# Run strategy with real data
+./goat live -p fx678 -f samples/strategies/simple.js -S XAU
+
+```
 
 ```
 

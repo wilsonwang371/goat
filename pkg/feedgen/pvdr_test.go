@@ -46,3 +46,23 @@ func TestFakeSimple(t *testing.T) {
 	time.Sleep(time.Second * 5)
 	disp.Stop()
 }
+
+func TestFx678StringGen(t *testing.T) {
+	count := 0
+
+	for {
+		if bar, err := getABar("XAU"); err != nil {
+			t.Error(err)
+			count++
+			time.Sleep(time.Second * 5)
+		} else {
+			t.Log(bar)
+			return
+		}
+
+		if count > 10 {
+			t.Error("failed to get bar")
+			return
+		}
+	}
+}

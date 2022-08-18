@@ -13,6 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	FailureSleepDuration = 10 * time.Second
+	FailureMaxCount      = 20
+)
+
 type BarDataProvider interface {
 	init(instrument string, freqList []core.Frequency) error
 	connect() error
@@ -60,7 +65,8 @@ func (l *LiveBarFeedGenerator) PopNextValues() (time.Time, map[string]interface{
 	return l.bfg.PopNextValues()
 }
 
-func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string, freq []core.Frequency,
+func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string,
+	freq []core.Frequency,
 	maxLen int,
 ) *LiveBarFeedGenerator {
 	res := &LiveBarFeedGenerator{
@@ -99,13 +105,20 @@ func (l *LiveBarFeedGenerator) Run() error {
 		return err
 	}
 
+	errorCount := 0
+
 	for {
 		if l.stopped {
 			break
 		}
 		if bars, err := l.provider.nextBars(); err != nil {
 			lg.Logger.Error("nextBars failed", zap.Error(err))
-			return err
+			time.Sleep(FailureSleepDuration)
+			errorCount++
+			if errorCount > FailureMaxCount {
+				lg.Logger.Error("too many errors, stop")
+				return err
+			}
 		} else {
 			if bars == nil {
 				lg.Logger.Warn("got empty bars")
@@ -126,6 +139,9 @@ func (l *LiveBarFeedGenerator) Run() error {
 				res[k] = v
 			}
 			l.AppendNewValueToBuffer(time.Time{}, res, *freq)
+
+			// reset error count
+			errorCount = 0
 		}
 	}
 	return nil

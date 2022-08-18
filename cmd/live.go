@@ -82,6 +82,8 @@ func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
 	} else if strings.EqualFold(feedProvider, "tradingview") {
 		provider = feedgen.NewTradingViewDataProvider(cfg.Live.TradingView.User,
 			cfg.Live.TradingView.Pass)
+	} else if strings.EqualFold(feedProvider, "fx678") {
+		provider = feedgen.NewFx678DataProvider()
 	} else {
 		logger.Logger.Error("unknown live feed provider", zap.String("provider", feedProvider))
 		os.Exit(1)
@@ -89,7 +91,7 @@ func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
 	gen := feedgen.NewLiveBarFeedGenerator(
 		provider,
 		cfg.Symbol,
-		[]core.Frequency{core.REALTIME, core.DAY},
+		[]core.Frequency{core.REALTIME},
 		100)
 
 	wg := &sync.WaitGroup{}
