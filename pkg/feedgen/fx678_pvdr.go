@@ -36,7 +36,10 @@ type fx678DataProvider struct {
 	stopped    bool
 }
 
-const SleepDuration = 10 * time.Second
+const (
+	SleepDuration          = 10 * time.Second
+	RequestTimeoutDuration = 10 * time.Second
+)
 
 var symbolMap map[string]string = map[string]string{
 	"XAU": "WGJS",
@@ -106,7 +109,11 @@ func sendRequest(reqUrl string) (string, error) {
 	req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
 	req.Header.Set("Sec-Ch-Ua-Platform", "\"macOS\"")
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{
+		Timeout: RequestTimeoutDuration,
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
