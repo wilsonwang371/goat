@@ -15,9 +15,9 @@ type Config struct {
 			Sid   string `mapstructure:"sid"`
 			Token string `mapstructure:"token"`
 		} `mapstructure:"twilio"`
-		PushOver struct {
-			Key   string `mapstructure:"key"`
-			Token string `mapstructure:"token"`
+		Pushover struct {
+			Token string   `mapstructure:"token"`
+			Keys  []string `mapstructure:"keys"`
 		} `mapstructure:"pushover"`
 		Email struct {
 			Host     string   `mapstructure:"host"`

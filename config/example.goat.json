@@ -14,8 +14,8 @@
       "token": "4"
     },
     "pushover": {
-      "key": "5",
-      "token": "6"
+      "token": "5",
+      "keys": ["6"],
     },
     "email": {
       "host": "smtp.gmail.com",

@@ -21,47 +21,56 @@ GOAT_EMAIL_TO=
 
 */
 
+const (
+	GoatEmailHost = "GOAT_EMAIL_HOST"
+	GoatEmailPort = "GOAT_EMAIL_PORT"
+	GoatEmailUser = "GOAT_EMAIL_USER"
+	GoatEmailPass = "GOAT_EMAIL_PASSWORD"
+	GoatEmailFrom = "GOAT_EMAIL_FROM"
+	GoatEmailTo   = "GOAT_EMAIL_TO"
+)
+
 func TestEmailSimple(t *testing.T) {
 	cfg := &config.Config{}
 
-	if host, exists := os.LookupEnv("GOAT_EMAIL_HOST"); exists {
+	if host, exists := os.LookupEnv(GoatEmailHost); exists {
 		cfg.Notification.Email.Host = host
 	} else {
-		t.Skip("GOAT_EMAIL_HOST not set")
+		t.Skip("environment variable " + GoatEmailHost + " is not set")
 	}
 
-	if port, exists := os.LookupEnv("GOAT_EMAIL_PORT"); exists {
+	if port, exists := os.LookupEnv(GoatEmailPort); exists {
 		if tmp, err := strconv.Atoi(port); err == nil {
 			cfg.Notification.Email.Port = tmp
 		} else {
-			t.Skip("GOAT_EMAIL_PORT not a number")
+			t.Skip("environment variable " + GoatEmailPort + " is not a number")
 		}
 	} else {
-		t.Skip("GOAT_EMAIL_PORT not set")
+		t.Skip("environment variable " + GoatEmailPort + " is not set")
 	}
 
-	if from, exists := os.LookupEnv("GOAT_EMAIL_FROM"); exists {
+	if from, exists := os.LookupEnv(GoatEmailFrom); exists {
 		cfg.Notification.Email.From = from
 	} else {
-		t.Skip("GOAT_EMAIL_FROM not set")
+		t.Skip("environment variable " + GoatEmailFrom + " is not set")
 	}
 
-	if to, exists := os.LookupEnv("GOAT_EMAIL_TO"); exists {
+	if to, exists := os.LookupEnv(GoatEmailTo); exists {
 		cfg.Notification.Email.To = []string{to}
 	} else {
-		t.Skip("GOAT_EMAIL_TO not set")
+		t.Skip("environment variable " + GoatEmailTo + " is not set")
 	}
 
-	if user, exists := os.LookupEnv("GOAT_EMAIL_USER"); exists {
+	if user, exists := os.LookupEnv(GoatEmailUser); exists {
 		cfg.Notification.Email.User = user
 	} else {
-		t.Skip("GOAT_EMAIL_USER not set")
+		t.Skip("environment variable " + GoatEmailUser + " is not set")
 	}
 
-	if password, exists := os.LookupEnv("GOAT_EMAIL_PASSWORD"); exists {
+	if password, exists := os.LookupEnv(GoatEmailPass); exists {
 		cfg.Notification.Email.Password = password
 	} else {
-		t.Skip("GOAT_EMAIL_PASSWORD not set")
+		t.Skip("environment variable " + GoatEmailPass + " is not set")
 	}
 
 	n := NewEmailNotifier(cfg)
