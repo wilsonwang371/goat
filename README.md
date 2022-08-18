@@ -1,5 +1,5 @@
 # GoAT
-![Coverage](https://img.shields.io/badge/Coverage-48.4%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-47.7%25-yellow)
 
 [![Go](https://github.com/wilsonwang371/goat/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/go.yml)
 
