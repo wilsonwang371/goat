@@ -36,19 +36,14 @@ type fx678DataProvider struct {
 	stopped    bool
 }
 
-const (
-	SleepDuration          = 10 * time.Second
-	RequestTimeoutDuration = 10 * time.Second
-)
-
-var symbolMap map[string]string = map[string]string{
+var fx678SymMap map[string]string = map[string]string{
 	"XAU": "WGJS",
 }
 
-func getABar(instrument string) (core.Bar, error) {
+func (f *fx678DataProvider) getOneBar(instrument string) (core.Bar, error) {
 	barRaw := Fx678Bar{}
-	reqUrl := fmt.Sprintf("https://api-q.fx678img.com/getQuote.php?exchName=%s&symbol=%s&st=%.16f", symbolMap[instrument], instrument, rand.Float64())
-	if resp, err := sendRequest(reqUrl); err != nil {
+	reqUrl := fmt.Sprintf("https://api-q.fx678img.com/getQuote.php?exchName=%s&symbol=%s&st=%.16f", fx678SymMap[instrument], instrument, rand.Float64())
+	if resp, err := f.sendRequest(reqUrl); err != nil {
 		log.Printf("error sending request: %v", err)
 		return nil, err
 	} else {
@@ -91,7 +86,7 @@ func getABar(instrument string) (core.Bar, error) {
 	}
 }
 
-func sendRequest(reqUrl string) (string, error) {
+func (f *fx678DataProvider) sendRequest(reqUrl string) (string, error) {
 	req, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		return "", err
@@ -127,7 +122,7 @@ func sendRequest(reqUrl string) (string, error) {
 }
 
 func (f *fx678DataProvider) init(instrument string, freqList []core.Frequency) error {
-	if _, ok := symbolMap[instrument]; !ok {
+	if _, ok := fx678SymMap[instrument]; !ok {
 		return fmt.Errorf("instrument %s not supported", instrument)
 	}
 	if len(freqList) == 0 {
@@ -152,7 +147,7 @@ func (f *fx678DataProvider) nextBars() (map[string]core.Bar, error) {
 		return nil, fmt.Errorf("fx678 data provider is stopped")
 	}
 	time.Sleep(SleepDuration)
-	basicBar, err := getABar(f.instrument)
+	basicBar, err := f.getOneBar(f.instrument)
 	if err != nil {
 		logger.Logger.Warn("error getting a bar: %v", zap.Error(err))
 		return nil, err

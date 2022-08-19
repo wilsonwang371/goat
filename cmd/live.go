@@ -84,6 +84,8 @@ func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
 			cfg.Live.TradingView.Pass)
 	} else if strings.EqualFold(feedProvider, "fx678") {
 		provider = feedgen.NewFx678DataProvider()
+	} else if strings.EqualFold(feedProvider, "goldpriceorg") {
+		provider = feedgen.NewGoldPriceOrgDataProvider()
 	} else {
 		logger.Logger.Error("unknown live feed provider", zap.String("provider", feedProvider))
 		os.Exit(1)

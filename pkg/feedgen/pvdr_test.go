@@ -50,11 +50,35 @@ func TestFakeSimple(t *testing.T) {
 	disp.Stop()
 }
 
-func TestFx678StringGen(t *testing.T) {
+func TestFx678DataGen(t *testing.T) {
 	count := 0
 
+	f := NewFx678DataProvider()
+
 	for {
-		if bar, err := getABar("XAU"); err != nil {
+		if bar, err := f.(*fx678DataProvider).getOneBar("XAU"); err != nil {
+			logger.Logger.Info("error getting a bar", zap.Error(err))
+			count++
+			time.Sleep(time.Second * 5)
+		} else {
+			t.Log(bar)
+			return
+		}
+
+		if count > 10 {
+			t.Error("failed to get bar")
+			return
+		}
+	}
+}
+
+func TestGoldPriceOrgDataGen(t *testing.T) {
+	count := 0
+
+	f := NewGoldPriceOrgDataProvider()
+
+	for {
+		if bar, err := f.(*goldPriceOrgDataProvider).getOneBar("XAU"); err != nil {
 			logger.Logger.Info("error getting a bar", zap.Error(err))
 			count++
 			time.Sleep(time.Second * 5)
