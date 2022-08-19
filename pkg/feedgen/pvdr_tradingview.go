@@ -373,11 +373,14 @@ func (t *tradingViewWSDataProvider) datatype() series.Type {
 }
 
 func (t *tradingViewWSDataProvider) nextBars() (map[string]core.Bar, error) {
-	tmp := <-t.barC
-
-	res := make(map[string]core.Bar)
-	res[t.instrument] = tmp
-	return res, nil
+	// this can return nothing but with no error, you should not block this forever
+	if tmp, ok := <-t.barC; ok {
+		res := make(map[string]core.Bar)
+		res[t.instrument] = tmp
+		return res, nil
+	} else {
+		return nil, fmt.Errorf("channel closed")
+	}
 }
 
 func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
@@ -406,7 +409,12 @@ func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
 					barList, _ := t.tvDataParse([]byte(v))
 					if len(barList) > 0 {
 						for _, bar := range barList {
-							t.barC <- bar
+							// t.barC <- bar
+							select {
+							case t.barC <- bar:
+							default:
+								lg.Logger.Warn("bar channel is full, dropping bar")
+							}
 						}
 					}
 				}

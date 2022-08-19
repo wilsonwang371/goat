@@ -12,6 +12,8 @@ const (
 	NotifyIsEmailFlag
 )
 
+const DataFeedMaxPendingBars = 10000
+
 type Config struct {
 	KVDB      string `mapstructure:"kvdb"`
 	Symbol    string `mapstructure:"symbol"`

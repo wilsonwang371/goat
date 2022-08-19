@@ -21,7 +21,7 @@ const (
 type BarDataProvider interface {
 	init(instrument string, freqList []core.Frequency) error
 	connect() error
-	nextBars() (map[string]core.Bar, error)
+	nextBars() (map[string]core.Bar, error) // this can return nothing but with no error, you should not block this forever
 	reset() error
 	stop() error
 	datatype() series.Type
@@ -38,7 +38,15 @@ type LiveBarFeedGenerator struct {
 // AppendNewValueToBuffer implements core.FeedGenerator
 func (l *LiveBarFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{}, f core.Frequency) error {
 	logger.Logger.Debug("LiveBarFeedGenerator::AppendNewValueToBuffer", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
-	return l.bfg.AppendNewValueToBuffer(t, v, f)
+	for {
+		if err := l.bfg.AppendNewValueToBuffer(t, v, f); err != nil {
+			logger.Logger.Debug("LiveBarFeedGenerator::AppendNewValueToBuffer failed", zap.Error(err))
+			time.Sleep(1 * time.Second)
+		} else {
+			break
+		}
+	}
+	return nil
 }
 
 // CreateDataSeries implements core.FeedGenerator

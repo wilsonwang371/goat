@@ -85,19 +85,22 @@ func NewYahooBarFeedGenerator(instrument string, freq core.Frequency) core.FeedG
 		for iter.Next() {
 			// logger.Logger.Info("yahoo", zap.String("bar", fmt.Sprintf("%+v", iter.Bar())))
 			ts := iter.Bar().Timestamp
-			err := rtn.barfeed.AppendNewValueToBuffer(time.Unix(int64(ts), 0), map[string]interface{}{
-				rtn.instrument: core.NewBasicBar(
-					time.Unix(int64(ts), 0),
-					iter.Bar().Open.InexactFloat64(),
-					iter.Bar().High.InexactFloat64(),
-					iter.Bar().Low.InexactFloat64(),
-					iter.Bar().Close.InexactFloat64(),
-					iter.Bar().AdjClose.InexactFloat64(),
-					int64(iter.Bar().Volume), rtn.frequency),
-			}, rtn.frequency)
-			if err != nil {
-				logger.Logger.Error("yahoo", zap.Error(err))
-				panic(err)
+			for {
+				if err := rtn.barfeed.AppendNewValueToBuffer(time.Unix(int64(ts), 0), map[string]interface{}{
+					rtn.instrument: core.NewBasicBar(
+						time.Unix(int64(ts), 0),
+						iter.Bar().Open.InexactFloat64(),
+						iter.Bar().High.InexactFloat64(),
+						iter.Bar().Low.InexactFloat64(),
+						iter.Bar().Close.InexactFloat64(),
+						iter.Bar().AdjClose.InexactFloat64(),
+						int64(iter.Bar().Volume), rtn.frequency),
+				}, rtn.frequency); err != nil {
+					logger.Logger.Error("append new value to buffer failed", zap.Error(err))
+					time.Sleep(time.Second)
+				} else {
+					break
+				}
 			}
 		}
 

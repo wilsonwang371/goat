@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"goat/pkg/config"
 	"goat/pkg/logger"
 
 	"go.uber.org/zap"
@@ -93,6 +94,9 @@ func (b *barFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]inte
 
 	b.dataBufMutex.Lock()
 	defer b.dataBufMutex.Unlock()
+	if len(b.dataBuf) >= config.DataFeedMaxPendingBars {
+		return fmt.Errorf("feed generator buffer is full")
+	}
 	b.dataBuf = append(b.dataBuf, &BarFeedGeneratorData{
 		t: t,
 		d: v,

@@ -138,7 +138,15 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 				logger.Logger.Error("parse error", zap.Error(err))
 				os.Exit(1)
 			}
-			c.barfeed.AppendNewValueToBuffer(bar.DateTime(), map[string]interface{}{symbol: bar}, bar.Frequency())
+			for {
+				if err := c.barfeed.AppendNewValueToBuffer(bar.DateTime(), map[string]interface{}{symbol: bar}, bar.Frequency()); err != nil {
+					logger.Logger.Warn("append error", zap.Error(err))
+					time.Sleep(time.Second)
+				} else {
+					break
+				}
+			}
+
 		}
 	}
 	c.Finish()

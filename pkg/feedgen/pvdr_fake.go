@@ -26,6 +26,7 @@ func (f *fakeDataProvider) connect() error {
 }
 
 func (f *fakeDataProvider) nextBars() (map[string]core.Bar, error) {
+	// this can return nothing but with no error, you should not block this forever
 	if f.stopped {
 		return nil, fmt.Errorf("fake data provider is stopped")
 	}
