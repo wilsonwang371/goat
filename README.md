@@ -55,7 +55,7 @@ In live mode, the strategy will be executed in real time.
 ./goat live -p fake -f samples/strategies/simple.js -S GLD
 
 # Run strategy with real data
-./goat live -p fx678 -f samples/strategies/simple.js -S XAU
+./goat live -p goldpriceorg -f samples/strategies/simple.js -S XAU
 
 
 ```
