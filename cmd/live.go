@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	feedProvider string
-	runWg        *sync.WaitGroup
+	feedProviders string
+	runWg         *sync.WaitGroup
 
 	liveCmd = &cobra.Command{
 		Use:   "live",
@@ -75,32 +75,52 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	}
 }
 
-func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
+func CreateOneProvider(p string) (feedgen.BarDataProvider, error) {
 	var provider feedgen.BarDataProvider
-	if strings.EqualFold(feedProvider, "fake") {
+	if strings.EqualFold(p, "fake") {
 		provider = feedgen.NewFakeDataProvider()
-	} else if strings.EqualFold(feedProvider, "tradingview") {
+	} else if strings.EqualFold(p, "tradingview") {
 		provider = feedgen.NewTradingViewDataProvider(cfg.Live.TradingView.User,
 			cfg.Live.TradingView.Pass)
-	} else if strings.EqualFold(feedProvider, "fx678") {
+	} else if strings.EqualFold(p, "fx678") {
 		provider = feedgen.NewFx678DataProvider()
-	} else if strings.EqualFold(feedProvider, "goldpriceorg") {
+	} else if strings.EqualFold(p, "goldpriceorg") {
 		provider = feedgen.NewGoldPriceOrgDataProvider()
 	} else {
-		logger.Logger.Error("unknown live feed provider", zap.String("provider", feedProvider))
+		logger.Logger.Error("unknown live feed provider", zap.String("provider", p))
+		return nil, fmt.Errorf("unknown live feed provider: %s", p)
+	}
+	return provider, nil
+}
+
+func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
+	var gen *feedgen.LiveBarFeedGenerator
+	providers := strings.Split(feedProviders, ",")
+
+	if len(providers) == 0 {
+		logger.Logger.Error("no feed provider specified")
+		os.Exit(1)
+	} else if len(providers) == 1 {
+		provider, err := CreateOneProvider(providers[0])
+		if err != nil {
+			logger.Logger.Error("failed to create feed provider", zap.Error(err))
+			os.Exit(1)
+		}
+		gen = feedgen.NewLiveBarFeedGenerator(
+			provider,
+			cfg.Symbol,
+			[]core.Frequency{core.REALTIME},
+			100)
+	} else {
+		// TODO: support multiple providers
+		logger.Logger.Error("multiple feed providers not supported yet")
 		os.Exit(1)
 	}
-	gen := feedgen.NewLiveBarFeedGenerator(
-		provider,
-		cfg.Symbol,
-		[]core.Frequency{core.REALTIME},
-		100)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
 	go gen.DeferredRun(wg)
-
 	return gen, wg
 }
 
@@ -108,6 +128,6 @@ func init() {
 	liveCmd.PersistentFlags().StringVarP(&scriptFile, "strategy", "f", "",
 		"strategy js script file")
 	liveCmd.MarkPersistentFlagRequired("strategy")
-	liveCmd.PersistentFlags().StringVarP(&feedProvider, "provider", "p", "", "live feed data provider name")
+	liveCmd.PersistentFlags().StringVarP(&feedProviders, "providers", "p", "", "live feed data providers name, separated by comma")
 	rootCmd.AddCommand(liveCmd)
 }
