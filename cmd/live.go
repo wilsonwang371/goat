@@ -44,7 +44,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("liveScriptFile", liveScriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
-	rt := js.NewRuntime(&cfg, startLive)
+	rt := js.NewStrategyRuntime(&cfg, startLive)
 	script, err := ioutil.ReadFile(liveScriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))

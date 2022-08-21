@@ -23,14 +23,14 @@ var supportedEvents []string = []string{
 
 type RuntimeFunc func(call otto.FunctionCall) otto.Value
 
-type Runtime interface {
+type StrategyRuntime interface {
 	Compile(source string) (*otto.Script, error)
 	Execute(script *otto.Script) (otto.Value, error)
 	RegisterHostCall(name string, fn RuntimeFunc) error
 	NotifyEvent(eventName string, args ...interface{}) error
 }
 
-type runtime struct {
+type strategyRuntime struct {
 	cfg            *config.Config
 	vm             *otto.Otto
 	kv             *apis.KVObject
@@ -42,8 +42,8 @@ type runtime struct {
 	talib          *talib.TALib
 }
 
-// NotifyEvent implements Runtime
-func (r *runtime) NotifyEvent(eventName string, args ...interface{}) error {
+// NotifyEvent implements StrategyRuntime
+func (r *strategyRuntime) NotifyEvent(eventName string, args ...interface{}) error {
 	if handler, ok := r.eventListeners[strings.ToLower(eventName)]; ok {
 		if _, err := handler.Call(otto.NullValue(), args...); err != nil {
 			logger.Logger.Debug("failed to call handler", zap.Error(err))
@@ -53,12 +53,12 @@ func (r *runtime) NotifyEvent(eventName string, args ...interface{}) error {
 	return nil
 }
 
-// RegisterHostCall implements Runtime
-func (r *runtime) RegisterHostCall(name string, fn RuntimeFunc) error {
+// RegisterHostCall implements StrategyRuntime
+func (r *strategyRuntime) RegisterHostCall(name string, fn RuntimeFunc) error {
 	return r.vm.Set(name, func(call otto.FunctionCall) otto.Value {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Logger.Debug("runtime panic", zap.Any("panic", r))
+				logger.Logger.Debug("strategyRuntime panic", zap.Any("panic", r))
 				logger.Logger.Debug(string(debug.Stack()))
 			}
 		}()
@@ -68,13 +68,13 @@ func (r *runtime) RegisterHostCall(name string, fn RuntimeFunc) error {
 	})
 }
 
-// Execute implements Runtime
-func (r *runtime) Execute(script *otto.Script) (otto.Value, error) {
+// Execute implements StrategyRuntime
+func (r *strategyRuntime) Execute(script *otto.Script) (otto.Value, error) {
 	return r.vm.Run(script)
 }
 
-// Compile implements Runtime
-func (r *runtime) Compile(source string) (*otto.Script, error) {
+// Compile implements StrategyRuntime
+func (r *strategyRuntime) Compile(source string) (*otto.Script, error) {
 	compiled, err := r.vm.Compile("", source)
 	if err != nil {
 		return nil, err
@@ -82,10 +82,10 @@ func (r *runtime) Compile(source string) (*otto.Script, error) {
 	return compiled, nil
 }
 
-func NewRuntime(cfg *config.Config, cb apis.StartCallback) Runtime {
+func NewStrategyRuntime(cfg *config.Config, cb apis.StartCallback) StrategyRuntime {
 	var err error
 
-	res := &runtime{
+	res := &strategyRuntime{
 		cfg:            cfg,
 		vm:             otto.New(),
 		apiHandlers:    make(map[string]RuntimeFunc),
@@ -122,7 +122,7 @@ func NewRuntime(cfg *config.Config, cb apis.StartCallback) Runtime {
 	return res
 }
 
-func (r *runtime) addEventListener(call otto.FunctionCall) otto.Value {
+func (r *strategyRuntime) addEventListener(call otto.FunctionCall) otto.Value {
 	// logger.Logger.Info("addEventListener is called")
 	if len(call.ArgumentList) != 2 {
 		logger.Logger.Error("addEventListener needs 2 arguments")
@@ -140,7 +140,7 @@ func (r *runtime) addEventListener(call otto.FunctionCall) otto.Value {
 	return otto.TrueValue()
 }
 
-func (r *runtime) setupStrategyAPIs() {
+func (r *strategyRuntime) setupStrategyAPIs() {
 	for name, fn := range r.apiHandlers {
 		if err := r.RegisterHostCall(name, fn); err != nil {
 			logger.Logger.Error("failed to register API", zap.Error(err))
