@@ -20,7 +20,7 @@ type JSStrategyEventListener struct {
 }
 
 // OnBars implements core.StrategyEventListener
-func (j *JSStrategyEventListener) OnBars(bars map[string]core.Bar) error {
+func (j *JSStrategyEventListener) OnBars(bars core.Bars) error {
 	jsonStr, err := json.Marshal(bars)
 	if err != nil {
 		logger.Logger.Error("onBars got invalid data", zap.Error(err))

@@ -57,6 +57,9 @@ In live mode, the strategy will be executed in real time.
 # Run strategy with real data
 ./goat live -p goldpriceorg -f samples/strategies/simple.js -S XAU
 
+# Multi providers are also supported
+./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU
+
 
 ```
 
@@ -67,13 +70,15 @@ In backtest mode, the strategy will be executed with historical data.
 ```bash
 
 # Run a simple strategy with a csv file
-./goat run -f samples/strategies/simple.js -s file://$(pwd)/samples/data/DBC-2007-yahoofinance.csv
+./goat run -f samples/strategies/simple.js -s \
+    file://$(pwd)/samples/data/DBC-2007-yahoofinance.csv
 
 # read data from yahoo finance
 ./goat run -f samples/strategies/simple.js -s remote://yahoo -S GLD
 
 # By default, if the source is not an url, it will try to treat it at a file path.
-./goat run -f samples/strategies/simple.js -s samples/data/DBC-2007-yahoofinance.csv
+./goat run -f samples/strategies/simple.js -s \
+    samples/data/DBC-2007-yahoofinance.csv
 
 ```
 

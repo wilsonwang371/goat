@@ -24,7 +24,7 @@ type StrategyEventListener interface {
 	OnStart(args ...interface{}) error
 	OnIdle() error
 	OnFinish(args ...interface{}) error
-	OnBars(bars map[string]Bar) error
+	OnBars(bars Bars) error
 	OnOrderUpdated(order Order) error
 	OnOrderEvent(orderEvent OrderEvent) error
 }
@@ -37,7 +37,7 @@ type StrategyController interface {
 type strategyEventListener struct{}
 
 // OnBars implements StrategyEventListener
-func (s *strategyEventListener) OnBars(bars map[string]Bar) error {
+func (s *strategyEventListener) OnBars(bars Bars) error {
 	logger.Logger.Info("onBars", zap.Any("bars", bars))
 	return nil
 }
@@ -112,7 +112,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 
 	currentTime := args[0].(time.Time)
 	data := args[1].(map[string]interface{})
-	bars := make(map[string]Bar, len(data))
+	bars := make(Bars, len(data))
 	for k, v := range data {
 		bars[k] = v.(Bar)
 	}

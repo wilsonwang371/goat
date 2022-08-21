@@ -125,7 +125,7 @@ func (f *goldPriceOrgDataProvider) connect() error {
 	return nil
 }
 
-func (f *goldPriceOrgDataProvider) nextBars() (map[string]core.Bar, error) {
+func (f *goldPriceOrgDataProvider) nextBars() (core.Bars, error) {
 	// this can return nothing but with no error, you should not block this forever
 	if f.stopped {
 		return nil, fmt.Errorf("goldprice.org data provider is stopped")
@@ -136,7 +136,7 @@ func (f *goldPriceOrgDataProvider) nextBars() (map[string]core.Bar, error) {
 		logger.Logger.Warn("error getting a bar: %v", zap.Error(err))
 		return nil, err
 	}
-	return map[string]core.Bar{f.instrument: basicBar}, nil
+	return core.Bars{f.instrument: basicBar}, nil
 }
 
 func (f *goldPriceOrgDataProvider) reset() error {
