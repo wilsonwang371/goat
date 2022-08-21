@@ -52,7 +52,8 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		gen, wg := GetLiveFeedGenerator()
+		providers := strings.Split(feedProviders, ",")
+		gen, wg := GetLiveFeedGenerator(providers)
 		if gen == nil {
 			logger.Logger.Error("failed to create feed generator")
 			os.Exit(1)
@@ -93,35 +94,50 @@ func CreateOneProvider(p string) (feedgen.BarDataProvider, error) {
 	return provider, nil
 }
 
-func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
-	var gen *feedgen.LiveBarFeedGenerator
-	providers := strings.Split(feedProviders, ",")
-
+func GetLiveFeedGenerator(providers []string) (core.FeedGenerator, *sync.WaitGroup) {
 	if len(providers) == 0 {
 		logger.Logger.Error("no feed provider specified")
 		os.Exit(1)
 	} else if len(providers) == 1 {
-		provider, err := CreateOneProvider(providers[0])
+		p, err := CreateOneProvider(providers[0])
 		if err != nil {
 			logger.Logger.Error("failed to create feed provider", zap.Error(err))
 			os.Exit(1)
 		}
-		gen = feedgen.NewLiveBarFeedGenerator(
-			provider,
+		gen := feedgen.NewLiveBarFeedGenerator(
+			p,
 			cfg.Symbol,
 			[]core.Frequency{core.REALTIME},
 			100)
+
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+
+		go gen.WaitAndRun(wg)
+		return gen, wg
 	} else {
-		// TODO: support multiple providers
-		logger.Logger.Error("multiple feed providers not supported yet")
-		os.Exit(1)
+		pArr := make([]feedgen.BarDataProvider, len(providers))
+		for _, pStr := range providers {
+			p, err := CreateOneProvider(pStr)
+			if err != nil {
+				logger.Logger.Error("failed to create feed provider", zap.Error(err))
+				os.Exit(1)
+			}
+			pArr = append(pArr, p)
+		}
+		gen := feedgen.NewMultiLiveBarFeedGenerator(
+			pArr,
+			cfg.Symbol,
+			[]core.Frequency{core.REALTIME},
+			100)
+
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+
+		go gen.WaitAndRun(wg)
+		return gen, wg
 	}
-
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	go gen.WaitAndRun(wg)
-	return gen, wg
+	return nil, nil // should not reach here
 }
 
 func init() {

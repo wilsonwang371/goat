@@ -171,7 +171,8 @@ func (l *MultiLiveBarFeedGenerator) Run() error {
 
 			if earliestBarIdx == -1 {
 				earliestBarIdx = i
-			} else if singleBarFromBars(b).DateTime().Before(singleBarFromBars(pendingBars[earliestBarIdx]).DateTime()) {
+			} else if singleBarFromBars(b).DateTime().Before(
+				singleBarFromBars(pendingBars[earliestBarIdx]).DateTime()) {
 				earliestBarIdx = i
 			}
 		}

@@ -1,11 +1,16 @@
 package feedgen
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
+	"goat/pkg/config"
 	"goat/pkg/core"
+	"goat/pkg/js"
 	"goat/pkg/logger"
 
 	"go.uber.org/zap"
@@ -108,5 +113,68 @@ func TestGoldPriceOrgDataGen(t *testing.T) {
 			t.Error("failed to get bar")
 			return
 		}
+	}
+}
+
+var runWg *sync.WaitGroup
+
+func startLive() error {
+	logger.Logger.Info("start live strategy data feed")
+	if runWg == nil {
+		panic("runWg is nil")
+	}
+	runWg.Done()
+	return nil
+}
+
+func TestMultiProviders(t *testing.T) {
+	cfg := config.Config{}
+	rt := js.NewRuntime(&cfg, startLive)
+	script, err := ioutil.ReadFile("../../samples/strategies/simple.js")
+	if err != nil {
+		logger.Logger.Error("failed to read script file", zap.Error(err))
+		os.Exit(1)
+	}
+	if compiledScript, err := rt.Compile(string(script)); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	} else {
+		pArr := []BarDataProvider{
+			NewFakeDataProvider(),
+			NewFakeDataProvider(),
+		}
+		gen := NewMultiLiveBarFeedGenerator(
+			pArr,
+			cfg.Symbol,
+			[]core.Frequency{core.REALTIME},
+			100)
+
+		if gen == nil {
+			logger.Logger.Error("failed to create feed generator")
+			os.Exit(1)
+		}
+		runWg = &sync.WaitGroup{}
+		runWg.Add(1)
+
+		go gen.WaitAndRun(runWg)
+
+		feed := core.NewGenericDataFeed(gen, 100)
+		sel := js.NewJSStrategyEventListener(rt)
+		broker := core.NewDummyBroker(feed)
+		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
+
+		if val, err := rt.Execute(compiledScript); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		} else {
+			fmt.Println(val)
+		}
+
+		go func() {
+			time.Sleep(time.Second * 15)
+			gen.Finish()
+		}()
+
+		strategy.Run()
 	}
 }
