@@ -120,7 +120,7 @@ func GetLiveFeedGenerator() (core.FeedGenerator, *sync.WaitGroup) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	go gen.DeferredRun(wg)
+	go gen.WaitAndRun(wg)
 	return gen, wg
 }
 

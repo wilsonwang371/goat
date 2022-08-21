@@ -63,7 +63,7 @@ func (e *dummyBroker) onBars(args ...interface{}) error {
 
 	currentTime := args[0].(time.Time)
 	data := args[1].(map[string]interface{})
-	bars := make(map[string]Bar, len(data))
+	bars := make(Bars, len(data))
 	for k, v := range data {
 		bars[k] = v.(Bar)
 	}

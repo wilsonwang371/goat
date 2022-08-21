@@ -142,7 +142,7 @@ func (f *fx678DataProvider) connect() error {
 	return nil
 }
 
-func (f *fx678DataProvider) nextBars() (map[string]core.Bar, error) {
+func (f *fx678DataProvider) nextBars() (core.Bars, error) {
 	// this can return nothing but with no error, you should not block this forever
 	if f.stopped {
 		return nil, fmt.Errorf("fx678 data provider is stopped")
@@ -153,7 +153,7 @@ func (f *fx678DataProvider) nextBars() (map[string]core.Bar, error) {
 		logger.Logger.Warn("error getting a bar: %v", zap.Error(err))
 		return nil, err
 	}
-	return map[string]core.Bar{f.instrument: basicBar}, nil
+	return core.Bars{f.instrument: basicBar}, nil
 }
 
 func (f *fx678DataProvider) reset() error {

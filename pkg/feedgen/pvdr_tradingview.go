@@ -372,10 +372,10 @@ func (t *tradingViewWSDataProvider) datatype() series.Type {
 	return series.Float
 }
 
-func (t *tradingViewWSDataProvider) nextBars() (map[string]core.Bar, error) {
+func (t *tradingViewWSDataProvider) nextBars() (core.Bars, error) {
 	// this can return nothing but with no error, you should not block this forever
 	if tmp, ok := <-t.barC; ok {
-		res := make(map[string]core.Bar)
+		res := make(core.Bars)
 		res[t.instrument] = tmp
 		return res, nil
 	} else {

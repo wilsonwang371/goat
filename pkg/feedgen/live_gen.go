@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"goat/pkg/consts"
 	"goat/pkg/core"
 	"goat/pkg/logger"
 
@@ -13,15 +14,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	FailureSleepDuration = 10 * time.Second
-	FailureMaxCount      = 20
-)
-
 type BarDataProvider interface {
 	init(instrument string, freqList []core.Frequency) error
 	connect() error
-	nextBars() (map[string]core.Bar, error) // this can return nothing but with no error, you should not block this forever
+	nextBars() (core.Bars, error) // this can return nothing but with no error, you should not block this forever
 	reset() error
 	stop() error
 	datatype() series.Type
@@ -93,7 +89,7 @@ func (l *LiveBarFeedGenerator) SetInstrument(instrument string) {
 	l.instrument = instrument
 }
 
-func (l *LiveBarFeedGenerator) DeferredRun(wg *sync.WaitGroup) error {
+func (l *LiveBarFeedGenerator) WaitAndRun(wg *sync.WaitGroup) error {
 	wg.Wait()
 	l.Run()
 	return nil
@@ -121,9 +117,9 @@ func (l *LiveBarFeedGenerator) Run() error {
 		}
 		if bars, err := l.provider.nextBars(); err != nil {
 			lg.Logger.Error("nextBars failed", zap.Error(err))
-			time.Sleep(FailureSleepDuration)
+			time.Sleep(consts.LiveGenFailureSleepDuration)
 			errorCount++
-			if errorCount > FailureMaxCount {
+			if errorCount > consts.LiveGenFailureMaxCount {
 				lg.Logger.Error("too many errors, stop")
 				return err
 			}

@@ -50,6 +50,23 @@ func TestFakeSimple(t *testing.T) {
 	disp.Stop()
 }
 
+func Test2FakeSimple(t *testing.T) {
+	gen := NewMultiLiveBarFeedGenerator(
+		[]BarDataProvider{NewFakeDataProvider(), NewFakeDataProvider()},
+		"XAUUSD",
+		[]core.Frequency{core.REALTIME, core.DAY},
+		100)
+	disp := core.NewDispatcher()
+	feed := core.NewGenericDataFeed(gen, 100)
+	disp.AddSubject(feed)
+
+	go gen.Run()
+	go disp.Run()
+
+	time.Sleep(time.Second * 5)
+	disp.Stop()
+}
+
 func TestFx678DataGen(t *testing.T) {
 	count := 0
 

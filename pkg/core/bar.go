@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+type Bars map[string]Bar
+
 type Bar interface {
 	Open() float64
 	High() float64
