@@ -4,8 +4,10 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/core"
 	"goat/pkg/js/apis"
+	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
+	"go.uber.org/zap"
 )
 
 type ConvertRuntime interface {
@@ -15,8 +17,9 @@ type ConvertRuntime interface {
 }
 
 type convertRt struct {
-	cfg *config.Config
-	vm  *otto.Otto
+	cfg     *config.Config
+	vm      *otto.Otto
+	mapping *apis.DBMappingObject
 }
 
 // Compile implements ConvertRuntime
@@ -35,7 +38,19 @@ func (*convertRt) Execute(script *otto.Script) (otto.Value, error) {
 }
 
 func NewDBConvertRuntime(cfg *config.Config, cb apis.StartCallback) ConvertRuntime {
+	var err error
+	res := &convertRt{
+		cfg: cfg,
+		vm:  otto.New(),
+	}
+
+	res.mapping, err = apis.NewDBMappingObject(cfg, res.vm)
+	if err != nil {
+		logger.Logger.Error("failed to create db convert mapping object", zap.Error(err))
+		panic(err)
+	}
+
 	// TODO: implement me
-	res := &convertRt{}
+
 	return res
 }

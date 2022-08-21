@@ -1,4 +1,4 @@
-db.mappings = {
+dbconvert.set_mappings({
   datetime: "",
   open: "",
   high: "",
@@ -8,4 +8,4 @@ db.mappings = {
   volume: "",
   frequency: "",
   note: "",
-};
+});
