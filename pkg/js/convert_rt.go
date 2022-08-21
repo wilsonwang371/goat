@@ -2,7 +2,7 @@ package js
 
 import (
 	"goat/pkg/config"
-	"goat/pkg/core"
+	"goat/pkg/convert"
 	"goat/pkg/js/apis"
 	"goat/pkg/logger"
 
@@ -13,7 +13,7 @@ import (
 type ConvertRuntime interface {
 	Compile(source string) (*otto.Script, error)
 	Execute(script *otto.Script) (otto.Value, error)
-	Convert(data map[string]string) (core.Bar, error)
+	Convert(dbsource convert.DBSource) error
 }
 
 type convertRt struct {
@@ -28,7 +28,7 @@ func (*convertRt) Compile(source string) (*otto.Script, error) {
 }
 
 // Convert implements ConvertRuntime
-func (*convertRt) Convert(data map[string]string) (core.Bar, error) {
+func (*convertRt) Convert(dbsource convert.DBSource) error {
 	panic("unimplemented")
 }
 
@@ -37,7 +37,7 @@ func (*convertRt) Execute(script *otto.Script) (otto.Value, error) {
 	panic("unimplemented")
 }
 
-func NewDBConvertRuntime(cfg *config.Config, cb apis.StartCallback) ConvertRuntime {
+func NewDBConvertRuntime(cfg *config.Config) ConvertRuntime {
 	var err error
 	res := &convertRt{
 		cfg: cfg,

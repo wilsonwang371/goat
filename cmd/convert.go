@@ -1,6 +1,17 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+
+	"goat/pkg/convert"
+	"goat/pkg/js"
+	"goat/pkg/logger"
+
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+)
 
 var (
 	convertScriptFile string
@@ -18,6 +29,29 @@ var convertCmd = &cobra.Command{
 }
 
 func ConvertFunction(cmd *cobra.Command, args []string) {
+	rt := js.NewDBConvertRuntime(&cfg)
+	script, err := ioutil.ReadFile(liveScriptFile)
+	if err != nil {
+		logger.Logger.Error("failed to read script file", zap.Error(err))
+		os.Exit(1)
+	}
+	compiledScript, err := rt.Compile(string(script))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if _, err := rt.Execute(compiledScript); err != nil {
+		logger.Logger.Error("failed to execute script", zap.Error(err))
+		os.Exit(1)
+	}
+
+	dbsource := convert.NewDBSource(convertDataSource, convertFileType)
+	if err := rt.Convert(dbsource); err != nil {
+		logger.Logger.Error("failed to convert data", zap.Error(err))
+		os.Exit(1)
+	}
+
 	// TODO: implement convert command
 }
 
@@ -35,7 +69,7 @@ func init() {
 	convertCmd.MarkPersistentFlagRequired("script")
 
 	convertCmd.PersistentFlags().StringVarP(&convertFileType, "type", "t", "",
-		"source data file type(sqlite)")
+		"source data file type(sqlite3)")
 	convertCmd.MarkPersistentFlagRequired("type")
 
 	rootCmd.AddCommand(convertCmd)
