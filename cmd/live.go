@@ -17,6 +17,8 @@ import (
 )
 
 var (
+	liveScriptFile string
+
 	feedProviders string
 	runWg         *sync.WaitGroup
 
@@ -39,11 +41,11 @@ func startLive() error {
 }
 
 func runLiveCmd(cmd *cobra.Command, args []string) {
-	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
+	logger.Logger.Debug("running script", zap.String("liveScriptFile", liveScriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
 	rt := js.NewRuntime(&cfg, startLive)
-	script, err := ioutil.ReadFile(scriptFile)
+	script, err := ioutil.ReadFile(liveScriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
 		os.Exit(1)
@@ -141,7 +143,7 @@ func GetLiveFeedGenerator(providers []string) (core.FeedGenerator, *sync.WaitGro
 }
 
 func init() {
-	liveCmd.PersistentFlags().StringVarP(&scriptFile, "strategy", "f", "",
+	liveCmd.PersistentFlags().StringVarP(&liveScriptFile, "strategy", "f", "",
 		"strategy js script file")
 	liveCmd.MarkPersistentFlagRequired("strategy")
 	liveCmd.PersistentFlags().StringVarP(&feedProviders, "providers", "p", "", "live feed data providers name, separated by comma")
