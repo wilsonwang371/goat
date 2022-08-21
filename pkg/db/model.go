@@ -15,6 +15,7 @@ type BarData struct {
 	Volume    int64   `json:"volume"`
 	AdjClose  float64 `json:"adjClose"`
 	Frequency int64   `json:"frequency"`
+	Note      string  `json:"note"`
 }
 
 func NewSQLiteDataBase(dbpath string) *gorm.DB {
