@@ -5,6 +5,7 @@ import "github.com/spf13/cobra"
 var (
 	convertScriptFile string
 	convertDataSource string
+	convertFileType   string
 	convertOutput     string
 )
 
@@ -32,6 +33,10 @@ func init() {
 	convertCmd.PersistentFlags().StringVarP(&convertScriptFile, "script", "f", "",
 		"source data column mapping js file")
 	convertCmd.MarkPersistentFlagRequired("script")
+
+	convertCmd.PersistentFlags().StringVarP(&convertFileType, "type", "t", "",
+		"source data file type(sqlite)")
+	convertCmd.MarkPersistentFlagRequired("type")
 
 	rootCmd.AddCommand(convertCmd)
 }
