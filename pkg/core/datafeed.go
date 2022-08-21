@@ -109,7 +109,7 @@ func NewBarFeedGenerator(freq []Frequency, maxLen int) FeedGenerator {
 	return &barFeedGenerator{
 		freq:         freq,
 		maxLen:       maxLen,
-		dataBuf:      make([]*BarFeedGeneratorData, 0),
+		dataBuf:      []*BarFeedGeneratorData{},
 		dataBufMutex: sync.Mutex{},
 	}
 }
@@ -227,7 +227,7 @@ func (d *dataSeriesManager) getDataSeries(name string) (DataSeries, error) {
 }
 
 func (d *dataSeriesManager) getDataSeriesNames() []string {
-	names := make([]string, 0, len(d.dataSeries))
+	names := []string{}
 	for name := range d.dataSeries {
 		names = append(names, name)
 	}

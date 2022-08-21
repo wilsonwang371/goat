@@ -117,13 +117,13 @@ func GetLiveFeedGenerator(providers []string) (core.FeedGenerator, *sync.WaitGro
 		return gen, wg
 	} else {
 		pArr := make([]feedgen.BarDataProvider, len(providers))
-		for _, pStr := range providers {
+		for i, pStr := range providers {
 			p, err := CreateOneProvider(pStr)
 			if err != nil {
 				logger.Logger.Error("failed to create feed provider", zap.Error(err))
 				os.Exit(1)
 			}
-			pArr = append(pArr, p)
+			pArr[i] = p
 		}
 		gen := feedgen.NewMultiLiveBarFeedGenerator(
 			pArr,

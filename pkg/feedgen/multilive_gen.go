@@ -134,6 +134,7 @@ func singleBarFromBars(bars core.Bars) core.Bar {
 
 func (l *MultiLiveBarFeedGenerator) Run() error {
 	for i, p := range l.providers {
+		logger.Logger.Debug("start provider", zap.Any("p", p))
 		if err := p.init(l.instrument, l.freq); err != nil {
 			logger.Logger.Error("failed to init provider", zap.Error(err))
 			return err
