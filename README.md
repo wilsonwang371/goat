@@ -87,7 +87,7 @@ In backtest mode, the strategy will be executed with historical data.
 ```bash
 
 # convert a sqlite db to GoAT sqlite db
-./goat convert -f samples/mappings.js -s <old_sqlite> -t sqlite -d <new_goat_sqlite>
+./goat convert -f samples/convert/mappings.js -s <old_sqlite> -t sqlite -d <new_goat_sqlite>
 
 ```
 
