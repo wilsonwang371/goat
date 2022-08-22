@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	liveScriptFile string
+	liveScriptFile   string
+	liveRecoveryMode bool
 
 	feedProviders string
 	runWg         *sync.WaitGroup
@@ -147,5 +148,9 @@ func init() {
 		"strategy js script file")
 	liveCmd.MarkPersistentFlagRequired("strategy")
 	liveCmd.PersistentFlags().StringVarP(&feedProviders, "providers", "p", "", "live feed data providers name, separated by comma")
+
+	liveCmd.PersistentFlags().BoolVarP(&liveRecoveryMode, "recovery", "r", false,
+		"recovery mode, if set to true, the strategy will run with saved data before go live")
+
 	rootCmd.AddCommand(liveCmd)
 }
