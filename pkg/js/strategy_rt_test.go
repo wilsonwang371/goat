@@ -14,7 +14,7 @@ func TestRuntimeSimple(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewRuntime(cfg, nil)
+	rt := NewStrategyRuntime(cfg, nil)
 	err := rt.RegisterHostCall("test_print", func(call otto.FunctionCall) otto.Value {
 		logger.Logger.Info("test_print is called")
 		return otto.NullValue()
@@ -37,7 +37,7 @@ func TestRuntimeSimple2(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewRuntime(cfg, nil)
+	rt := NewStrategyRuntime(cfg, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		console.log("onbars", e);
@@ -59,7 +59,7 @@ func TestRuntimeKV(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewRuntime(cfg, nil)
+	rt := NewStrategyRuntime(cfg, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		kvstorage.save("foo", "bar");
@@ -82,7 +82,7 @@ func TestRuntimeTALibSimple(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewRuntime(cfg, nil)
+	rt := NewStrategyRuntime(cfg, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		res = talib.Ema([.1,.2,.3,.4,.5,.6,.7,.8], 4);

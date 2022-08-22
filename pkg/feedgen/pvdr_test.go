@@ -129,7 +129,7 @@ func startLive() error {
 
 func TestMultiProviders(t *testing.T) {
 	cfg := config.Config{}
-	rt := js.NewRuntime(&cfg, startLive)
+	rt := js.NewStrategyRuntime(&cfg, startLive)
 	script, err := ioutil.ReadFile("../../samples/strategies/simple.js")
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))

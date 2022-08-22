@@ -9,14 +9,14 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewJSStrategyEventListener(rt Runtime) core.StrategyEventListener {
+func NewJSStrategyEventListener(rt StrategyRuntime) core.StrategyEventListener {
 	return &JSStrategyEventListener{
 		rt: rt,
 	}
 }
 
 type JSStrategyEventListener struct {
-	rt Runtime
+	rt StrategyRuntime
 }
 
 // OnBars implements core.StrategyEventListener

@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	scriptFile string
-	dataSource string
+	runScriptFile string
+	runDataSource string
 
 	runCmd = &cobra.Command{
 		Use:   "run",
@@ -30,10 +30,10 @@ var (
 )
 
 func RunFunction(cmd *cobra.Command, args []string) {
-	logger.Logger.Debug("running script", zap.String("scriptFile", scriptFile))
+	logger.Logger.Debug("running script", zap.String("runScriptFile", runScriptFile))
 
-	rt := js.NewRuntime(&cfg, nil)
-	script, err := ioutil.ReadFile(scriptFile)
+	rt := js.NewStrategyRuntime(&cfg, nil)
+	script, err := ioutil.ReadFile(runScriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
 		os.Exit(1)
@@ -66,11 +66,11 @@ func RunFunction(cmd *cobra.Command, args []string) {
 }
 
 func GetFeedGenerator() core.FeedGenerator {
-	if u, err := url.ParseRequestURI(dataSource); err != nil {
-		ext := filepath.Ext(dataSource)
+	if u, err := url.ParseRequestURI(runDataSource); err != nil {
+		ext := filepath.Ext(runDataSource)
 		switch ext {
 		case ".csv":
-			return feedgen.NewCSVBarFeedGenerator(dataSource, "symbol", core.UNKNOWN)
+			return feedgen.NewCSVBarFeedGenerator(runDataSource, "symbol", core.UNKNOWN)
 		default:
 			logger.Logger.Error("unsupported file type", zap.String("fileType", ext))
 			return nil
@@ -92,22 +92,22 @@ func GetFeedGenerator() core.FeedGenerator {
 				return feedgen.NewYahooBarFeedGenerator(cfg.Symbol, core.UNKNOWN)
 			default:
 				logger.Logger.Error("unsupported remote data source",
-					zap.String("dataSource", u.Host))
+					zap.String("runDataSource", u.Host))
 				return nil
 			}
 		default:
-			logger.Logger.Error("unknown data source", zap.String("dataSource", dataSource))
+			logger.Logger.Error("unknown data source", zap.String("runDataSource", runDataSource))
 			return nil
 		}
 	}
 }
 
 func init() {
-	runCmd.PersistentFlags().StringVarP(&scriptFile, "strategy", "f", "",
+	runCmd.PersistentFlags().StringVarP(&runScriptFile, "strategy", "f", "",
 		"strategy js script file")
 	runCmd.MarkPersistentFlagRequired("strategy")
 
-	runCmd.PersistentFlags().StringVarP(&dataSource, "datasource", "s", "",
+	runCmd.PersistentFlags().StringVarP(&runDataSource, "datasource", "s", "",
 		"data source(support url scheme: csv, yahoo) e.g. csv:///path/to/file.csv or yahoo://")
 	runCmd.MarkPersistentFlagRequired("datasource")
 
