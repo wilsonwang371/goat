@@ -1,11 +1,11 @@
 dbconvert.set_mappings({
-  datetime: "",
-  open: "",
-  high: "",
-  low: "",
-  close: "",
+  datetime: "dt",
+  open: "o",
+  high: "h",
+  low: "l",
+  close: "c",
   adj_close: "",
-  volume: "",
-  frequency: "",
+  volume: "v",
+  frequency: "freq",
   note: "",
 });

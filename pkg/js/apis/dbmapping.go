@@ -7,11 +7,13 @@ import (
 	"goat/pkg/logger"
 
 	"github.com/robertkrimen/otto"
+	"go.uber.org/zap"
 )
 
 type DBMappingObject struct {
-	cfg *config.Config
-	VM  *otto.Otto
+	cfg      *config.Config
+	VM       *otto.Otto
+	Mappings map[string]interface{}
 }
 
 func NewDBMappingObject(cfg *config.Config, vm *otto.Otto) (*DBMappingObject, error) {
@@ -20,8 +22,9 @@ func NewDBMappingObject(cfg *config.Config, vm *otto.Otto) (*DBMappingObject, er
 	}
 
 	db := &DBMappingObject{
-		cfg: cfg,
-		VM:  vm,
+		cfg:      cfg,
+		VM:       vm,
+		Mappings: nil,
 	}
 
 	dbObj, err := db.VM.Object(`dbconvert = {}`)
@@ -34,12 +37,25 @@ func NewDBMappingObject(cfg *config.Config, vm *otto.Otto) (*DBMappingObject, er
 }
 
 func (db *DBMappingObject) SetDBMappingCmd(call otto.FunctionCall) otto.Value {
-	if len(call.ArgumentList) != 0 {
-		logger.Logger.Debug("startCmd needs 0 argument")
+	if len(call.ArgumentList) != 1 {
+		logger.Logger.Debug("set_mappings needs 1 argument")
 		return otto.FalseValue()
 	}
 
-	// TOOD: implement me
+	if call.Argument(0).IsObject() {
+		rawObj, err := call.Argument(0).Export()
+		if err != nil {
+			logger.Logger.Debug("set_mappings argument is not an object")
+			return otto.FalseValue()
+		}
+		logger.Logger.Debug("set_mappings", zap.Any("obj", rawObj))
+
+		if obj, ok := rawObj.(map[string]interface{}); ok {
+			db.Mappings = obj
+		}
+	} else {
+		logger.Logger.Debug("invalid argument")
+	}
 
 	return otto.TrueValue()
 }

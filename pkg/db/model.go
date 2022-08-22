@@ -1,6 +1,11 @@
 package db
 
 import (
+	"os"
+
+	"goat/pkg/logger"
+
+	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -21,7 +26,8 @@ type BarData struct {
 func NewSQLiteDataBase(dbpath string) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		logger.Logger.Error("failed to connect database", zap.Error(err))
+		os.Exit(1)
 	}
 	db.AutoMigrate(&BarData{})
 	return db
