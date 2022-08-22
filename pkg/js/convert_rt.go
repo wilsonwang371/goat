@@ -68,8 +68,11 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *gorm.DB) error 
 		var datetime time.Time
 		var open, high, low, close, volume, adj_close float64
 		var frequency int64
-		var note string
+		var symbol, note string
 
+		if val, ok := row[mappings["symbol"].(string)]; ok {
+			symbol = val
+		}
 		if val, ok := row[mappings["datetime"].(string)]; ok {
 			if val, err := dateparse.ParseAny(val); err == nil {
 				datetime = val
@@ -131,6 +134,7 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *gorm.DB) error 
 		}
 
 		bar := &db.BarData{
+			Symbol:    symbol,
 			DateTime:  datetime.Unix(),
 			Open:      open,
 			High:      high,

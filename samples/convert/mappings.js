@@ -1,4 +1,5 @@
 dbconvert.set_mappings({
+  symbol: "instrument",
   datetime: "dt",
   open: "o",
   high: "h",

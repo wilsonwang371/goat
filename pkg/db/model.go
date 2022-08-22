@@ -12,6 +12,7 @@ import (
 
 type BarData struct {
 	gorm.Model
+	Symbol    string  `json:"symbol"`
 	DateTime  int64   `json:"dateTime"`
 	Open      float64 `json:"open"`
 	High      float64 `json:"high"`

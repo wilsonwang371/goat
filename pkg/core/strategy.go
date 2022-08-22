@@ -121,8 +121,9 @@ func (s *strategyController) onBars(args ...interface{}) error {
 		zap.Time("time", currentTime),
 		zap.Any("bars", bars))
 	if s.dumpDB != nil {
-		for _, bar := range bars {
+		for symbol, bar := range bars {
 			s.dumpDB.Create(&db.BarData{
+				Symbol:    symbol,
 				DateTime:  bar.DateTime().Unix(),
 				Open:      bar.Open(),
 				High:      bar.High(),
