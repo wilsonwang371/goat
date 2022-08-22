@@ -154,6 +154,7 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *gorm.DB) error 
 	if len(allbars) > 0 {
 		dboutput.CreateInBatches(allbars, len(allbars))
 	}
+	c.bar.Finish()
 	return nil
 }
 
