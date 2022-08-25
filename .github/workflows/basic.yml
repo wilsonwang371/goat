@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build-binary:
+  compile-binaries:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -19,7 +19,7 @@ jobs:
     - name: Compile
       run: ./run-build.sh compile
 
-  unit-test:
+  unittest:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
