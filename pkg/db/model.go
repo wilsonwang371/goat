@@ -40,7 +40,7 @@ func NewSQLiteDataBase(dbpath string) *DB {
 }
 
 func (db *DB) IterateRows(f func(*BarData)) error {
-	if rows, err := db.Model(&BarData{}).Order("primarykey").Rows(); err != nil {
+	if rows, err := db.Model(&BarData{}).Order("id").Rows(); err != nil {
 		return err
 	} else {
 		defer rows.Close()

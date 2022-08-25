@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"time"
 
 	"goat/pkg/config"
 	"goat/pkg/db"
@@ -109,16 +108,16 @@ func (s *strategyController) onBars(args ...interface{}) error {
 		return fmt.Errorf("onBars args length should be 2")
 	}
 
-	currentTime := args[0].(time.Time)
+	// currentTime := args[0].(time.Time)
 	data := args[1].(map[string]interface{})
 	bars := make(Bars, len(data))
 	for k, v := range data {
 		bars[k] = v.(Bar)
 	}
 
-	logger.Logger.Debug("onBars",
-		zap.Time("time", currentTime),
-		zap.Any("bars", bars))
+	// logger.Logger.Debug("onBars",
+	// 	zap.Time("time", currentTime),
+	// 	zap.Any("bars", bars))
 	if s.dumpDB != nil {
 		for symbol, bar := range bars {
 			s.dumpDB.Create(&db.BarData{
