@@ -71,12 +71,10 @@ func (d *dispatcher) dispatchSubject(subject Subject, smallestTime time.Time) bo
 		logger.Logger.Info("no data available yet", zap.String("subject", reflect.TypeOf(subject).String()))
 		return false
 	}
+
+	// TODO: broker currently is not returning the right time.
 	if !subject.Eof() && !t.Before(smallestTime) {
 		return subject.Dispatch()
-	} else {
-		logger.Logger.Debug("subject not dispatched", zap.Any("eof", subject.Eof()),
-			zap.Any("smallestTime", smallestTime),
-			zap.Any("PeekDateTime", t))
 	}
 	return false
 }

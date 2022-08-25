@@ -1,11 +1,13 @@
 package core
 
 import (
+	"database/sql"
 	"fmt"
 	"sync"
 	"time"
 
 	"goat/pkg/config"
+	"goat/pkg/db"
 	"goat/pkg/logger"
 
 	"go.uber.org/zap"
@@ -60,6 +62,7 @@ func (b *barFeedGenerator) CreateDataSeries(key string, maxLen int) DataSeries {
 
 // NextValues implements FeedGenerator
 // NOTE: we cannot simply wait here because it is called inside dispatch loop
+// if we return no err,  still it can have no data returned
 func (b *barFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, Frequency, error) {
 	b.dataBufMutex.Lock()
 	defer b.dataBufMutex.Unlock()
@@ -120,10 +123,19 @@ type DataFeed interface {
 	CreateDataSeries(key string, maxLen int) DataSeries
 }
 
+type pendingDataType struct {
+	t time.Time
+	v map[string]interface{}
+	f Frequency
+}
+
 type genericDataFeed struct {
-	newValueEvent     Event
-	dataSeriesManager *dataSeriesManager
-	feedGenerator     FeedGenerator
+	newValueEvent       Event
+	dataSeriesManager   *dataSeriesManager
+	feedGenerator       FeedGenerator
+	recoveryDB          *db.DB
+	rows                *sql.Rows
+	pendingRecoveryData *pendingDataType
 }
 
 // CreateDataSeries implements DataFeed
@@ -131,11 +143,77 @@ func (d *genericDataFeed) CreateDataSeries(key string, maxLen int) DataSeries {
 	return d.feedGenerator.CreateDataSeries(key, maxLen)
 }
 
+func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
+	var t time.Time
+	var v map[string]interface{}
+	var f Frequency
+
+	if d.pendingRecoveryData != nil {
+		// we have pending data, just ignore
+		return nil
+	}
+
+	if d.recoveryDB != nil {
+		if d.rows.Next() {
+			// NOTE: if we have data in the recovery database, we should use it
+			var barData db.BarData
+			if err := d.recoveryDB.ScanRows(d.rows, &barData); err != nil {
+				logger.Logger.Error("failed to scan row", zap.Error(err))
+				panic(err)
+			}
+
+			bar := NewBasicBar(time.Unix(barData.DateTime, 0),
+				barData.Open,
+				barData.High,
+				barData.Low,
+				barData.Close,
+				barData.AdjClose,
+				barData.Volume,
+				Frequency(barData.Frequency))
+
+			// NOTE:  we replace the value with the one from the recovery database
+			t = time.Unix(barData.DateTime, 0)
+			v = map[string]interface{}{}
+			v[barData.Symbol] = bar.(interface{})
+			f = Frequency(barData.Frequency)
+
+			// logger.Logger.Info("read bar from recovery database",
+			//	zap.Time("time", t), zap.String("symbol", barData.Symbol), zap.Any("bar", bar))
+			d.pendingRecoveryData = &pendingDataType{t, v, f}
+			return nil
+		} else {
+			d.rows.Close()
+			d.recoveryDB = nil
+			return nil
+		}
+	} else {
+		return fmt.Errorf("recovery database is not open")
+	}
+}
+
 // Dispatch implements DataFeed
 func (d *genericDataFeed) Dispatch() bool {
-	if t, v, f, err := d.feedGenerator.PopNextValues(); err != nil {
+	var t time.Time
+	var v map[string]interface{}
+	var f Frequency
+	var err error
+
+	if t, v, f, err = d.feedGenerator.PopNextValues(); err != nil {
 		return false
-	} else if v != nil {
+	}
+
+	// we may need to read data from recovery db
+	d.maybeFetchNextRecoveryData()
+
+	if d.pendingRecoveryData != nil {
+		// we have data from the recovery database, use it
+		t = d.pendingRecoveryData.t
+		v = d.pendingRecoveryData.v
+		f = d.pendingRecoveryData.f
+		d.pendingRecoveryData = nil
+	}
+
+	if v != nil {
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 			panic(err)
 		}
@@ -165,6 +243,11 @@ func (d *genericDataFeed) Join() error {
 // PeekDateTime implements DataFeed
 func (d *genericDataFeed) PeekDateTime() *time.Time {
 	// NOTE: we need to read data
+	d.maybeFetchNextRecoveryData()
+	if d.pendingRecoveryData != nil {
+		// we have data from the recovery database, use it
+		return &d.pendingRecoveryData.t
+	}
 	return d.feedGenerator.PeekNextTime()
 }
 
@@ -185,12 +268,26 @@ func (d *genericDataFeed) GetNewValueEvent() Event {
 }
 
 // GetOrderUpdatedEvent implements Broker
-func NewGenericDataFeed(fg FeedGenerator, maxLen int) DataFeed {
+func NewGenericDataFeed(fg FeedGenerator, maxLen int, recoveryDB string) DataFeed {
+	var recDB *db.DB
+	var rows *sql.Rows
+	if recoveryDB != "" {
+		logger.Logger.Info("recovery mode is enabled", zap.String("db", recoveryDB))
+		recDB = db.NewSQLiteDataBase(recoveryDB)
+		if tmp, err := recDB.Model(&db.BarData{}).Order("id").Rows(); err != nil {
+			panic(err)
+		} else {
+			rows = tmp
+		}
+	}
 	df := &genericDataFeed{
 		newValueEvent: NewEvent(),
 		feedGenerator: fg,
+		recoveryDB:    recDB,
+		rows:          rows,
 	}
 	df.dataSeriesManager = newDataSeriesManager(df, maxLen)
+	df.maybeFetchNextRecoveryData() // we may need to read some initial data from recovery db
 	return df
 }
 

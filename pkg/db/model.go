@@ -24,12 +24,33 @@ type BarData struct {
 	Note      string  `json:"note"`
 }
 
-func NewSQLiteDataBase(dbpath string) *gorm.DB {
+type DB struct {
+	*gorm.DB
+}
+
+func NewSQLiteDataBase(dbpath string) *DB {
 	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
 	if err != nil {
 		logger.Logger.Error("failed to connect database", zap.Error(err))
 		os.Exit(1)
 	}
 	db.AutoMigrate(&BarData{})
-	return db
+
+	return &DB{db}
+}
+
+func (db *DB) IterateRows(f func(*BarData)) error {
+	if rows, err := db.Model(&BarData{}).Order("id").Rows(); err != nil {
+		return err
+	} else {
+		defer rows.Close()
+		for rows.Next() {
+			data := &BarData{}
+			if err := db.ScanRows(rows, data); err != nil {
+				return err
+			}
+			f(data)
+		}
+	}
+	return nil
 }

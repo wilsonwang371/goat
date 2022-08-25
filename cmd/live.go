@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	liveScriptFile string
+	liveScriptFile     string
+	liveRecoveryDBFile string
 
 	feedProviders string
 	runWg         *sync.WaitGroup
@@ -31,11 +32,13 @@ var (
 	}
 )
 
+// startLive function is used by js runtime to start live feed
 func startLive() error {
 	logger.Logger.Info("start live strategy data feed")
 	if runWg == nil {
 		panic("runWg is nil")
 	}
+	// unblock bar feed generator
 	runWg.Done()
 	return nil
 }
@@ -62,16 +65,15 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		}
 		runWg = wg
 
-		feed := core.NewGenericDataFeed(gen, 100)
+		feed := core.NewGenericDataFeed(gen, 100, liveRecoveryDBFile)
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
 		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
 
-		if val, err := rt.Execute(compiledScript); err != nil {
+		// starting from here, we start to run the strategy
+		if _, err := rt.Execute(compiledScript); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
-		} else {
-			fmt.Println(val)
 		}
 
 		strategy.Run()
@@ -147,5 +149,9 @@ func init() {
 		"strategy js script file")
 	liveCmd.MarkPersistentFlagRequired("strategy")
 	liveCmd.PersistentFlags().StringVarP(&feedProviders, "providers", "p", "", "live feed data providers name, separated by comma")
+
+	liveCmd.PersistentFlags().StringVarP(&liveRecoveryDBFile, "recovery-db", "r", "",
+		"goat db file that will be replayed before go live")
+
 	rootCmd.AddCommand(liveCmd)
 }

@@ -3,10 +3,6 @@ package core
 import (
 	"fmt"
 	"time"
-
-	"goat/pkg/logger"
-
-	"go.uber.org/zap"
 )
 
 type Broker interface {
@@ -36,6 +32,7 @@ func (e *dummyBroker) Join() error {
 
 // PeekDateTime implements Broker
 func (e *dummyBroker) PeekDateTime() *time.Time {
+	// TODO: right now we don't deal with it.
 	t := time.Now().UTC()
 	return &t
 }
@@ -56,21 +53,21 @@ func (e *dummyBroker) GetOrderUpdatedEvent() Event {
 }
 
 func (e *dummyBroker) onBars(args ...interface{}) error {
-	logger.Logger.Debug("broker onBars")
+	// logger.Logger.Debug("broker onBars")
 	if len(args) != 2 {
 		return fmt.Errorf("onBars args length should be 2")
 	}
 
-	currentTime := args[0].(time.Time)
+	// currentTime := args[0].(time.Time)
 	data := args[1].(map[string]interface{})
 	bars := make(Bars, len(data))
 	for k, v := range data {
 		bars[k] = v.(Bar)
 	}
 
-	logger.Logger.Debug("onBars",
-		zap.Time("time", currentTime),
-		zap.Any("bars", bars))
+	// logger.Logger.Debug("onBars",
+	// 	zap.Time("time", currentTime),
+	// 	zap.Any("bars", bars))
 
 	// TODO: implement fill strategy
 

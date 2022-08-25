@@ -26,7 +26,7 @@ I want to make some small changes to meet my own needs.
 ## Build
 
 ```bash
-run-build.sh build
+run-build.sh compile
 ```
 
 ## Test
@@ -60,6 +60,11 @@ In live mode, the strategy will be executed in real time.
 # Multi providers are also supported
 ./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU
 
+# Run recovery mode
+./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU -r samples/data/strategy_data.dumpdb
+
+```
+
 
 ```
 
@@ -87,7 +92,8 @@ In backtest mode, the strategy will be executed with historical data.
 ```bash
 
 # convert a sqlite db to GoAT sqlite db
-./goat convert -f samples/convert/mappings.js -s <old_sqlite> -t sqlite -d <new_goat_sqlite>
+./goat convert -f samples/convert/mappings.js -s ./samples/data/strategy_data.sqlite -t sqlite \
+    -o ./samples/data/strategy_data.dumpdb
 
 ```
 

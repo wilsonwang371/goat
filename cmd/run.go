@@ -55,7 +55,7 @@ func RunFunction(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 
-		feed := core.NewGenericDataFeed(gen, 100)
+		feed := core.NewGenericDataFeed(gen, 100, "")
 
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)

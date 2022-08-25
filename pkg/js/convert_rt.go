@@ -15,7 +15,6 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/robertkrimen/otto"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 const dbBatchCreateSize = 2048
@@ -23,7 +22,7 @@ const dbBatchCreateSize = 2048
 type ConvertRuntime interface {
 	Compile(source string) (*otto.Script, error)
 	Execute(script *otto.Script) (otto.Value, error)
-	Convert(dbsource convert.DBSource, dboutput *gorm.DB) error
+	Convert(dbsource convert.DBSource, dboutput *db.DB) error
 }
 
 type convertRt struct {
@@ -43,7 +42,7 @@ func (c *convertRt) Compile(source string) (*otto.Script, error) {
 }
 
 // Convert implements ConvertRuntime
-func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *gorm.DB) error {
+func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *db.DB) error {
 	if err := dbsource.Open(); err != nil {
 		return err
 	}
