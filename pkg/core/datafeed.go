@@ -1,11 +1,13 @@
 package core
 
 import (
+	"database/sql"
 	"fmt"
 	"sync"
 	"time"
 
 	"goat/pkg/config"
+	"goat/pkg/db"
 	"goat/pkg/logger"
 
 	"go.uber.org/zap"
@@ -60,6 +62,7 @@ func (b *barFeedGenerator) CreateDataSeries(key string, maxLen int) DataSeries {
 
 // NextValues implements FeedGenerator
 // NOTE: we cannot simply wait here because it is called inside dispatch loop
+// if we return no err,  still it can have no data returned
 func (b *barFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, Frequency, error) {
 	b.dataBufMutex.Lock()
 	defer b.dataBufMutex.Unlock()
@@ -124,6 +127,8 @@ type genericDataFeed struct {
 	newValueEvent     Event
 	dataSeriesManager *dataSeriesManager
 	feedGenerator     FeedGenerator
+	recoveryDB        *db.DB
+	rows              *sql.Rows
 }
 
 // CreateDataSeries implements DataFeed
@@ -133,9 +138,47 @@ func (d *genericDataFeed) CreateDataSeries(key string, maxLen int) DataSeries {
 
 // Dispatch implements DataFeed
 func (d *genericDataFeed) Dispatch() bool {
-	if t, v, f, err := d.feedGenerator.PopNextValues(); err != nil {
+	var t time.Time
+	var v map[string]interface{}
+	var f Frequency
+	var err error
+
+	if t, v, f, err = d.feedGenerator.PopNextValues(); err != nil {
 		return false
-	} else if v != nil {
+	} else {
+		// we may need to read data from recovery db
+		if d.recoveryDB != nil {
+			if d.rows.Next() {
+				// NOTE: if we have data in the recovery database, we should use it
+				var barData db.BarData
+				if err := d.recoveryDB.ScanRows(d.rows, &barData); err != nil {
+					logger.Logger.Error("failed to scan row", zap.Error(err))
+					panic(err)
+				}
+
+				bar := NewBasicBar(time.Unix(barData.DateTime, 0),
+					barData.Open,
+					barData.High,
+					barData.Low,
+					barData.Close,
+					barData.AdjClose,
+					barData.Volume,
+					Frequency(barData.Frequency))
+
+				// NOTE:  we replace the value with the one from the recovery database
+				t = time.Unix(barData.DateTime, 0)
+				v = map[string]interface{}{}
+				v[barData.Symbol] = bar.(interface{})
+				f = Frequency(barData.Frequency)
+
+			} else {
+				d.rows.Close()
+				d.recoveryDB = nil
+			}
+		}
+	}
+
+	if v != nil {
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 			panic(err)
 		}
@@ -185,10 +228,22 @@ func (d *genericDataFeed) GetNewValueEvent() Event {
 }
 
 // GetOrderUpdatedEvent implements Broker
-func NewGenericDataFeed(fg FeedGenerator, maxLen int) DataFeed {
+func NewGenericDataFeed(fg FeedGenerator, maxLen int, recoveryDB string) DataFeed {
+	var recDB *db.DB
+	var rows *sql.Rows
+	if recoveryDB != "" {
+		recDB = db.NewSQLiteDataBase(recoveryDB)
+		if tmp, err := recDB.Model(&db.BarData{}).Order("primarykey").Rows(); err != nil {
+			panic(err)
+		} else {
+			rows = tmp
+		}
+	}
 	df := &genericDataFeed{
 		newValueEvent: NewEvent(),
 		feedGenerator: fg,
+		recoveryDB:    recDB,
+		rows:          rows,
 	}
 	df.dataSeriesManager = newDataSeriesManager(df, maxLen)
 	return df

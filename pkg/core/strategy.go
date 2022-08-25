@@ -9,7 +9,6 @@ import (
 	"goat/pkg/logger"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type Order interface{}
@@ -78,7 +77,7 @@ func NewSimpleStrategyEventListener() StrategyEventListener {
 
 type strategyController struct {
 	cfg      *config.Config
-	dumpDB   *gorm.DB
+	dumpDB   *db.DB
 	listener StrategyEventListener
 	broker   Broker
 	dataFeed DataFeed

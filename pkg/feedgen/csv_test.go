@@ -12,7 +12,7 @@ func TestCSVSimple(t *testing.T) {
 		"../../samples/data/DBC-2007-yahoofinance.csv", "Symbol",
 		core.UNKNOWN)
 	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(gen, 100)
+	feed := core.NewGenericDataFeed(gen, 100, "")
 	disp.AddSubject(feed)
 
 	go disp.Run()

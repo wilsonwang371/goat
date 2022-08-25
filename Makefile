@@ -1,9 +1,9 @@
 PHONY: all
 
-build:
-	@echo "Building..."
+compile:
+	@echo "Compiling..."
 	@go build -o ./goat ./main.go
-	@echo "Building done."
+	@echo "Compiling done."
 
 test:
 	@echo "Testing..."

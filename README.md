@@ -26,7 +26,7 @@ I want to make some small changes to meet my own needs.
 ## Build
 
 ```bash
-run-build.sh build
+run-build.sh compile
 ```
 
 ## Test
