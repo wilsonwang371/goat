@@ -37,6 +37,7 @@ type strategyRuntime struct {
 	tl             *apis.TALib
 	sys            *apis.SysObject
 	alert          *apis.AlertObject
+	feed           *apis.FeedObject
 	eventListeners map[string]otto.Value
 	apiHandlers    map[string]RuntimeFunc
 	talib          *talib.TALib
@@ -113,6 +114,11 @@ func NewStrategyRuntime(cfg *config.Config, cb apis.StartCallback) StrategyRunti
 	res.alert, err = apis.NewAlertObject(cfg, res.vm)
 	if err != nil {
 		logger.Logger.Error("failed to create alert object", zap.Error(err))
+		panic(err)
+	}
+	res.feed, err = apis.NewFeedObject(cfg, res.vm)
+	if err != nil {
+		logger.Logger.Error("failed to create feed object", zap.Error(err))
 		panic(err)
 	}
 
