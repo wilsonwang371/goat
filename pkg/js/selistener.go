@@ -21,12 +21,17 @@ type JSStrategyEventListener struct {
 
 // OnBars implements core.StrategyEventListener
 func (j *JSStrategyEventListener) OnBars(bars core.Bars) error {
-	jsonStr, err := json.Marshal(bars)
+	jsonData, err := json.Marshal(bars)
 	if err != nil {
 		logger.Logger.Error("onBars got invalid data", zap.Error(err))
 		return err
 	}
-	return j.rt.NotifyEvent("onbars", string(jsonStr))
+	var data map[string]interface{}
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		logger.Logger.Error("onBars got invalid data to unmarshal", zap.Error(err))
+		return err
+	}
+	return j.rt.NotifyEvent("onbars", data)
 }
 
 // OnFinish implements core.StrategyEventListener
