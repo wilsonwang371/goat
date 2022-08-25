@@ -1,0 +1,31 @@
+name: Compile and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build-binary:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker
+      uses: docker-practice/actions-setup-docker@master
+
+    - name: Compile
+      run: ./run-build.sh compile
+
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker
+      uses: docker-practice/actions-setup-docker@master
+
+    - name: Test
+      run: ./run-build.sh test
