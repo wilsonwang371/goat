@@ -25,8 +25,16 @@ I want to make some small changes to meet my own needs.
 
 ## Build
 
+### Linux
+
 ```bash
 run-build.sh compile
+```
+
+### MacOS
+
+```bash
+make compile
 ```
 
 ## Test
