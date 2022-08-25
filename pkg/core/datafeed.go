@@ -293,7 +293,7 @@ func NewGenericDataFeed(fg FeedGenerator, maxLen int, recoveryDB string) DataFee
 
 // internal data series manager
 type dataSeriesManager struct {
-	dataSeries map[string]DataSeries
+	dataSeries map[string]map[Frequency]DataSeries
 	dataFeed   DataFeed
 	maxLen     int
 }
@@ -301,23 +301,31 @@ type dataSeriesManager struct {
 // crate new internal data series manager
 func newDataSeriesManager(feed DataFeed, maxLen int) *dataSeriesManager {
 	return &dataSeriesManager{
-		dataSeries: make(map[string]DataSeries),
+		dataSeries: make(map[string]map[Frequency]DataSeries),
 		dataFeed:   feed,
 		maxLen:     maxLen,
 	}
 }
 
-func (d *dataSeriesManager) registerDataSeries(name string, dataSeries DataSeries) error {
-	if _, ok := d.dataSeries[name]; ok {
-		return fmt.Errorf("data series %s already registered", name)
+func (d *dataSeriesManager) registerDataSeries(name string, freq Frequency, dataSeries DataSeries) error {
+	if v, ok := d.dataSeries[name]; ok {
+		if _, ok2 := v[freq]; ok2 {
+			return fmt.Errorf("data series %s already registered for frequency %d", name, freq)
+		}
+		v[freq] = dataSeries
+	} else {
+		d.dataSeries[name] = make(map[Frequency]DataSeries)
+		d.dataSeries[name][freq] = dataSeries
 	}
-	d.dataSeries[name] = dataSeries
 	return nil
 }
 
-func (d *dataSeriesManager) getDataSeries(name string) (DataSeries, error) {
+func (d *dataSeriesManager) getDataSeries(name string, freq Frequency) (DataSeries, error) {
 	if dataSeries, ok := d.dataSeries[name]; ok {
-		return dataSeries, nil
+		if v, ok := dataSeries[freq]; ok {
+			return v, nil
+		}
+		return nil, fmt.Errorf("data series %s not registered for frequency %d", name, freq)
 	} else {
 		return nil, fmt.Errorf("data series %s not found", name)
 	}
@@ -333,12 +341,12 @@ func (d *dataSeriesManager) getDataSeriesNames() []string {
 
 func (d *dataSeriesManager) newValueUpdate(timeVal time.Time, values map[string]interface{}, freq Frequency) error {
 	for key, value := range values {
-		if dataSeries, err := d.getDataSeries(key); err == nil {
+		if dataSeries, err := d.getDataSeries(key, freq); err == nil {
 			if err := dataSeries.AppendWithDateTime(timeVal, value); err != nil {
 				return err
 			}
 		} else {
-			d.registerDataSeries(key, d.dataFeed.CreateDataSeries(key, d.maxLen))
+			d.registerDataSeries(key, freq, d.dataFeed.CreateDataSeries(key, d.maxLen))
 		}
 	}
 	return nil
