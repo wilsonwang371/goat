@@ -16,8 +16,8 @@ jobs:
     - name: Set up Docker
       uses: docker-practice/actions-setup-docker@master
 
-    - name: Build
-      run: ./run-build.sh build
+    - name: Compile
+      run: ./run-build.sh compile
 
   unit-test:
     runs-on: ubuntu-latest
