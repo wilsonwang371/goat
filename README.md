@@ -61,12 +61,12 @@ In live mode, the strategy will be executed in real time.
 ./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU
 
 # Run recovery mode
-./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU -r samples/data/strategy_data.dumpdb
+./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU \
+    -r samples/data/strategy_data.dumpdb
 
 ```
 
 
-```
 
 ### Backtest Mode
 
