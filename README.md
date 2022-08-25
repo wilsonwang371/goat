@@ -66,8 +66,6 @@ In live mode, the strategy will be executed in real time.
 
 ```
 
-
-
 ### Backtest Mode
 
 In backtest mode, the strategy will be executed with historical data.
