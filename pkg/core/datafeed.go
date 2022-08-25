@@ -232,6 +232,7 @@ func NewGenericDataFeed(fg FeedGenerator, maxLen int, recoveryDB string) DataFee
 	var recDB *db.DB
 	var rows *sql.Rows
 	if recoveryDB != "" {
+		logger.Logger.Info("recovery mode is enabled", zap.String("db", recoveryDB))
 		recDB = db.NewSQLiteDataBase(recoveryDB)
 		if tmp, err := recDB.Model(&db.BarData{}).Order("primarykey").Rows(); err != nil {
 			panic(err)
