@@ -47,7 +47,18 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("liveScriptFile", liveScriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
-	rt := js.NewStrategyRuntime(&cfg, startLive)
+	// setup provider, data generator and feed
+	providers := strings.Split(feedProviders, ",")
+	gen, wg := GetLiveFeedGenerator(providers)
+	if gen == nil {
+		logger.Logger.Error("failed to create feed generator")
+		os.Exit(1)
+	}
+	runWg = wg
+	feed := core.NewGenericDataFeed(gen, 100, liveRecoveryDBFile)
+
+	// setup js runtime
+	rt := js.NewStrategyRuntime(&cfg, feed, startLive)
 	script, err := ioutil.ReadFile(liveScriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -57,24 +68,15 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		providers := strings.Split(feedProviders, ",")
-		gen, wg := GetLiveFeedGenerator(providers)
-		if gen == nil {
-			logger.Logger.Error("failed to create feed generator")
-			os.Exit(1)
-		}
-		runWg = wg
-
-		feed := core.NewGenericDataFeed(gen, 100, liveRecoveryDBFile)
-		sel := js.NewJSStrategyEventListener(rt)
-		broker := core.NewDummyBroker(feed)
-		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
-
 		// starting from here, we start to run the strategy
 		if _, err := rt.Execute(compiledScript); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		sel := js.NewJSStrategyEventListener(rt)
+		broker := core.NewDummyBroker(feed)
+		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
 
 		strategy.Run()
 	}

@@ -5,3 +5,4 @@ goat
 site/**
 coverage.out
 *.db
+*-journal

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -12,6 +13,7 @@ type DataSeries interface {
 	Slice(start, end int) DataSeries
 	At(po int) (time.Time, interface{}, error)
 	DateTimes() []time.Time
+	GetDataAsObjects(int) (map[string]interface{}, error)
 }
 
 type SequenceDataSeries interface {
@@ -24,6 +26,34 @@ type sequenceDataSeries struct {
 	maxLen    int
 	dateTimes []time.Time
 	values    []interface{}
+}
+
+type exportedObject struct {
+	Data []interface{} `json:"data"`
+}
+
+// GetDataAsObjects implements DataSeries
+func (s *sequenceDataSeries) GetDataAsObjects(length int) (map[string]interface{}, error) {
+	if length <= 0 {
+		return nil, fmt.Errorf("length should be greater than 0")
+	}
+	if length > s.Len() {
+		length = s.Len()
+	}
+	rtn := exportedObject{
+		Data: s.values[len(s.values)-length:],
+	}
+	// fmt.Printf("rtn: %+v\n", rtn)
+	if rawData, err := json.Marshal(rtn); err == nil {
+		var obj map[string]interface{}
+		if err := json.Unmarshal(rawData, &obj); err == nil {
+			return obj, nil
+		} else {
+			return nil, err
+		}
+	} else {
+		return nil, err
+	}
 }
 
 // Append implements DataSeries

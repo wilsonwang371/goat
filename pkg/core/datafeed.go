@@ -120,7 +120,7 @@ func NewBarFeedGenerator(freq []Frequency, maxLen int) FeedGenerator {
 type DataFeed interface {
 	Subject
 	GetNewValueEvent() Event
-	CreateDataSeries(key string, maxLen int) DataSeries
+	GetDataSeries(string, Frequency) (DataSeries, error)
 }
 
 type pendingDataType struct {
@@ -138,9 +138,9 @@ type genericDataFeed struct {
 	pendingRecoveryData *pendingDataType
 }
 
-// CreateDataSeries implements DataFeed
-func (d *genericDataFeed) CreateDataSeries(key string, maxLen int) DataSeries {
-	return d.feedGenerator.CreateDataSeries(key, maxLen)
+// GetDataSeries implements DataFeed
+func (d *genericDataFeed) GetDataSeries(symbol string, freq Frequency) (DataSeries, error) {
+	return d.dataSeriesManager.getDataSeries(symbol, freq)
 }
 
 func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
@@ -217,9 +217,9 @@ func (d *genericDataFeed) Dispatch() bool {
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 			panic(err)
 		}
-		for key, val := range v {
-			if b, ok := val.(Bar); ok {
-				logger.Logger.Debug("dispatch a bar", zap.String("key", key), zap.Stringer("bar", b))
+		for _, val := range v {
+			if _, ok := val.(Bar); !ok {
+				panic(fmt.Errorf("value is not a bar"))
 			}
 		}
 		// logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", fmt.Sprintf("%+v", v)), zap.Any("f", f))
@@ -286,24 +286,24 @@ func NewGenericDataFeed(fg FeedGenerator, maxLen int, recoveryDB string) DataFee
 		recoveryDB:    recDB,
 		rows:          rows,
 	}
-	df.dataSeriesManager = newDataSeriesManager(df, maxLen)
+	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
 	df.maybeFetchNextRecoveryData() // we may need to read some initial data from recovery db
 	return df
 }
 
 // internal data series manager
 type dataSeriesManager struct {
-	dataSeries map[string]map[Frequency]DataSeries
-	dataFeed   DataFeed
-	maxLen     int
+	dataSeries   map[string]map[Frequency]DataSeries
+	createDSFunc func(key string, maxLen int) DataSeries
+	maxLen       int
 }
 
 // crate new internal data series manager
-func newDataSeriesManager(feed DataFeed, maxLen int) *dataSeriesManager {
+func newDataSeriesManager(f func(string, int) DataSeries, maxLen int) *dataSeriesManager {
 	return &dataSeriesManager{
-		dataSeries: make(map[string]map[Frequency]DataSeries),
-		dataFeed:   feed,
-		maxLen:     maxLen,
+		dataSeries:   make(map[string]map[Frequency]DataSeries),
+		createDSFunc: f,
+		maxLen:       maxLen,
 	}
 }
 
@@ -346,7 +346,7 @@ func (d *dataSeriesManager) newValueUpdate(timeVal time.Time, values map[string]
 				return err
 			}
 		} else {
-			d.registerDataSeries(key, freq, d.dataFeed.CreateDataSeries(key, d.maxLen))
+			d.registerDataSeries(key, freq, d.createDSFunc(key, d.maxLen))
 		}
 	}
 	return nil

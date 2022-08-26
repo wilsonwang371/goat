@@ -20,77 +20,77 @@ type Bar interface {
 	String() string
 }
 
-type bar struct {
-	open        float64   `json:"open"`
-	high        float64   `json:"high"`
-	low         float64   `json:"low"`
-	close       float64   `json:"close"`
-	volume      int64     `json:"volume"`
-	adjClose    float64   `json:"adjClose"`
-	frequency   Frequency `json:"frequency"`
-	dateTime    time.Time `json:"dateTime"`
-	useAdjusted bool      `json:"useAdjusted"`
+type BasicBarData struct {
+	OpenV        float64   `json:"open"`
+	HighV        float64   `json:"high"`
+	LowV         float64   `json:"low"`
+	CloseV       float64   `json:"close"`
+	VolumeV      int64     `json:"volume"`
+	AdjCloseV    float64   `json:"adjClose"`
+	FrequencyV   Frequency `json:"frequency"`
+	DateTimeV    time.Time `json:"dateTime"`
+	UseAdjustedV bool      `json:"useAdjusted"`
 }
 
 // String implements Bar
-func (b *bar) String() string {
-	return fmt.Sprintf("%s %f %f %f %f %d", b.dateTime.Format("2006-01-02 15:04:05"),
-		b.open, b.high, b.low, b.close, b.volume)
+func (b *BasicBarData) String() string {
+	return fmt.Sprintf("%s %f %f %f %f %d", b.DateTimeV.Format("2006-01-02 15:04:05"),
+		b.OpenV, b.HighV, b.LowV, b.CloseV, b.VolumeV)
 }
 
 // AdjClose implements Bar
-func (b *bar) AdjClose() float64 {
-	return b.adjClose
+func (b *BasicBarData) AdjClose() float64 {
+	return b.AdjCloseV
 }
 
 // Close implements Bar
-func (b *bar) Close() float64 {
-	return b.close
+func (b *BasicBarData) Close() float64 {
+	return b.CloseV
 }
 
 // DateTime implements Bar
-func (b *bar) DateTime() time.Time {
-	return b.dateTime
+func (b *BasicBarData) DateTime() time.Time {
+	return b.DateTimeV
 }
 
 // Frequency implements Bar
-func (b *bar) Frequency() Frequency {
-	return b.frequency
+func (b *BasicBarData) Frequency() Frequency {
+	return b.FrequencyV
 }
 
 // High implements Bar
-func (b *bar) High() float64 {
-	return b.high
+func (b *BasicBarData) High() float64 {
+	return b.HighV
 }
 
 // Low implements Bar
-func (b *bar) Low() float64 {
-	return b.low
+func (b *BasicBarData) Low() float64 {
+	return b.LowV
 }
 
 // Open implements Bar
-func (b *bar) Open() float64 {
-	return b.open
+func (b *BasicBarData) Open() float64 {
+	return b.OpenV
 }
 
 // SetUseAdjustedValue implements Bar
-func (b *bar) SetUseAdjustedValue(v bool) {
-	b.useAdjusted = v
+func (b *BasicBarData) SetUseAdjustedValue(v bool) {
+	b.UseAdjustedV = v
 }
 
 // Volume implements Bar
-func (b *bar) Volume() int64 {
-	return b.volume
+func (b *BasicBarData) Volume() int64 {
+	return b.VolumeV
 }
 
 func NewBasicBar(t time.Time, open, high, low, close, adj_close float64, volume int64, frequency Frequency) Bar {
-	return &bar{
-		open:      open,
-		high:      high,
-		low:       low,
-		close:     close,
-		volume:    volume,
-		frequency: frequency,
-		dateTime:  t,
+	return &BasicBarData{
+		OpenV:      open,
+		HighV:      high,
+		LowV:       low,
+		CloseV:     close,
+		VolumeV:    volume,
+		FrequencyV: frequency,
+		DateTimeV:  t,
 	}
 }
