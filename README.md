@@ -1,7 +1,5 @@
 # GoAT
-![Coverage](https://img.shields.io/badge/Coverage-49.2%25-yellow)
-
-[![Go](https://github.com/wilsonwang371/goat/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml)
+[![Compile and Test](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml) ![Coverage](https://img.shields.io/badge/Coverage-49.2%25-yellow)
 
 This repo is currently a work in progress.
 
