@@ -2,11 +2,9 @@
 [![Compile and Test](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml)
 ![Coverage](https://img.shields.io/badge/Coverage-49.2%25-yellow)
 
-This repo is currently a work in progress.
-
 ## Introduction
 
-GoAT(Go Algo Trade) is inspired by PyAlgoTrade. It added support for live strategy execution. Currently it is under development.
+GoAT(Go Algo Trade) is inspired by PyAlgoTrade. It added support for live strategy execution. 
 
 ## Design
 
@@ -20,7 +18,16 @@ There are several reasons for me proposing this GoAT as a GO alternative of PyAl
 However, I love using PyAlgoTrade. PyAlgoTrade is lightweight compared with Zipline. Zipline is not very flexible when
 I want to make some small changes to meet my own needs.
 
+## Features
 
+GoAT currently supports the following features:
+
+* User strategy Javascript support
+* Multiple data frequencies support
+* Live strategy support
+* Data format conversion support
+
+Broker, strategy & portfolio analysis are not there yet. I will add them in the future.
 
 ## Build
 
