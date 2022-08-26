@@ -1,7 +1,7 @@
 # GoAT
 ![Coverage](https://img.shields.io/badge/Coverage-49.2%25-yellow)
 
-[![Go](https://github.com/wilsonwang371/goat/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/go.yml)
+[![Go](https://github.com/wilsonwang371/goat/actions/workflows/go.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml)
 
 This repo is currently a work in progress.
 
@@ -27,25 +27,25 @@ I want to make some small changes to meet my own needs.
 
 ### Linux
 
-```bash
+```sh
 run-build.sh compile
 ```
 
 ### MacOS
 
-```bash
+```sh
 make compile
 ```
 
 ## Test
 
-```bash
+```
 run-build.sh test
 ```
 
 ## Format Code
 
-```bash
+```sh
 
 # format go and js code
 run-build.sh format
@@ -57,7 +57,7 @@ run-build.sh format
 
 In live mode, the strategy will be executed in real time.
 
-```bash
+```sh
 
 # Generate some fake data
 ./goat live -p fake -f samples/strategies/simple.js -S GLD
@@ -78,7 +78,7 @@ In live mode, the strategy will be executed in real time.
 
 In backtest mode, the strategy will be executed with historical data.
 
-```bash
+```sh
 
 # Run a simple strategy with a csv file
 ./goat run -f samples/strategies/simple.js -s \
@@ -95,7 +95,7 @@ In backtest mode, the strategy will be executed with historical data.
 
 ### Convert Other DB to GoAT sqlite DB
 
-```bash
+```sh
 
 # convert a sqlite db to GoAT sqlite db
 ./goat convert -f samples/convert/mappings.js -s ./samples/data/strategy_data.sqlite -t sqlite \
