@@ -61,10 +61,8 @@ func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	if freq, err = call.Argument(1).ToInteger(); err == nil {
-		logger.Logger.Debug("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq))
 		switch core.Frequency(freq) {
 		case core.REALTIME, core.SECOND, core.MINUTE, core.HOUR, core.HOUR_4, core.DAY, core.WEEK, core.MONTH, core.YEAR:
-			logger.Logger.Debug("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq))
 			if f.feed == nil {
 				logger.Logger.Error("feed is nil")
 				return otto.NullValue()

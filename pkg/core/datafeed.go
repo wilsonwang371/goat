@@ -217,9 +217,9 @@ func (d *genericDataFeed) Dispatch() bool {
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 			panic(err)
 		}
-		for key, val := range v {
-			if b, ok := val.(Bar); ok {
-				logger.Logger.Debug("dispatch a bar", zap.String("key", key), zap.Stringer("bar", b))
+		for _, val := range v {
+			if _, ok := val.(Bar); !ok {
+				panic(fmt.Errorf("value is not a bar"))
 			}
 		}
 		// logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", fmt.Sprintf("%+v", v)), zap.Any("f", f))
