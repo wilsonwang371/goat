@@ -129,7 +129,29 @@ func startLive() error {
 
 func TestMultiProviders(t *testing.T) {
 	cfg := config.Config{}
-	rt := js.NewStrategyRuntime(&cfg, startLive)
+
+	pArr := []BarDataProvider{
+		NewFakeDataProvider(),
+		NewFakeDataProvider(),
+	}
+	gen := NewMultiLiveBarFeedGenerator(
+		pArr,
+		cfg.Symbol,
+		[]core.Frequency{core.REALTIME},
+		100)
+
+	if gen == nil {
+		logger.Logger.Error("failed to create feed generator")
+		os.Exit(1)
+	}
+	runWg = &sync.WaitGroup{}
+	runWg.Add(1)
+
+	go gen.WaitAndRun(runWg)
+
+	feed := core.NewGenericDataFeed(gen, 100, "")
+
+	rt := js.NewStrategyRuntime(&cfg, feed, startLive)
 	script, err := ioutil.ReadFile("../../samples/strategies/simple.js")
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -139,26 +161,6 @@ func TestMultiProviders(t *testing.T) {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		pArr := []BarDataProvider{
-			NewFakeDataProvider(),
-			NewFakeDataProvider(),
-		}
-		gen := NewMultiLiveBarFeedGenerator(
-			pArr,
-			cfg.Symbol,
-			[]core.Frequency{core.REALTIME},
-			100)
-
-		if gen == nil {
-			logger.Logger.Error("failed to create feed generator")
-			os.Exit(1)
-		}
-		runWg = &sync.WaitGroup{}
-		runWg.Add(1)
-
-		go gen.WaitAndRun(runWg)
-
-		feed := core.NewGenericDataFeed(gen, 100, "")
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
 		strategy := core.NewStrategyController(&cfg, sel, broker, feed)

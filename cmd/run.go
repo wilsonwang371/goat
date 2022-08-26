@@ -32,7 +32,17 @@ var (
 func RunFunction(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("runScriptFile", runScriptFile))
 
-	rt := js.NewStrategyRuntime(&cfg, nil)
+	// setup provider, data generator and feed
+	gen := GetFeedGenerator()
+	if gen == nil {
+		logger.Logger.Error("failed to create feed generator")
+		os.Exit(1)
+	}
+
+	feed := core.NewGenericDataFeed(gen, 100, "")
+
+	// setup js runtime
+	rt := js.NewStrategyRuntime(&cfg, feed, nil)
 	script, err := ioutil.ReadFile(runScriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -42,20 +52,11 @@ func RunFunction(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		if val, err := rt.Execute(compiledScript); err != nil {
+		// starting from here, we start to run the strategy
+		if _, err := rt.Execute(compiledScript); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
-		} else {
-			fmt.Println(val)
 		}
-
-		gen := GetFeedGenerator()
-		if gen == nil {
-			logger.Logger.Error("failed to create feed generator")
-			os.Exit(1)
-		}
-
-		feed := core.NewGenericDataFeed(gen, 100, "")
 
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)

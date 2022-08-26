@@ -4,7 +4,7 @@ addEventListener("onBars", function (bar) {
   symbol = Object.keys(bar)[0];
   c++;
   console.log("onBars is called " + c + " times. Data: " + bar);
-  feed.dataseries(symbol, 0);
+  console.log("dataseries: " + feed.dataseries(symbol, 86400, 10));
 });
 
 addEventListener("onStart", function () {

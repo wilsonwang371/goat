@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"goat/pkg/config"
+	"goat/pkg/core"
 	"goat/pkg/js/apis"
 	"goat/pkg/logger"
 
@@ -33,11 +34,11 @@ type StrategyRuntime interface {
 type strategyRuntime struct {
 	cfg            *config.Config
 	vm             *otto.Otto
-	kv             *apis.KVObject
-	tl             *apis.TALib
-	sys            *apis.SysObject
-	alert          *apis.AlertObject
-	feed           *apis.FeedObject
+	kvApi          *apis.KVObject
+	tlApi          *apis.TALib
+	sysApi         *apis.SysObject
+	alertApi       *apis.AlertObject
+	feedApi        *apis.FeedObject
 	eventListeners map[string]otto.Value
 	apiHandlers    map[string]RuntimeFunc
 	talib          *talib.TALib
@@ -83,7 +84,7 @@ func (r *strategyRuntime) Compile(source string) (*otto.Script, error) {
 	return compiled, nil
 }
 
-func NewStrategyRuntime(cfg *config.Config, cb apis.StartCallback) StrategyRuntime {
+func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCallback) StrategyRuntime {
 	var err error
 
 	res := &strategyRuntime{
@@ -96,27 +97,27 @@ func NewStrategyRuntime(cfg *config.Config, cb apis.StartCallback) StrategyRunti
 
 	logger.Logger.Info("using kvdb file.", zap.String("kvdb", cfg.KVDB))
 
-	res.kv, err = apis.NewKVObject(cfg, res.vm, cfg.KVDB)
+	res.kvApi, err = apis.NewKVObject(cfg, res.vm, cfg.KVDB)
 	if err != nil {
 		logger.Logger.Error("failed to create kv object", zap.Error(err))
 		panic(err)
 	}
-	res.tl, err = apis.NewTALibObject(cfg, res.vm)
+	res.tlApi, err = apis.NewTALibObject(cfg, res.vm)
 	if err != nil {
 		logger.Logger.Error("failed to create talib object", zap.Error(err))
 		panic(err)
 	}
-	res.sys, err = apis.NewSysObject(cfg, res.vm, cb)
+	res.sysApi, err = apis.NewSysObject(cfg, res.vm, cb)
 	if err != nil {
 		logger.Logger.Error("failed to create sys object", zap.Error(err))
 		panic(err)
 	}
-	res.alert, err = apis.NewAlertObject(cfg, res.vm)
+	res.alertApi, err = apis.NewAlertObject(cfg, res.vm)
 	if err != nil {
 		logger.Logger.Error("failed to create alert object", zap.Error(err))
 		panic(err)
 	}
-	res.feed, err = apis.NewFeedObject(cfg, res.vm)
+	res.feedApi, err = apis.NewFeedObject(cfg, res.vm, feed)
 	if err != nil {
 		logger.Logger.Error("failed to create feed object", zap.Error(err))
 		panic(err)
