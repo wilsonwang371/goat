@@ -23,16 +23,14 @@ I want to make some small changes to meet my own needs.
 
 ## Build
 
-### Linux
-
 ```sh
+
+# On Linux
 run-build.sh compile
-```
 
-### MacOS
-
-```sh
+# On MacOS
 make compile
+
 ```
 
 ## Test
