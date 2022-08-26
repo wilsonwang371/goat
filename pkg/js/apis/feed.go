@@ -73,7 +73,7 @@ func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
 				logger.Logger.Error("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
 				return otto.NullValue()
 			} else {
-				if obj, err := ds.GetObject(); err != nil {
+				if obj, err := ds.GetDataAsObjects(int(length)); err != nil {
 					logger.Logger.Error("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
 					return otto.NullValue()
 				} else {
@@ -81,7 +81,6 @@ func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
 						logger.Logger.Error("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
 						return otto.NullValue()
 					} else {
-						logger.Logger.Debug("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Any("ret", ret))
 						return ret
 					}
 				}

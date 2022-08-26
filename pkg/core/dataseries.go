@@ -13,7 +13,7 @@ type DataSeries interface {
 	Slice(start, end int) DataSeries
 	At(po int) (time.Time, interface{}, error)
 	DateTimes() []time.Time
-	GetObject() (map[string]interface{}, error)
+	GetDataAsObjects(int) (map[string]interface{}, error)
 }
 
 type SequenceDataSeries interface {
@@ -29,16 +29,21 @@ type sequenceDataSeries struct {
 }
 
 type exportedObject struct {
-	dateTimes []time.Time   `json:"datetimes"`
-	values    []interface{} `json:"values"`
+	Data []interface{} `json:"data"`
 }
 
-// GetObject implements DataSeries
-func (s *sequenceDataSeries) GetObject() (map[string]interface{}, error) {
-	rtn := exportedObject{
-		dateTimes: s.dateTimes,
-		values:    s.values,
+// GetDataAsObjects implements DataSeries
+func (s *sequenceDataSeries) GetDataAsObjects(length int) (map[string]interface{}, error) {
+	if length <= 0 {
+		return nil, fmt.Errorf("length should be greater than 0")
 	}
+	if length > s.Len() {
+		length = s.Len()
+	}
+	rtn := exportedObject{
+		Data: s.values[len(s.values)-length:],
+	}
+	// fmt.Printf("rtn: %+v\n", rtn)
 	if rawData, err := json.Marshal(rtn); err == nil {
 		var obj map[string]interface{}
 		if err := json.Unmarshal(rawData, &obj); err == nil {
