@@ -205,6 +205,7 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 		} else {
 			d.recoveryDB = nil
 			d.recoveryBar.Finish()
+			logger.Logger.Info("recovery database is finished")
 			return err
 		}
 	} else {
