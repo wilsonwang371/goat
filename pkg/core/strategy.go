@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"goat/pkg/config"
+	"goat/pkg/consts"
 	"goat/pkg/db"
 	"goat/pkg/logger"
 
@@ -96,12 +97,7 @@ func (s *strategyController) onStart(args ...interface{}) error {
 
 func (s *strategyController) onIdle(args ...interface{}) error {
 	// logger.Logger.Info("onIdle")
-	/*
-			# Force a resample check to avoid depending solely on the underlying
-		        # barfeed events.
-		        for resampledBarFeed in self.__resampledBarFeeds:
-		            resampledBarFeed.checkNow(self.getCurrentDateTime())
-	*/
+	time.Sleep(consts.IdelSleepDuration)
 	return s.listener.OnIdle()
 }
 

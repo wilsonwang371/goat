@@ -7,4 +7,6 @@ const (
 	LiveGenFailureMaxCount      = 20
 
 	ProfilePort = 6060
+
+	IdelSleepDuration = 10 * time.Millisecond
 )
