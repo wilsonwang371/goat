@@ -3,6 +3,7 @@ package convert
 import (
 	"database/sql"
 	"fmt"
+	"runtime"
 	"strconv"
 
 	"goat/pkg/logger"
@@ -50,6 +51,7 @@ func (s *sqliteDBSource) getTotalRowsCount() error {
 		return err
 	} else {
 		defer rows.Close()
+		defer runtime.GC()
 		cols, err := rows.Columns()
 		if err != nil {
 			panic(err)
@@ -105,6 +107,7 @@ func (s *sqliteDBSource) Open() error {
 		return err
 	} else {
 		defer rows.Close()
+		defer runtime.GC()
 		foundTable := false
 		cols, err := rows.Columns()
 		if err != nil {

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"goat/pkg/profile"
 	"os"
 
 	"goat/pkg/config"
@@ -26,6 +27,7 @@ It is a tool for trading.
 }
 
 func Execute() {
+	profile.StartProfilingServer()
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

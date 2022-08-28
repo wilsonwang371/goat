@@ -8,8 +8,8 @@ import (
 	"goat/pkg/consts"
 )
 
-func init() {
+func StartProfilingServer() {
 	go func() {
-		http.ListenAndServe(fmt.Sprintf(":%d", consts.ProfilePort), nil)
+		http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", consts.ProfilePort), nil)
 	}()
 }

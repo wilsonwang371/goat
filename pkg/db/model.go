@@ -2,6 +2,7 @@ package db
 
 import (
 	"os"
+	"runtime"
 
 	"goat/pkg/logger"
 
@@ -10,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const dataBatchSize = 1024 * 1024
+const dataBatchSize = 1024 * 64
 
 type BarData struct {
 	gorm.Model
@@ -48,10 +49,11 @@ func NewSQLiteDataBase(dbpath string) *DB {
 }
 
 func (db *DB) fetchAll() {
+	var data []*BarData
+
 	db.err = nil
 	startIdx := 0
 	for {
-		var data []*BarData
 		if err := db.Model(&BarData{}).Order("id").Offset(startIdx).Limit(dataBatchSize).Find(&data).Error; err != nil {
 			logger.Logger.Error("failed to fetch data", zap.Error(err))
 			db.err = err
@@ -65,6 +67,7 @@ func (db *DB) fetchAll() {
 			db.dataChan <- d
 		}
 		startIdx += dataBatchSize
+		runtime.GC()
 	}
 	close(db.dataChan)
 }
