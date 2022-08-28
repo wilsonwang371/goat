@@ -36,13 +36,19 @@ type fx678DataProvider struct {
 	stopped    bool
 }
 
-var fx678SymMap map[string]string = map[string]string{
-	"XAU": "WGJS",
+type ReqParam struct {
+	Symbol   string
+	Exchange string
+}
+
+var symbolToParamMap = map[string]ReqParam{
+	"XAUUSD": {"XAU", "WGJS"},
 }
 
 func (f *fx678DataProvider) getOneBar(instrument string) (core.Bar, error) {
 	barRaw := Fx678Bar{}
-	reqUrl := fmt.Sprintf("https://api-q.fx678img.com/getQuote.php?exchName=%s&symbol=%s&st=%.16f", fx678SymMap[instrument], instrument, rand.Float64())
+	reqUrl := fmt.Sprintf("https://api-q.fx678img.com/getQuote.php?exchName=%s&symbol=%s&st=%.16f",
+		symbolToParamMap[instrument].Exchange, symbolToParamMap[instrument].Symbol, rand.Float64())
 	if resp, err := f.sendRequest(reqUrl); err != nil {
 		log.Printf("error sending request: %v", err)
 		return nil, err
@@ -122,7 +128,7 @@ func (f *fx678DataProvider) sendRequest(reqUrl string) (string, error) {
 }
 
 func (f *fx678DataProvider) init(instrument string, freqList []core.Frequency) error {
-	if _, ok := fx678SymMap[instrument]; !ok {
+	if _, ok := symbolToParamMap[instrument]; !ok {
 		return fmt.Errorf("instrument %s not supported", instrument)
 	}
 	if len(freqList) == 0 {

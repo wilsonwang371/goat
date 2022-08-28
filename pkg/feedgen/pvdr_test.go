@@ -100,7 +100,7 @@ func TestGoldPriceOrgDataGen(t *testing.T) {
 	f := NewGoldPriceOrgDataProvider()
 
 	for {
-		if bar, err := f.(*goldPriceOrgDataProvider).getOneBar("XAU"); err != nil {
+		if bar, err := f.(*goldPriceOrgDataProvider).getOneBar("XAUUSD"); err != nil {
 			logger.Logger.Info("error getting a bar", zap.Error(err))
 			count++
 			time.Sleep(time.Second * 5)
