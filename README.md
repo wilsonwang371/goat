@@ -1,6 +1,6 @@
 # GoAT
 [![Compile and Test](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml/badge.svg)](https://github.com/wilsonwang371/goat/actions/workflows/basic.yml)
-![Coverage](https://img.shields.io/badge/Coverage-49.2%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-48.4%25-yellow)
 
 ## Introduction
 
