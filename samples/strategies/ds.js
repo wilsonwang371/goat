@@ -1,11 +1,18 @@
 var c = 0;
+var lastTs = 0;
 
 addEventListener("onBars", function (bar) {
+  var thisTs = system.now();
   symbol = Object.keys(bar)[0];
   c++;
-  if (c % 1000 == 0) {
-    console.log("onBars is called " + c + " times. Data: " + bar);
-    JSON.stringify(feed.dataseries(symbol, 86400, 10));
+
+  ds = feed.dataseries(symbol, frequency.DAY, 10);
+
+  if (thisTs - lastTs > 10) {
+    console.log(
+      "[" + thisTs + "] onBars is called " + c + " times. Data: " + bar
+    );
+    lastTs = thisTs;
   }
 });
 

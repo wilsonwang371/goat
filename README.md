@@ -67,13 +67,13 @@ In live mode, the strategy will be executed in real time.
 ./goat live -p fake -f samples/strategies/simple.js -S GLD
 
 # Run strategy with real data
-./goat live -p goldpriceorg -f samples/strategies/simple.js -S XAU
+./goat live -p goldpriceorg -f samples/strategies/simple.js -S XAUUSD
 
 # Multi providers are also supported
-./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU
+./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAUUSD
 
 # Run recovery mode
-./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAU \
+./goat live -p "goldpriceorg,fake" -f samples/strategies/simple.js -S XAUUSD \
     -r samples/data/strategy_data.dumpdb
 
 ```

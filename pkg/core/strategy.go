@@ -220,8 +220,9 @@ func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEve
 		barDataDumpC:      make(chan *db.BarData, 100),
 	}
 
-	if cfg.BarDumpDB != "" {
-		controller.dumpDB = db.NewSQLiteDataBase(cfg.BarDumpDB)
+	if cfg.Dump.BarDumpDB != "" {
+		controller.dumpDB = db.NewSQLiteDataBase(cfg.Dump.BarDumpDB,
+			cfg.Dump.DeleteIfExist)
 	}
 
 	controller.dispatcher.AddSubject(controller.broker)

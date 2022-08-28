@@ -34,6 +34,20 @@ func NewFeedObject(cfg *config.Config, vm *otto.Otto, f core.DataFeed) (*FeedObj
 	}
 	feedObj.Set("dataseries", feed.DataSeriesCmd)
 
+	freqObj, err := feed.VM.Object(`frequency = {}`)
+	if err != nil {
+		return nil, err
+	}
+	freqObj.Set("REALTIME", core.REALTIME)
+	freqObj.Set("SECOND", core.SECOND)
+	freqObj.Set("MINUTE", core.MINUTE)
+	freqObj.Set("HOUR", core.HOUR)
+	freqObj.Set("HOUR_4", core.HOUR_4)
+	freqObj.Set("DAY", core.DAY)
+	freqObj.Set("WEEK", core.WEEK)
+	freqObj.Set("MONTH", core.MONTH)
+	freqObj.Set("YEAR", core.YEAR)
+
 	return feed, nil
 }
 

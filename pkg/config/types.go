@@ -15,10 +15,13 @@ const (
 const DataFeedMaxPendingBars = 10000
 
 type Config struct {
-	KVDB      string `mapstructure:"kvdb"`
-	Symbol    string `mapstructure:"symbol"`
-	BarDumpDB string `mapstructure:"bardumpdb"` // name of db to dump live feed data, leave empty to disable
-	Live      struct {
+	KVDB   string `mapstructure:"kvdb"`
+	Symbol string `mapstructure:"symbol"`
+	Dump   struct {
+		BarDumpDB     string `mapstructure:"bardumpdb"`        // name of db to dump live feed data, leave empty to disable
+		DeleteIfExist bool   `mapstructure:"delete_if_exists"` // delete db if exist
+	} `mapstructure:"dump"`
+	Live struct {
 		TradingView struct {
 			User string `mapstructure:"user"`
 			Pass string `mapstructure:"password"`

@@ -25,7 +25,7 @@ func TestConvertSimple(t *testing.T) {
 	}
 
 	dbsource := convert.NewDBSource("../samples/data/strategy_data.sqlite", "sqlite")
-	dboutput := db.NewSQLiteDataBase("../stategy_data.db")
+	dboutput := db.NewSQLiteDataBase("../stategy_data.db", false)
 	if err := rt.Convert(dbsource, dboutput); err != nil {
 		t.Fatal("failed to convert data")
 	}

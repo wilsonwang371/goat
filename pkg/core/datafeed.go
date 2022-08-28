@@ -13,6 +13,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const FailOnUnmatchedSymbol = true
+
 var warnedUnmatchedSymbol = false
 
 // interface for feed value generator
@@ -151,14 +153,14 @@ func (d *genericDataFeed) GetDataSeries(symbol string, freq Frequency) (DataSeri
 	return d.dataSeriesManager.getDataSeries(symbol, freq)
 }
 
-func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
+func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 	var t time.Time
 	var v map[string]interface{}
 	var f Frequency
 
 	if d.pendingRecoveryData != nil {
 		// we have pending data, just ignore
-		return nil
+		return
 	}
 
 	if d.recoveryDB != nil {
@@ -167,7 +169,9 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 			if barData == nil {
 				// no more data in the recovery database
 				d.recoveryDB = nil
-				return nil
+				d.recoveryBar.Finish()
+				logger.Logger.Info("recovery database is finished")
+				return
 			}
 
 			// update progress bar
@@ -190,6 +194,10 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 			t = time.Unix(barData.DateTime, 0)
 			v = map[string]interface{}{}
 			if barData.Symbol != d.cfg.Symbol && !warnedUnmatchedSymbol {
+				if FailOnUnmatchedSymbol {
+					panic(fmt.Errorf("unmatched symbol %s in recovery database, expected %s",
+						barData.Symbol, d.cfg.Symbol))
+				}
 				logger.Logger.Info("symbol in recovery database is different from config",
 					zap.String("symbol", barData.Symbol),
 					zap.String("config_symbol", d.cfg.Symbol))
@@ -201,15 +209,15 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 			// logger.Logger.Info("read bar from recovery database",
 			//	zap.Time("time", t), zap.String("symbol", barData.Symbol), zap.Any("bar", bar))
 			d.pendingRecoveryData = &pendingDataType{t, v, f}
-			return nil
+			return
 		} else {
+			// error happens and we cannot continue
 			d.recoveryDB = nil
-			d.recoveryBar.Finish()
-			logger.Logger.Info("recovery database is finished")
-			return err
+			panic(err)
 		}
 	} else {
-		return fmt.Errorf("recovery database is not open")
+		// no recovery database, just fetch from feed generator
+		return
 	}
 }
 
@@ -295,7 +303,7 @@ func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, maxLen int, recove
 	var recCount int64
 	if recoveryDB != "" {
 		logger.Logger.Debug("recovery mode is enabled", zap.String("db", recoveryDB))
-		recDB = db.NewSQLiteDataBase(recoveryDB)
+		recDB = db.NewSQLiteDataBase(recoveryDB, false)
 		recCount = recDB.FetchAll(true)
 	}
 	df := &genericDataFeed{

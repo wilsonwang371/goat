@@ -2,6 +2,7 @@ package apis
 
 import (
 	"fmt"
+	"time"
 
 	"goat/pkg/config"
 	"goat/pkg/logger"
@@ -33,6 +34,7 @@ func NewSysObject(cfg *config.Config, vm *otto.Otto, startCb StartCallback) (*Sy
 		return nil, err
 	}
 	sysObj.Set("start", sys.StartCmd)
+	sysObj.Set("now", sys.TimeCmd)
 
 	return sys, nil
 }
@@ -53,4 +55,19 @@ func (sys *SysObject) StartCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	return otto.TrueValue()
+}
+
+func (sys *SysObject) TimeCmd(call otto.FunctionCall) otto.Value {
+	if len(call.ArgumentList) != 0 {
+		logger.Logger.Debug("startCmd needs 0 argument")
+		return otto.FalseValue()
+	}
+
+	tm := time.Now().Unix()
+
+	if val, err := sys.VM.ToValue(tm); err != nil {
+		return otto.NaNValue()
+	} else {
+		return val
+	}
 }

@@ -1,7 +1,10 @@
 {
   "kvdb": "",
   "symbol": "GLD",
-  "bardumpdb": "dump.db",
+  "dump": {
+    "bardumpdb": "dump.db",
+    "delete_if_exists": true
+  },
   "live": {
     "tradingview": {
       "user": "1",

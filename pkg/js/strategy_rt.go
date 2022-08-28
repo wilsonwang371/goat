@@ -48,8 +48,8 @@ type strategyRuntime struct {
 func (r *strategyRuntime) NotifyEvent(eventName string, args ...interface{}) error {
 	if handler, ok := r.eventListeners[strings.ToLower(eventName)]; ok {
 		if _, err := handler.Call(otto.NullValue(), args...); err != nil {
-			logger.Logger.Debug("failed to call handler", zap.Error(err))
-			return err
+			logger.Logger.Error("failed to call handler", zap.Error(err))
+			panic(err)
 		}
 	}
 	return nil

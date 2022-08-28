@@ -32,11 +32,19 @@ type DB struct {
 	err      error
 }
 
-func NewSQLiteDataBase(dbpath string) *DB {
+func NewSQLiteDataBase(dbpath string, delIfExists bool) *DB {
+	if _, err := os.Stat(dbpath); !os.IsNotExist(err) && delIfExists {
+		logger.Logger.Info("delete existing db", zap.String("dbpath", dbpath))
+		err = os.Remove(dbpath)
+		if err != nil {
+			logger.Logger.Fatal("failed to remove db file", zap.Error(err))
+			panic(err)
+		}
+	}
 	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
 	if err != nil {
 		logger.Logger.Error("failed to connect database", zap.Error(err))
-		os.Exit(1)
+		panic(err)
 	}
 	db.AutoMigrate(&BarData{})
 

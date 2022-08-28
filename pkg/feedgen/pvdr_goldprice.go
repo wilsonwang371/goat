@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var goldPriceOrgSupportedSymbols []string = []string{"XAU", "XAG"}
+var goldPriceOrgSupportedSymbols []string = []string{"XAUUSD", "XAGUSD"}
 
 type GoldPriceOrgBar struct {
 	Timestamp  uint64 `json:"ts"`
@@ -62,9 +62,9 @@ func (f *goldPriceOrgDataProvider) getOneBar(instrument string) (core.Bar, error
 
 		t := time.Unix(int64(barRaw.Timestamp2/1000), 0)
 
-		if instrument == "XAU" {
+		if instrument == "XAUUSD" {
 			return core.NewBasicBar(t, barRaw.Items[0].XauPrice, barRaw.Items[0].XauPrice, barRaw.Items[0].XauPrice, barRaw.Items[0].XauPrice, barRaw.Items[0].XauPrice, 0, core.REALTIME), nil
-		} else if instrument == "XAG" {
+		} else if instrument == "XAGUSD" {
 			return core.NewBasicBar(t, barRaw.Items[0].XagPrice, barRaw.Items[0].XagPrice, barRaw.Items[0].XagPrice, barRaw.Items[0].XagPrice, barRaw.Items[0].XagPrice, 0, core.REALTIME), nil
 		} else {
 			return nil, fmt.Errorf("unexpected instrument: %s", instrument)
