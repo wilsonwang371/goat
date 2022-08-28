@@ -107,7 +107,7 @@ func (l *MultiLiveBarFeedGenerator) ProviderFetcher(idx int) {
 			break
 		}
 		if bars, err := pvdr.nextBars(); err != nil {
-			lg.Logger.Error("nextBars failed", zap.Error(err),
+			lg.Logger.Warn("nextBars failed", zap.Error(err),
 				zap.Any("pvdr", pvdr),
 				zap.Int("errorCount", errorCount))
 			time.Sleep(consts.LiveGenFailureSleepDuration)

@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"goat/pkg/profile"
 	"os"
+
+	"goat/pkg/profile"
 
 	"goat/pkg/config"
 

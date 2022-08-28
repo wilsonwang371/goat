@@ -2,7 +2,6 @@ package db
 
 import (
 	"os"
-	"runtime"
 
 	"goat/pkg/logger"
 
@@ -11,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const dataBatchSize = 1024 * 64
+const dataBatchSize = 1024 * 96
 
 type BarData struct {
 	gorm.Model
@@ -67,7 +66,6 @@ func (db *DB) fetchAll() {
 			db.dataChan <- d
 		}
 		startIdx += dataBatchSize
-		runtime.GC()
 	}
 	close(db.dataChan)
 }

@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"runtime"
 	"time"
 
 	"goat/pkg/config"
@@ -114,14 +113,12 @@ func (s *strategyController) barDumpWorkerLoop() {
 			barDataList = append(barDataList, barData)
 			if len(barDataList) >= 1000 {
 				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
-				barDataList = []*db.BarData{}
-				runtime.GC()
+				barDataList = nil
 			}
 		default:
 			if len(barDataList) > 0 {
 				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
-				barDataList = []*db.BarData{}
-				runtime.GC()
+				barDataList = nil
 			} else {
 				time.Sleep(time.Millisecond * 1)
 			}
