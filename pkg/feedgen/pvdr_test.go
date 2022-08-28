@@ -78,7 +78,7 @@ func TestFx678DataGen(t *testing.T) {
 	f := NewFx678DataProvider()
 
 	for {
-		if bar, err := f.(*fx678DataProvider).getOneBar("XAU"); err != nil {
+		if bar, err := f.(*fx678DataProvider).getOneBar("XAUUSD"); err != nil {
 			logger.Logger.Info("error getting a bar", zap.Error(err))
 			count++
 			time.Sleep(time.Second * 5)
