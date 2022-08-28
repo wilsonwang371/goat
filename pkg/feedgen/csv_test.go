@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"goat/pkg/config"
 	"goat/pkg/core"
 )
 
@@ -12,7 +13,7 @@ func TestCSVSimple(t *testing.T) {
 		"../../samples/data/DBC-2007-yahoofinance.csv", "Symbol",
 		core.UNKNOWN)
 	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
 	disp.AddSubject(feed)
 
 	go disp.Run()

@@ -49,11 +49,11 @@ func (s *sqliteDBSource) getTotalRowsCount() error {
 		logger.Logger.Error("failed to query table", zap.Error(err))
 		return err
 	} else {
+		defer rows.Close()
 		cols, err := rows.Columns()
 		if err != nil {
 			panic(err)
 		}
-		logger.Logger.Debug("result columns", zap.Strings("cols", cols))
 
 		results := make([]interface{}, len(cols))
 		for i := range results {
@@ -82,7 +82,6 @@ func (s *sqliteDBSource) getTotalRowsCount() error {
 			if len(cur) != 1 {
 				panic("unexpected result")
 			} else {
-				logger.Logger.Debug("total rows count", zap.String("count", cur[0]))
 				if res, err := strconv.Atoi(cur[0]); err != nil {
 					panic(err)
 				} else {
@@ -105,6 +104,7 @@ func (s *sqliteDBSource) Open() error {
 		logger.Logger.Error("failed to query sqlite tables", zap.Error(err))
 		return err
 	} else {
+		defer rows.Close()
 		foundTable := false
 		cols, err := rows.Columns()
 		if err != nil {
@@ -146,18 +146,17 @@ func (s *sqliteDBSource) Open() error {
 		}
 	}
 
-	logger.Logger.Debug("found table", zap.String("table", s.table))
 	s.getTotalRowsCount()
 
 	if s.resultCount == 0 {
 		return fmt.Errorf("no rows in table")
 	}
 
-	if rows, err := s.db.Query(fmt.Sprintf("SELECT * FROM %s;", s.table)); err != nil {
+	if rows2, err := s.db.Query(fmt.Sprintf("SELECT * FROM %s;", s.table)); err != nil {
 		logger.Logger.Error("failed to query table", zap.Error(err))
 		return err
 	} else {
-		s.resultRows = rows
+		s.resultRows = rows2
 	}
 
 	return nil
@@ -179,6 +178,7 @@ func (s *sqliteDBSource) ReadOneRow() (map[string]string, error) {
 	for i := range results {
 		results[i] = new(interface{})
 	}
+
 	if s.resultRows.Next() {
 		if err := s.resultRows.Scan(results[:]...); err != nil {
 			panic(err)
@@ -207,6 +207,7 @@ func (s *sqliteDBSource) ReadOneRow() (map[string]string, error) {
 		}
 		return row, nil
 	} else {
+		s.resultRows.Close()
 		return nil, nil
 	}
 }

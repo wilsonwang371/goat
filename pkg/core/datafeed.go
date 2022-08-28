@@ -1,7 +1,6 @@
 package core
 
 import (
-	"database/sql"
 	"fmt"
 	"sync"
 	"time"
@@ -12,6 +11,8 @@ import (
 
 	"go.uber.org/zap"
 )
+
+var warnedUnmatchedSymbol = false
 
 // interface for feed value generator
 type FeedGenerator interface {
@@ -130,11 +131,11 @@ type pendingDataType struct {
 }
 
 type genericDataFeed struct {
+	cfg                 *config.Config
 	newValueEvent       Event
 	dataSeriesManager   *dataSeriesManager
 	feedGenerator       FeedGenerator
 	recoveryDB          *db.DB
-	rows                *sql.Rows
 	pendingRecoveryData *pendingDataType
 }
 
@@ -154,12 +155,13 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 	}
 
 	if d.recoveryDB != nil {
-		if d.rows.Next() {
+		if barData, err := d.recoveryDB.Next(); err == nil {
 			// NOTE: if we have data in the recovery database, we should use it
-			var barData db.BarData
-			if err := d.recoveryDB.ScanRows(d.rows, &barData); err != nil {
-				logger.Logger.Error("failed to scan row", zap.Error(err))
-				panic(err)
+
+			if barData == nil {
+				// no more data in the recovery database
+				d.recoveryDB = nil
+				return nil
 			}
 
 			bar := NewBasicBar(time.Unix(barData.DateTime, 0),
@@ -174,6 +176,12 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 			// NOTE:  we replace the value with the one from the recovery database
 			t = time.Unix(barData.DateTime, 0)
 			v = map[string]interface{}{}
+			if barData.Symbol != d.cfg.Symbol && !warnedUnmatchedSymbol {
+				logger.Logger.Info("symbol in recovery database is different from config",
+					zap.String("symbol", barData.Symbol),
+					zap.String("config_symbol", d.cfg.Symbol))
+				warnedUnmatchedSymbol = true
+			}
 			v[barData.Symbol] = bar.(interface{})
 			f = Frequency(barData.Frequency)
 
@@ -182,9 +190,8 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 			d.pendingRecoveryData = &pendingDataType{t, v, f}
 			return nil
 		} else {
-			d.rows.Close()
 			d.recoveryDB = nil
-			return nil
+			return err
 		}
 	} else {
 		return fmt.Errorf("recovery database is not open")
@@ -263,28 +270,23 @@ func (d *genericDataFeed) Stop() error {
 
 // GetNewValueEvent implements DataFeed
 func (d *genericDataFeed) GetNewValueEvent() Event {
-	logger.Logger.Info("GetNewValueEvent")
+	// logger.Logger.Info("GetNewValueEvent")
 	return d.newValueEvent
 }
 
 // GetOrderUpdatedEvent implements Broker
-func NewGenericDataFeed(fg FeedGenerator, maxLen int, recoveryDB string) DataFeed {
+func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, maxLen int, recoveryDB string) DataFeed {
 	var recDB *db.DB
-	var rows *sql.Rows
 	if recoveryDB != "" {
-		logger.Logger.Info("recovery mode is enabled", zap.String("db", recoveryDB))
+		logger.Logger.Debug("recovery mode is enabled", zap.String("db", recoveryDB))
 		recDB = db.NewSQLiteDataBase(recoveryDB)
-		if tmp, err := recDB.Model(&db.BarData{}).Order("id").Rows(); err != nil {
-			panic(err)
-		} else {
-			rows = tmp
-		}
+		recDB.FetchAll(true)
 	}
 	df := &genericDataFeed{
+		cfg:           cfg,
 		newValueEvent: NewEvent(),
 		feedGenerator: fg,
 		recoveryDB:    recDB,
-		rows:          rows,
 	}
 	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
 	df.maybeFetchNextRecoveryData() // we may need to read some initial data from recovery db

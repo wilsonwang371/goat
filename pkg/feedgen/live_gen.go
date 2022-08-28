@@ -91,7 +91,9 @@ func (l *LiveBarFeedGenerator) SetInstrument(instrument string) {
 
 func (l *LiveBarFeedGenerator) WaitAndRun(wg *sync.WaitGroup) error {
 	wg.Wait()
-	l.Run()
+	if err := l.Run(); err != nil {
+		panic(err)
+	}
 	return nil
 }
 
@@ -112,6 +114,7 @@ func (l *LiveBarFeedGenerator) Run() error {
 	errorCount := 0
 
 	for {
+		logger.Logger.Debug("LiveBarFeedGenerator::Run", zap.String("instrument", l.instrument))
 		if l.stopped {
 			break
 		}

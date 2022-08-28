@@ -68,15 +68,15 @@ func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
 				return otto.NullValue()
 			}
 			if ds, err := f.feed.GetDataSeries(symbol, core.Frequency(freq)); err != nil {
-				logger.Logger.Error("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
+				logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
 				return otto.NullValue()
 			} else {
 				if obj, err := ds.GetDataAsObjects(int(length)); err != nil {
-					logger.Logger.Error("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
+					logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
 					return otto.NullValue()
 				} else {
 					if ret, err := f.VM.ToValue(obj); err != nil {
-						logger.Logger.Error("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
+						logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
 						return otto.NullValue()
 					} else {
 						return ret

@@ -95,7 +95,7 @@ func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCal
 		talib:          talib.NewTALib(),
 	}
 
-	logger.Logger.Info("using kvdb file.", zap.String("kvdb", cfg.KVDB))
+	logger.Logger.Debug("using kvdb file.", zap.String("kvdb", cfg.KVDB))
 
 	res.kvApi, err = apis.NewKVObject(cfg, res.vm, cfg.KVDB)
 	if err != nil {

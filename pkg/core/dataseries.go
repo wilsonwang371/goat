@@ -43,7 +43,6 @@ func (s *sequenceDataSeries) GetDataAsObjects(length int) (map[string]interface{
 	rtn := exportedObject{
 		Data: s.values[len(s.values)-length:],
 	}
-	// fmt.Printf("rtn: %+v\n", rtn)
 	if rawData, err := json.Marshal(rtn); err == nil {
 		var obj map[string]interface{}
 		if err := json.Unmarshal(rawData, &obj); err == nil {

@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"reflect"
 	"sync"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const noDataSleepDuration = 100 * time.Millisecond
+
 type MultiLiveBarFeedGenerator struct {
 	bfg        core.FeedGenerator
 	providers  []BarDataProvider
@@ -24,7 +27,7 @@ type MultiLiveBarFeedGenerator struct {
 
 // AppendNewValueToBuffer implements core.FeedGenerator
 func (l *MultiLiveBarFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{}, f core.Frequency) error {
-	logger.Logger.Debug("LiveBarFeedGenerator::AppendNewValueToBuffer", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
+	// logger.Logger.Debug("LiveBarFeedGenerator::AppendNewValueToBuffer", zap.Any("t", t), zap.Any("v", v), zap.Any("f", f))
 	for {
 		if err := l.bfg.AppendNewValueToBuffer(t, v, f); err != nil {
 			logger.Logger.Debug("LiveBarFeedGenerator::AppendNewValueToBuffer failed", zap.Error(err))
@@ -89,7 +92,9 @@ func (l *MultiLiveBarFeedGenerator) SetInstrument(instrument string) {
 
 func (l *MultiLiveBarFeedGenerator) WaitAndRun(wg *sync.WaitGroup) error {
 	wg.Wait()
-	l.Run()
+	if err := l.Run(); err != nil {
+		panic(err)
+	}
 	return nil
 }
 
@@ -134,7 +139,7 @@ func singleBarFromBars(bars core.Bars) core.Bar {
 
 func (l *MultiLiveBarFeedGenerator) Run() error {
 	for i, p := range l.providers {
-		logger.Logger.Debug("start provider", zap.Any("p", p))
+		logger.Logger.Debug("start provider", zap.Any("p", reflect.TypeOf(p)))
 		if err := p.init(l.instrument, l.freq); err != nil {
 			logger.Logger.Error("failed to init provider", zap.Error(err))
 			return err
@@ -180,13 +185,12 @@ func (l *MultiLiveBarFeedGenerator) Run() error {
 
 		if earliestBarIdx == -1 {
 			// no bar available
-			logger.Logger.Debug("no bar available")
-			time.Sleep(1 * time.Second)
+			time.Sleep(noDataSleepDuration)
 			continue
 		} else {
 			// we have a bar, append it to buffer
 			bars := pendingBars[earliestBarIdx]
-			logger.Logger.Debug("got bar", zap.Any("bar", bars))
+			// logger.Logger.Debug("got bar", zap.Any("bar", bars))
 			var freq *core.Frequency
 			for _, v := range bars {
 				if freq == nil {

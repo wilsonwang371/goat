@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const dataBatchSize = 4096 * 2
+
 type BarData struct {
 	gorm.Model
 	Symbol    string  `json:"symbol"`
@@ -26,6 +28,8 @@ type BarData struct {
 
 type DB struct {
 	*gorm.DB
+	dataChan chan *BarData
+	err      error
 }
 
 func NewSQLiteDataBase(dbpath string) *DB {
@@ -36,21 +40,49 @@ func NewSQLiteDataBase(dbpath string) *DB {
 	}
 	db.AutoMigrate(&BarData{})
 
-	return &DB{db}
+	return &DB{
+		db,
+		make(chan *BarData, dataBatchSize),
+		nil,
+	}
 }
 
-func (db *DB) IterateRows(f func(*BarData)) error {
-	if rows, err := db.Model(&BarData{}).Order("id").Rows(); err != nil {
-		return err
-	} else {
-		defer rows.Close()
-		for rows.Next() {
-			data := &BarData{}
-			if err := db.ScanRows(rows, data); err != nil {
-				return err
-			}
-			f(data)
+func (db *DB) fetchAll() {
+	db.err = nil
+	startIdx := 0
+	for {
+		var data []*BarData
+		if err := db.Model(&BarData{}).Order("id").Offset(startIdx).Limit(dataBatchSize).Find(&data).Error; err != nil {
+			logger.Logger.Error("failed to fetch data", zap.Error(err))
+			db.err = err
+			break
 		}
+		if len(data) == 0 {
+			db.err = nil
+			break
+		}
+		for _, d := range data {
+			db.dataChan <- d
+		}
+		startIdx += dataBatchSize
 	}
-	return nil
+	close(db.dataChan)
+}
+
+func (db *DB) FetchAll(bg bool) {
+	if bg {
+		go func() {
+			db.fetchAll()
+		}()
+	} else {
+		db.fetchAll()
+	}
+}
+
+func (db *DB) Next() (*BarData, error) {
+	data, ok := <-db.dataChan
+	if !ok {
+		return nil, db.err
+	}
+	return data, nil
 }

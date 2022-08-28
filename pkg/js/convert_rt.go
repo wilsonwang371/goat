@@ -147,7 +147,10 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *db.DB) error {
 		// logger.Logger.Debug("bar", zap.Any("bar", bar))
 		allbars = append(allbars, bar)
 		if len(allbars) >= dbBatchCreateSize {
-			dboutput.CreateInBatches(allbars, len(allbars))
+			res := dboutput.Create(allbars)
+			if res.Error != nil {
+				return res.Error
+			}
 			allbars = []*db.BarData{}
 		}
 
@@ -155,7 +158,10 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *db.DB) error {
 		c.bar.Add(1)
 	}
 	if len(allbars) > 0 {
-		dboutput.CreateInBatches(allbars, len(allbars))
+		res := dboutput.Create(allbars)
+		if res.Error != nil {
+			return res.Error
+		}
 	}
 	c.bar.Finish()
 	return nil

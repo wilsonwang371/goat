@@ -55,7 +55,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	runWg = wg
-	feed := core.NewGenericDataFeed(gen, 100, liveRecoveryDBFile)
+	feed := core.NewGenericDataFeed(&cfg, gen, 250, liveRecoveryDBFile)
 
 	// setup js runtime
 	rt := js.NewStrategyRuntime(&cfg, feed, startLive)

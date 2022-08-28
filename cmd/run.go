@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"goat/pkg/config"
 	"goat/pkg/core"
 	"goat/pkg/feedgen"
 	"goat/pkg/js"
@@ -39,7 +40,7 @@ func RunFunction(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	feed := core.NewGenericDataFeed(gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
 
 	// setup js runtime
 	rt := js.NewStrategyRuntime(&cfg, feed, nil)

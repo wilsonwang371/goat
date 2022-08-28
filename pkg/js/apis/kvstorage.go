@@ -33,14 +33,14 @@ func NewKVObject(cfg *config.Config, vm *otto.Otto, kvdbFilePath string) (*KVObj
 	}
 
 	if kvdbFilePath != "" {
-		kvdb, err := badger.Open(badger.DefaultOptions(kvdbFilePath))
+		kvdb, err := badger.Open(badger.DefaultOptions(kvdbFilePath).WithLoggingLevel(badger.ERROR))
 		if err != nil {
 			logger.Logger.Fatal("failed to open badger kvdb file", zap.Error(err))
 			return nil, err
 		}
 		kv.KVDB = kvdb
 	} else {
-		kvdb, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
+		kvdb, err := badger.Open(badger.DefaultOptions("").WithInMemory(true).WithLoggingLevel(badger.ERROR))
 		if err != nil {
 			logger.Logger.Fatal("failed to open in-memory badger kvdb", zap.Error(err))
 			return nil, err

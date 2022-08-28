@@ -13,7 +13,7 @@ func TestSimpleStrategy(t *testing.T) {
 	gen := NewBarFeedGenerator(
 		[]Frequency{REALTIME, DAY, HOUR},
 		100)
-	feed := NewGenericDataFeed(gen, 100, "")
+	feed := NewGenericDataFeed(&config.Config{}, gen, 100, "")
 	sel := NewSimpleStrategyEventListener()
 	broker := NewDummyBroker(feed)
 	strategy := NewStrategyController(cfg, sel, broker, feed)
