@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+	"runtime"
+	"time"
 
 	"goat/pkg/config"
 	"goat/pkg/db"
@@ -84,6 +86,8 @@ type strategyController struct {
 	dispatcher Dispatcher
 
 	barProcessedEvent Event
+
+	barDataDumpC chan *db.BarData
 }
 
 func (s *strategyController) onStart(args ...interface{}) error {
@@ -100,6 +104,29 @@ func (s *strategyController) onIdle(args ...interface{}) error {
 		            resampledBarFeed.checkNow(self.getCurrentDateTime())
 	*/
 	return s.listener.OnIdle()
+}
+
+func (s *strategyController) barDumpWorkerLoop() {
+	barDataList := []*db.BarData{}
+	for {
+		select {
+		case barData := <-s.barDataDumpC:
+			barDataList = append(barDataList, barData)
+			if len(barDataList) >= 1000 {
+				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+				barDataList = []*db.BarData{}
+				runtime.GC()
+			}
+		default:
+			if len(barDataList) > 0 {
+				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+				barDataList = []*db.BarData{}
+				runtime.GC()
+			} else {
+				time.Sleep(time.Millisecond * 1)
+			}
+		}
+	}
 }
 
 func (s *strategyController) onBars(args ...interface{}) error {
@@ -120,7 +147,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 	// 	zap.Any("bars", bars))
 	if s.dumpDB != nil {
 		for symbol, bar := range bars {
-			s.dumpDB.Create(&db.BarData{
+			data := &db.BarData{
 				Symbol:    symbol,
 				DateTime:  bar.DateTime().Unix(),
 				Open:      bar.Open(),
@@ -130,7 +157,8 @@ func (s *strategyController) onBars(args ...interface{}) error {
 				Volume:    bar.Volume(),
 				AdjClose:  bar.AdjClose(),
 				Frequency: int64(bar.Frequency()),
-			})
+			}
+			s.barDataDumpC <- data
 		}
 	}
 
@@ -192,6 +220,7 @@ func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEve
 		dataFeed:          dataFeed,
 		dispatcher:        NewDispatcher(),
 		barProcessedEvent: NewEvent(),
+		barDataDumpC:      make(chan *db.BarData, 100),
 	}
 
 	if cfg.BarDumpDB != "" {
@@ -206,6 +235,9 @@ func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEve
 
 	controller.dataFeed.GetNewValueEvent().Subscribe(controller.onBars)
 	controller.broker.GetOrderUpdatedEvent().Subscribe(controller.onOrderEvent)
+
+	// TODO: handle proper shutdown
+	go controller.barDumpWorkerLoop()
 
 	return controller
 }
