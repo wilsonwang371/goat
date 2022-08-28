@@ -9,6 +9,7 @@ import (
 	"goat/pkg/db"
 	"goat/pkg/logger"
 
+	"github.com/schollz/progressbar/v3"
 	"go.uber.org/zap"
 )
 
@@ -131,11 +132,17 @@ type pendingDataType struct {
 }
 
 type genericDataFeed struct {
-	cfg                 *config.Config
-	newValueEvent       Event
-	dataSeriesManager   *dataSeriesManager
-	feedGenerator       FeedGenerator
-	recoveryDB          *db.DB
+	cfg               *config.Config
+	newValueEvent     Event
+	dataSeriesManager *dataSeriesManager
+	feedGenerator     FeedGenerator
+
+	recoveryDB       *db.DB
+	recoveryCount    int64
+	recoveryProgress int64
+	recoveryBar      *progressbar.ProgressBar
+	recoveryLastTime time.Time
+
 	pendingRecoveryData *pendingDataType
 }
 
@@ -157,11 +164,17 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 	if d.recoveryDB != nil {
 		if barData, err := d.recoveryDB.Next(); err == nil {
 			// NOTE: if we have data in the recovery database, we should use it
-
 			if barData == nil {
 				// no more data in the recovery database
 				d.recoveryDB = nil
 				return nil
+			}
+
+			// update progress bar
+			d.recoveryProgress++
+			if d.recoveryLastTime.IsZero() || time.Now().Sub(d.recoveryLastTime) > 10*time.Second {
+				d.recoveryBar.Set64(d.recoveryProgress)
+				d.recoveryLastTime = time.Now()
 			}
 
 			bar := NewBasicBar(time.Unix(barData.DateTime, 0),
@@ -191,6 +204,7 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() error {
 			return nil
 		} else {
 			d.recoveryDB = nil
+			d.recoveryBar.Finish()
 			return err
 		}
 	} else {
@@ -277,16 +291,20 @@ func (d *genericDataFeed) GetNewValueEvent() Event {
 // GetOrderUpdatedEvent implements Broker
 func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, maxLen int, recoveryDB string) DataFeed {
 	var recDB *db.DB
+	var recCount int64
 	if recoveryDB != "" {
 		logger.Logger.Debug("recovery mode is enabled", zap.String("db", recoveryDB))
 		recDB = db.NewSQLiteDataBase(recoveryDB)
-		recDB.FetchAll(true)
+		recCount = recDB.FetchAll(true)
 	}
 	df := &genericDataFeed{
-		cfg:           cfg,
-		newValueEvent: NewEvent(),
-		feedGenerator: fg,
-		recoveryDB:    recDB,
+		cfg:              cfg,
+		newValueEvent:    NewEvent(),
+		feedGenerator:    fg,
+		recoveryDB:       recDB,
+		recoveryCount:    recCount,
+		recoveryProgress: 0,
+		recoveryBar:      progressbar.Default(recCount),
 	}
 	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
 	df.maybeFetchNextRecoveryData() // we may need to read some initial data from recovery db

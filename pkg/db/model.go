@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const dataBatchSize = 4096 * 2
+const dataBatchSize = 1024 * 1024
 
 type BarData struct {
 	gorm.Model
@@ -69,7 +69,9 @@ func (db *DB) fetchAll() {
 	close(db.dataChan)
 }
 
-func (db *DB) FetchAll(bg bool) {
+func (db *DB) FetchAll(bg bool) int64 {
+	count := int64(0)
+	db.Model(&BarData{}).Count(&count)
 	if bg {
 		go func() {
 			db.fetchAll()
@@ -77,6 +79,7 @@ func (db *DB) FetchAll(bg bool) {
 	} else {
 		db.fetchAll()
 	}
+	return count
 }
 
 func (db *DB) Next() (*BarData, error) {

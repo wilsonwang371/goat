@@ -3,8 +3,10 @@ var c = 0;
 addEventListener("onBars", function (bar) {
   symbol = Object.keys(bar)[0];
   c++;
-  console.log("onBars is called " + c + " times. Data: " + bar);
-  JSON.stringify(feed.dataseries(symbol, 86400, 10));
+  if (c % 1000 == 0) {
+    console.log("onBars is called " + c + " times. Data: " + bar);
+    JSON.stringify(feed.dataseries(symbol, 86400, 10));
+  }
 });
 
 addEventListener("onStart", function () {
