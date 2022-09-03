@@ -40,7 +40,7 @@ func RunFunction(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 
 	// setup js runtime
 	rt := js.NewStrategyRuntime(&cfg, feed, nil)

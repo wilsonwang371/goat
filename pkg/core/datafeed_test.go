@@ -12,7 +12,7 @@ func TestSimpleDataFeedGenerator(t *testing.T) {
 		[]Frequency{REALTIME, DAY},
 		100)
 	disp := NewDispatcher()
-	feed := NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	gen.AppendNewValueToBuffer(time.Now(),
@@ -41,7 +41,7 @@ func TestSimpleDataFeedGenerator2(t *testing.T) {
 		[]Frequency{REALTIME, DAY},
 		100)
 	disp := NewDispatcher()
-	feed := NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	gen.AppendNewValueToBuffer(time.Now(),
