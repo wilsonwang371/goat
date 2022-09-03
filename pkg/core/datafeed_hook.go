@@ -1,36 +1,45 @@
 package core
 
-type DataFeedHooks interface {
+type DataFeedHooksControl interface {
 	FilterNewValue(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue
-	AddNewFilter(hook DataFeedHookFunc)
+	AddNewHook(hook DataFeedHook)
 }
 
-type DataFeedHookFunc func(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue
-
-type dataFeedHook struct {
-	hooks []DataFeedHookFunc
+type dataFeedHookControl struct {
+	hooks []DataFeedHook
 }
 
-func NewDataFeedValueHook() DataFeedHooks {
-	return &dataFeedHook{
-		hooks: make([]DataFeedHookFunc, 0),
+func NewDataFeedValueHookControl() DataFeedHooksControl {
+	return &dataFeedHookControl{
+		hooks: make([]DataFeedHook, 0),
 	}
 }
 
-func (d *dataFeedHook) FilterNewValue(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue {
+func (d *dataFeedHookControl) FilterNewValue(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue {
 	values := []*PendingDataFeedValue{value}
 	for _, h := range d.hooks {
-		for _, v := range h(value, isRecovery) {
+		for _, v := range h.Invoke(value, isRecovery) {
 			values = append(values, v)
 		}
 	}
 	return values
 }
 
-func (d *dataFeedHook) AddNewFilter(hook DataFeedHookFunc) {
+func (d *dataFeedHookControl) AddNewHook(hook DataFeedHook) {
 	d.hooks = append(d.hooks, hook)
 }
 
-func DayBarGenHook(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue {
+type DataFeedHook interface {
+	Invoke(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue
+}
+
+type dataFeedHook struct{}
+
+func NewDayBarGenHook() DataFeedHook {
+	return &dataFeedHook{}
+}
+
+// Invoke implements DataFeedHook
+func (*dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) []*PendingDataFeedValue {
 	return []*PendingDataFeedValue{value}
 }

@@ -145,8 +145,8 @@ type genericDataFeed struct {
 	recoveryBar      *progressbar.ProgressBar
 	recoveryLastTime time.Time
 
-	pendingRecoveryData []*PendingDataFeedValue
-	dataFeedHooks       DataFeedHooks
+	pendingRecoveryData  []*PendingDataFeedValue
+	dataFeedHooksControl DataFeedHooksControl
 }
 
 // GetDataSeries implements DataFeed
@@ -248,7 +248,7 @@ func (d *genericDataFeed) Dispatch() bool {
 	}
 
 	if v != nil {
-		result := d.dataFeedHooks.FilterNewValue(&PendingDataFeedValue{t, v, f}, isRecovery)
+		result := d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f}, isRecovery)
 
 		if result != nil {
 			for _, p := range result {
@@ -308,7 +308,7 @@ func (d *genericDataFeed) GetNewValueEvent() Event {
 }
 
 // GetOrderUpdatedEvent implements Broker
-func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooks DataFeedHooks, maxLen int, recoveryDB string) DataFeed {
+func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeedHooksControl, maxLen int, recoveryDB string) DataFeed {
 	var recDB *db.DB
 	var recCount int64
 	if recoveryDB != "" {
@@ -316,21 +316,21 @@ func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooks DataFeedHook
 		recDB = db.NewSQLiteDataBase(recoveryDB, false)
 		recCount = recDB.FetchAll(true)
 	}
-	if hooks == nil {
+	if hooksCtrl == nil {
 		// default hooks
-		hooks = NewDataFeedValueHook()
-		hooks.AddNewFilter(DayBarGenHook)
+		hooksCtrl = NewDataFeedValueHookControl()
+		hooksCtrl.AddNewHook(NewDayBarGenHook())
 	}
 	df := &genericDataFeed{
-		cfg:                 cfg,
-		newValueEvent:       NewEvent(),
-		feedGenerator:       fg,
-		recoveryDB:          recDB,
-		recoveryCount:       recCount,
-		recoveryProgress:    0,
-		recoveryBar:         progressbar.Default(recCount),
-		pendingRecoveryData: []*PendingDataFeedValue{},
-		dataFeedHooks:       hooks,
+		cfg:                  cfg,
+		newValueEvent:        NewEvent(),
+		feedGenerator:        fg,
+		recoveryDB:           recDB,
+		recoveryCount:        recCount,
+		recoveryProgress:     0,
+		recoveryBar:          progressbar.Default(recCount),
+		pendingRecoveryData:  []*PendingDataFeedValue{},
+		dataFeedHooksControl: hooksCtrl,
 	}
 	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
 	return df
