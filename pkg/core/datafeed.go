@@ -145,7 +145,7 @@ type genericDataFeed struct {
 	recoveryBar      *progressbar.ProgressBar
 	recoveryLastTime time.Time
 
-	pendingRecoveryData *PendingDataFeedValue
+	pendingRecoveryData []*PendingDataFeedValue
 	dataFeedHooks       DataFeedHooks
 }
 
@@ -159,7 +159,7 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 	var v map[string]interface{}
 	var f Frequency
 
-	if d.pendingRecoveryData != nil {
+	if len(d.pendingRecoveryData) != 0 {
 		// we have pending data, just ignore
 		return
 	}
@@ -209,7 +209,7 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 
 			// logger.Logger.Info("read bar from recovery database",
 			//	zap.Time("time", t), zap.String("symbol", barData.Symbol), zap.Any("bar", bar))
-			d.pendingRecoveryData = &PendingDataFeedValue{t, v, f}
+			d.pendingRecoveryData = append(d.pendingRecoveryData, &PendingDataFeedValue{t, v, f})
 			return
 		} else {
 			// error happens and we cannot continue
@@ -237,12 +237,13 @@ func (d *genericDataFeed) Dispatch() bool {
 	// we may need to read data from recovery db
 	d.maybeFetchNextRecoveryData()
 
-	if d.pendingRecoveryData != nil {
+	if len(d.pendingRecoveryData) != 0 {
 		// we have data from the recovery database, use it
-		t = d.pendingRecoveryData.t
-		v = d.pendingRecoveryData.v
-		f = d.pendingRecoveryData.f
-		d.pendingRecoveryData = nil
+		pendingData := d.pendingRecoveryData[0]
+		t = pendingData.t
+		v = pendingData.v
+		f = pendingData.f
+		d.pendingRecoveryData = d.pendingRecoveryData[1:]
 		isRecovery = true
 	}
 
@@ -283,9 +284,9 @@ func (d *genericDataFeed) Join() error {
 func (d *genericDataFeed) PeekDateTime() *time.Time {
 	// NOTE: we need to read data
 	d.maybeFetchNextRecoveryData()
-	if d.pendingRecoveryData != nil {
+	if len(d.pendingRecoveryData) != 0 {
 		// we have data from the recovery database, use it
-		return &d.pendingRecoveryData.t
+		return &d.pendingRecoveryData[0].t
 	}
 	return d.feedGenerator.PeekNextTime()
 }
@@ -321,14 +322,15 @@ func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooks DataFeedHook
 		hooks.AddNewFilter(DayBarGenHook)
 	}
 	df := &genericDataFeed{
-		cfg:              cfg,
-		newValueEvent:    NewEvent(),
-		feedGenerator:    fg,
-		recoveryDB:       recDB,
-		recoveryCount:    recCount,
-		recoveryProgress: 0,
-		recoveryBar:      progressbar.Default(recCount),
-		dataFeedHooks:    hooks,
+		cfg:                 cfg,
+		newValueEvent:       NewEvent(),
+		feedGenerator:       fg,
+		recoveryDB:          recDB,
+		recoveryCount:       recCount,
+		recoveryProgress:    0,
+		recoveryBar:         progressbar.Default(recCount),
+		pendingRecoveryData: []*PendingDataFeedValue{},
+		dataFeedHooks:       hooks,
 	}
 	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
 	return df
