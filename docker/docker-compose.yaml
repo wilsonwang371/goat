@@ -2,6 +2,6 @@ version: "3"
 services:
   workload:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../
+      dockerfile: docker/Dockerfile
     image: wilsonny/goat-build:latest
