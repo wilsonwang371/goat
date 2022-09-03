@@ -18,7 +18,7 @@ func TestYahooSimple(t *testing.T) {
 func TestYahooSimple2(t *testing.T) {
 	gen := NewYahooBarFeedGenerator("GLD", core.DAY)
 	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go disp.Run()

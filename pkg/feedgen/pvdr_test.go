@@ -28,7 +28,7 @@ func TestTradingViewSimple(t *testing.T) {
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
 	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go gen.Run()
@@ -45,7 +45,7 @@ func TestFakeSimple(t *testing.T) {
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
 	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go gen.Run()
@@ -62,7 +62,7 @@ func Test2FakeSimple(t *testing.T) {
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
 	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go gen.Run()
@@ -149,7 +149,7 @@ func TestMultiProviders(t *testing.T) {
 
 	go gen.WaitAndRun(runWg)
 
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, 100, "")
+	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 
 	rt := js.NewStrategyRuntime(&cfg, feed, startLive)
 	script, err := ioutil.ReadFile("../../samples/strategies/simple.js")
