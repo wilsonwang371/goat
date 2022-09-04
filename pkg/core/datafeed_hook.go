@@ -12,7 +12,7 @@ type dataFeedHookControl struct {
 	hooks []DataFeedHook
 }
 
-// MayHaveNewValue implements DataFeedHooksControl
+// PossibleOneNewValue implements DataFeedHooksControl
 func (d *dataFeedHookControl) PossibleOneNewValue() *PendingDataFeedValue {
 	for _, h := range d.hooks {
 		if v := h.MayHaveNewValue(); v != nil {
