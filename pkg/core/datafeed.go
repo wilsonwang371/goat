@@ -154,6 +154,12 @@ func (d *genericDataFeed) GetDataSeries(symbol string, freq Frequency) (DataSeri
 	return d.dataSeriesManager.getDataSeries(symbol, freq)
 }
 
+func (d *genericDataFeed) maybeFetchNextGeneratedData() {
+	if v := d.dataFeedHooksControl.PossibleOneNewValue(); v != nil {
+		d.pendingRecoveryData = append(d.pendingRecoveryData, v)
+	}
+}
+
 func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 	var t time.Time
 	var v map[string]interface{}
@@ -228,14 +234,22 @@ func (d *genericDataFeed) Dispatch() bool {
 	var v map[string]interface{}
 	var f Frequency
 	var err error
+	var isRecovery bool
 
 	if t, v, f, err = d.feedGenerator.PopNextValues(); err != nil {
 		return false
 	}
-	isRecovery := false
 
 	// we may need to read data from recovery db
 	d.maybeFetchNextRecoveryData()
+	// we may need to read data from feed hooks
+	d.maybeFetchNextGeneratedData()
+
+	if d.recoveryDB != nil {
+		isRecovery = true
+	} else {
+		isRecovery = false
+	}
 
 	if len(d.pendingRecoveryData) != 0 {
 		// we have data from the recovery database, use it
@@ -244,26 +258,21 @@ func (d *genericDataFeed) Dispatch() bool {
 		v = pendingData.v
 		f = pendingData.f
 		d.pendingRecoveryData = d.pendingRecoveryData[1:]
-		isRecovery = true
 	}
 
 	if v != nil {
-		result := d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f}, isRecovery)
+		d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f}, isRecovery)
 
-		if result != nil {
-			for _, p := range result {
-				if err := d.dataSeriesManager.newValueUpdate(p.t, p.v, p.f); err != nil {
-					panic(err)
-				}
-				for _, val := range p.v {
-					if _, ok := val.(Bar); !ok {
-						panic(fmt.Errorf("value is not a bar"))
-					}
-				}
-				// logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", fmt.Sprintf("%+v", v)), zap.Any("f", f))
-				d.newValueEvent.Emit(p.t, p.v)
+		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
+			panic(err)
+		}
+		for _, val := range v {
+			if _, ok := val.(Bar); !ok {
+				panic(fmt.Errorf("value is not a bar"))
 			}
 		}
+		// logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", fmt.Sprintf("%+v", v)), zap.Any("f", f))
+		d.newValueEvent.Emit(t, v)
 		return true
 	}
 	return false
