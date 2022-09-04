@@ -145,7 +145,7 @@ type genericDataFeed struct {
 	recoveryBar      *progressbar.ProgressBar
 	recoveryLastTime time.Time
 
-	pendingRecoveryData  []*PendingDataFeedValue
+	pendingData          []*PendingDataFeedValue
 	dataFeedHooksControl DataFeedHooksControl
 }
 
@@ -156,7 +156,7 @@ func (d *genericDataFeed) GetDataSeries(symbol string, freq Frequency) (DataSeri
 
 func (d *genericDataFeed) maybeFetchNextGeneratedData() {
 	if v := d.dataFeedHooksControl.PossibleOneNewValue(); v != nil {
-		d.pendingRecoveryData = append(d.pendingRecoveryData, v)
+		d.pendingData = append(d.pendingData, v)
 	}
 }
 
@@ -164,11 +164,6 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 	var t time.Time
 	var v map[string]interface{}
 	var f Frequency
-
-	if len(d.pendingRecoveryData) != 0 {
-		// we have pending data, just ignore
-		return
-	}
 
 	if d.recoveryDB != nil {
 		if barData, err := d.recoveryDB.Next(); err == nil {
@@ -215,7 +210,7 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 
 			// logger.Logger.Info("read bar from recovery database",
 			//	zap.Time("time", t), zap.String("symbol", barData.Symbol), zap.Any("bar", bar))
-			d.pendingRecoveryData = append(d.pendingRecoveryData, &PendingDataFeedValue{t, v, f})
+			d.pendingData = append(d.pendingData, &PendingDataFeedValue{t, v, f})
 			return
 		} else {
 			// error happens and we cannot continue
@@ -251,13 +246,13 @@ func (d *genericDataFeed) Dispatch() bool {
 		isRecovery = false
 	}
 
-	if len(d.pendingRecoveryData) != 0 {
+	if len(d.pendingData) != 0 {
 		// we have data from the recovery database, use it
-		pendingData := d.pendingRecoveryData[0]
+		pendingData := d.pendingData[0]
 		t = pendingData.t
 		v = pendingData.v
 		f = pendingData.f
-		d.pendingRecoveryData = d.pendingRecoveryData[1:]
+		d.pendingData = d.pendingData[1:]
 	}
 
 	if v != nil {
@@ -293,9 +288,9 @@ func (d *genericDataFeed) Join() error {
 func (d *genericDataFeed) PeekDateTime() *time.Time {
 	// NOTE: we need to read data
 	d.maybeFetchNextRecoveryData()
-	if len(d.pendingRecoveryData) != 0 {
+	if len(d.pendingData) != 0 {
 		// we have data from the recovery database, use it
-		return &d.pendingRecoveryData[0].t
+		return &d.pendingData[0].t
 	}
 	return d.feedGenerator.PeekNextTime()
 }
@@ -338,7 +333,7 @@ func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeed
 		recoveryCount:        recCount,
 		recoveryProgress:     0,
 		recoveryBar:          progressbar.Default(recCount),
-		pendingRecoveryData:  []*PendingDataFeedValue{},
+		pendingData:          []*PendingDataFeedValue{},
 		dataFeedHooksControl: hooksCtrl,
 	}
 	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
