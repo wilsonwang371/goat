@@ -85,7 +85,9 @@ func (b *barFeedGenerator) Finish() {
 	b.eof = true
 }
 
-func (b *barFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{}, f Frequency) error {
+func (b *barFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]interface{},
+	f Frequency,
+) error {
 	found := false
 	for i := 0; i < len(b.freq); i++ {
 		if b.freq[i] == f {
@@ -150,7 +152,9 @@ type genericDataFeed struct {
 }
 
 // GetDataSeries implements DataFeed
-func (d *genericDataFeed) GetDataSeries(symbol string, freq Frequency) (DataSeries, error) {
+func (d *genericDataFeed) GetDataSeries(symbol string,
+	freq Frequency,
+) (DataSeries, error) {
 	return d.dataSeriesManager.getDataSeries(symbol, freq)
 }
 
@@ -178,7 +182,8 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 
 			// update progress bar
 			d.recoveryProgress++
-			if d.recoveryLastTime.IsZero() || time.Now().Sub(d.recoveryLastTime) > 10*time.Second {
+			if d.recoveryLastTime.IsZero() || time.Now().Sub(d.recoveryLastTime) >
+				10*time.Second {
 				d.recoveryBar.Set64(d.recoveryProgress)
 				d.recoveryLastTime = time.Now()
 			}
@@ -256,7 +261,8 @@ func (d *genericDataFeed) Dispatch() bool {
 	}
 
 	if v != nil {
-		d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f}, isRecovery)
+		d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f},
+			isRecovery)
 
 		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 			panic(err)
@@ -266,7 +272,6 @@ func (d *genericDataFeed) Dispatch() bool {
 				panic(fmt.Errorf("value is not a bar"))
 			}
 		}
-		// logger.Logger.Debug("emit new value", zap.Any("t", t), zap.Any("v", fmt.Sprintf("%+v", v)), zap.Any("f", f))
 		d.newValueEvent.Emit(t, v)
 		return true
 	}
@@ -312,7 +317,9 @@ func (d *genericDataFeed) GetNewValueEvent() Event {
 }
 
 // GetOrderUpdatedEvent implements Broker
-func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeedHooksControl, maxLen int, recoveryDB string) DataFeed {
+func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeedHooksControl,
+	maxLen int, recoveryDB string,
+) DataFeed {
 	var recDB *db.DB
 	var recCount int64
 	if recoveryDB != "" {
@@ -356,10 +363,13 @@ func newDataSeriesManager(f func(string, int) DataSeries, maxLen int) *dataSerie
 	}
 }
 
-func (d *dataSeriesManager) registerDataSeries(name string, freq Frequency, dataSeries DataSeries) error {
+func (d *dataSeriesManager) registerDataSeries(name string, freq Frequency,
+	dataSeries DataSeries,
+) error {
 	if v, ok := d.dataSeries[name]; ok {
 		if _, ok2 := v[freq]; ok2 {
-			return fmt.Errorf("data series %s already registered for frequency %d", name, freq)
+			return fmt.Errorf("data series %s already registered for frequency %d",
+				name, freq)
 		}
 		v[freq] = dataSeries
 	} else {
@@ -369,7 +379,9 @@ func (d *dataSeriesManager) registerDataSeries(name string, freq Frequency, data
 	return nil
 }
 
-func (d *dataSeriesManager) getDataSeries(name string, freq Frequency) (DataSeries, error) {
+func (d *dataSeriesManager) getDataSeries(name string,
+	freq Frequency,
+) (DataSeries, error) {
 	if dataSeries, ok := d.dataSeries[name]; ok {
 		if v, ok := dataSeries[freq]; ok {
 			return v, nil
@@ -388,7 +400,9 @@ func (d *dataSeriesManager) getDataSeriesNames() []string {
 	return names
 }
 
-func (d *dataSeriesManager) newValueUpdate(timeVal time.Time, values map[string]interface{}, freq Frequency) error {
+func (d *dataSeriesManager) newValueUpdate(timeVal time.Time, values map[string]interface{},
+	freq Frequency,
+) error {
 	for key, value := range values {
 		if dataSeries, err := d.getDataSeries(key, freq); err == nil {
 			if err := dataSeries.AppendWithDateTime(timeVal, value); err != nil {

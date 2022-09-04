@@ -28,7 +28,9 @@ func NewDataFeedValueHookControl() DataFeedHooksControl {
 	}
 }
 
-func (d *dataFeedHookControl) FilterNewValue(value *PendingDataFeedValue, isRecovery bool) {
+func (d *dataFeedHookControl) FilterNewValue(value *PendingDataFeedValue,
+	isRecovery bool,
+) {
 	for _, h := range d.hooks {
 		h.Invoke(value, isRecovery)
 	}
@@ -75,7 +77,8 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		for k, v := range d.dayBarMap {
 			newDayBar.v[k] = v
 		}
-		newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(),
+		newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(),
+			d.startTime.Day(),
 			0, 0, 0, 0, time.UTC)
 		d.startTime = nil
 		d.stopTime = nil

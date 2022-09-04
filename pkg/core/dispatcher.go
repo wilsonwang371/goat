@@ -68,7 +68,8 @@ func (d *dispatcher) AddSubject(subject Subject) {
 func (d *dispatcher) dispatchSubject(subject Subject, smallestTime time.Time) bool {
 	t := subject.PeekDateTime()
 	if t == nil {
-		logger.Logger.Info("no data available yet", zap.String("subject", reflect.TypeOf(subject).String()))
+		logger.Logger.Info("no data available yet", zap.String("subject",
+			reflect.TypeOf(subject).String()))
 		return false
 	}
 
