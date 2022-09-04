@@ -15,7 +15,10 @@ import (
 
 const FailOnUnmatchedSymbol = true
 
-var warnedUnmatchedSymbol = false
+var (
+	warnedUnmatchedSymbol = false
+	maxPendingDataAmount  = 100
+)
 
 // interface for feed value generator
 type FeedGenerator interface {
@@ -170,6 +173,10 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 	var f Frequency
 
 	if d.recoveryDB != nil {
+		if len(d.pendingData) >= maxPendingDataAmount {
+			// do not fetch too many data at once
+			return
+		}
 		if barData, err := d.recoveryDB.Next(); err == nil {
 			// NOTE: if we have data in the recovery database, we should use it
 			if barData == nil {
