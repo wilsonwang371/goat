@@ -75,7 +75,8 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		for k, v := range d.dayBarMap {
 			newDayBar.v[k] = v
 		}
-		newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(), 0, 0, 0, 0, time.UTC)
+		newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(),
+			0, 0, 0, 0, time.UTC)
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
@@ -96,37 +97,28 @@ func (d *dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) {
 	if d.startTime == nil {
 		d.startTime = &value.t
 		// set the stop time
-		stopTime := time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(), 23, 59, 59, 0, time.UTC)
+		stopTime := time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(),
+			23, 59, 59, 0, time.UTC)
 		d.stopTime = &stopTime
 	}
 	for k, v := range value.v {
 		if d.dayBarMap[k] == nil {
 			bar := v.(Bar)
-			d.dayBarMap[k] = NewBasicBar(value.t, bar.Open(), bar.High(), bar.Low(), bar.Close(),
+			d.dayBarMap[k] = NewBasicBar(value.t,
+				bar.Open(), bar.High(), bar.Low(), bar.Close(),
 				bar.AdjClose(), bar.Volume(), DAY)
 		} else {
 			bar := v.(Bar)
 			if bar.Close() > d.dayBarMap[k].High() {
-				d.dayBarMap[k] = NewBasicBar(d.dayBarMap[k].DateTime(), d.dayBarMap[k].Open(), bar.Close(), d.dayBarMap[k].Low(), bar.Close(),
+				d.dayBarMap[k] = NewBasicBar(d.dayBarMap[k].DateTime(),
+					d.dayBarMap[k].Open(), bar.Close(), d.dayBarMap[k].Low(), bar.Close(),
 					d.dayBarMap[k].AdjClose(), d.dayBarMap[k].Volume(), d.dayBarMap[k].Frequency())
 			}
 			if bar.Close() < d.dayBarMap[k].Low() {
-				d.dayBarMap[k] = NewBasicBar(d.dayBarMap[k].DateTime(), d.dayBarMap[k].Open(), d.dayBarMap[k].High(), bar.Close(), bar.Close(),
+				d.dayBarMap[k] = NewBasicBar(d.dayBarMap[k].DateTime(),
+					d.dayBarMap[k].Open(), d.dayBarMap[k].High(), bar.Close(), bar.Close(),
 					d.dayBarMap[k].AdjClose(), d.dayBarMap[k].Volume(), d.dayBarMap[k].Frequency())
 			}
 		}
 	}
-	// if d.timeToGenDayBar() {
-	// 	var newDayBar PendingDataFeedValue
-	// 	newDayBar.f = DAY
-	// 	newDayBar.v = map[string]interface{}{}
-	// 	for k, v := range d.dayBarMap {
-	// 		newDayBar.v[k] = v
-	// 	}
-	// 	newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(), 0, 0, 0, 0, time.UTC)
-	// 	d.startTime = nil
-	// 	d.dayBarMap = make(map[string]Bar)
-	// 	return []*PendingDataFeedValue{value, &newDayBar}
-	// }
-	// return []*PendingDataFeedValue{value}
 }
