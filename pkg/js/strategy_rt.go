@@ -3,6 +3,7 @@ package js
 import (
 	"runtime/debug"
 	"strings"
+	"sync"
 
 	"goat/pkg/config"
 	"goat/pkg/core"
@@ -34,6 +35,7 @@ type StrategyRuntime interface {
 type strategyRuntime struct {
 	cfg            *config.Config
 	vm             *goja.Runtime
+	mu             sync.Mutex
 	kvApi          *apis.KVObject
 	tlApi          *apis.TALib
 	sysApi         *apis.SysObject
@@ -51,6 +53,8 @@ func (r *strategyRuntime) NotifyEvent(eventName string, args ...interface{}) err
 		if err := r.vm.ExportTo(handler, &handlerFunc); err != nil {
 			return err
 		} else {
+			r.mu.Lock()
+			defer r.mu.Unlock()
 			handlerFunc(args...)
 		}
 	}
@@ -74,6 +78,8 @@ func (r *strategyRuntime) RegisterHostCall(name string, fn RuntimeFunc) error {
 
 // Execute implements StrategyRuntime
 func (r *strategyRuntime) Execute(script *goja.Program) (goja.Value, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	return r.vm.RunProgram(script)
 }
 
@@ -109,7 +115,7 @@ func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCal
 		logger.Logger.Error("failed to create talib object", zap.Error(err))
 		panic(err)
 	}
-	res.sysApi, err = apis.NewSysObject(cfg, res.vm, cb)
+	res.sysApi, err = apis.NewSysObject(cfg, res.vm, &res.mu, cb)
 	if err != nil {
 		logger.Logger.Error("failed to create sys object", zap.Error(err))
 		panic(err)

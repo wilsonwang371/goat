@@ -2,6 +2,7 @@ package apis
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"goat/pkg/config"
@@ -15,10 +16,11 @@ type StartCallback func() error
 type SysObject struct {
 	cfg *config.Config
 	VM  *goja.Runtime
+	Mu  *sync.Mutex
 	Cb  StartCallback
 }
 
-func NewSysObject(cfg *config.Config, vm *goja.Runtime, startCb StartCallback) (*SysObject, error) {
+func NewSysObject(cfg *config.Config, vm *goja.Runtime, runMu *sync.Mutex, startCb StartCallback) (*SysObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -26,6 +28,7 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, startCb StartCallback) (
 	sys := &SysObject{
 		cfg: cfg,
 		VM:  vm,
+		Mu:  runMu,
 		Cb:  startCb,
 	}
 
@@ -39,7 +42,29 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, startCb StartCallback) (
 	consoleObj.Set("log", sys.LogCmd)
 	sys.VM.Set("console", consoleObj)
 
+	sys.VM.Set("setInterval", sys.SetIntervalCmd)
+
 	return sys, nil
+}
+
+func (sys *SysObject) SetIntervalCmd(call goja.FunctionCall) goja.Value {
+	logger.Logger.Debug("setIntervalCmd")
+	if len(call.Arguments) != 2 {
+		logger.Logger.Debug("setIntervalCmd needs 2 argument")
+		return sys.VM.ToValue(false)
+	}
+	if cb, ok := goja.AssertFunction(call.Argument(0)); ok {
+		interval := call.Argument(1).ToInteger()
+		go func(cb goja.Callable, interval int64, mu *sync.Mutex) {
+			for {
+				time.Sleep(time.Duration(interval) * time.Millisecond)
+				mu.Lock()
+				cb(goja.Undefined())
+				mu.Unlock()
+			}
+		}(cb, interval, sys.Mu)
+	}
+	return sys.VM.ToValue(true)
 }
 
 func (sys *SysObject) StrftimeCmd(call goja.FunctionCall) goja.Value {
