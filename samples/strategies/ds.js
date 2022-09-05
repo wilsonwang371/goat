@@ -50,7 +50,7 @@ addEventListener("onBars", function (bars) {
   var symbol = Object.keys(bar);
   c++;
 
-  var ds = getDataSeries(symbol, frequency.DAY, 50);
+  var ds = getDataSeries(symbol, frequency.DAY, 64);
   if (ds == null) {
     return;
   }

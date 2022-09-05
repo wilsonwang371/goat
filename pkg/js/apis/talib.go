@@ -51,6 +51,65 @@ func (t *TALib) populateMethods() {
 	}
 }
 
+func isInterfaceArrayFloatArray(arr []interface{}) bool {
+	floatAmount := 0
+	for _, v := range arr {
+		switch v.(type) {
+		case float32:
+		case float64:
+			floatAmount += 1
+		}
+	}
+	if floatAmount != 0 {
+		return true
+	}
+	return false
+}
+
+func convertInterfaceArrayToIntArray(arr []interface{}) []int64 {
+	var ret []int64
+	for _, v := range arr {
+		switch v.(type) {
+		case float32:
+			ret = append(ret, int64(v.(float32)))
+		case float64:
+			ret = append(ret, int64(v.(float64)))
+		case int:
+			ret = append(ret, int64(v.(int)))
+		case int32:
+			ret = append(ret, int64(v.(int32)))
+		case int64:
+			ret = append(ret, v.(int64))
+		default:
+			logger.Logger.Error("unsupported type", zap.Any("type", v))
+			return nil
+		}
+	}
+	return ret
+}
+
+func convertInterfaceArrayToFloatArray(arr []interface{}) []float64 {
+	var ret []float64
+	for _, v := range arr {
+		switch v.(type) {
+		case float32:
+			ret = append(ret, float64(v.(float32)))
+		case float64:
+			ret = append(ret, v.(float64))
+		case int:
+			ret = append(ret, float64(v.(int)))
+		case int32:
+			ret = append(ret, float64(v.(int32)))
+		case int64:
+			ret = append(ret, float64(v.(int64)))
+		default:
+			logger.Logger.Error("unsupported type", zap.Any("type", v))
+			return nil
+		}
+	}
+	return ret
+}
+
 func (t *TALib) registerSingleMethod(obj *goja.Object, name string, method reflect.Method) {
 	obj.Set(name, func(call goja.FunctionCall) goja.Value {
 		logger.Logger.Debug("calling talib method", zap.String("method", name))
@@ -58,7 +117,7 @@ func (t *TALib) registerSingleMethod(obj *goja.Object, name string, method refle
 		args := make([]reflect.Value, numArgs)
 
 		if numArgs-1 != len(call.Arguments) {
-			logger.Logger.Debug("talib method needs correct number of arguments",
+			logger.Logger.Info("talib method needs correct number of arguments",
 				zap.String("method", name),
 				zap.Int("expected", numArgs-1),
 				zap.Int("actual", len(call.Arguments)))
@@ -72,79 +131,76 @@ func (t *TALib) registerSingleMethod(obj *goja.Object, name string, method refle
 				continue
 			}
 
-			{
-				var val []float64
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					args[i] = reflect.ValueOf(val)
-					continue
+			inArgRaw := call.Arguments[i-1].Export()
+			switch v := inArgRaw.(type) {
+			case []interface{}:
+				if len(v) == 0 {
+					args[i] = reflect.ValueOf([]float64{})
 				}
-			}
-
-			{
-				var val []float32
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					v2 := make([]float64, len(val))
-					for i := 0; i < len(val); i++ {
-						v2[i] = float64(val[i])
-					}
-					args[i] = reflect.ValueOf(v2)
-					continue
+				if isInterfaceArrayFloatArray(v) {
+					args[i] = reflect.ValueOf(convertInterfaceArrayToFloatArray(v))
+				} else {
+					args[i] = reflect.ValueOf(convertInterfaceArrayToIntArray(v))
 				}
-			}
-
-			{
-				var val []int32
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					v2 := make([]float64, len(val))
-					for i := 0; i < len(val); i++ {
-						v2[i] = float64(val[i])
-					}
-					args[i] = reflect.ValueOf(v2)
-					continue
+			case int:
+				if method.Type.In(i).ConvertibleTo(reflect.TypeOf(v)) {
+					args[i] = reflect.ValueOf(v).Convert(method.Type.In(i))
+				} else {
+					logger.Logger.Error("talib method argument type mismatch",
+						zap.String("method", name),
+						zap.Int("index", i),
+						zap.String("expected", method.Type.In(i).String()),
+						zap.String("actual", reflect.TypeOf(v).String()))
+					return goja.Null()
 				}
-			}
-
-			{
-				var val []int64
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					v2 := make([]float64, len(val))
-					for i := 0; i < len(val); i++ {
-						v2[i] = float64(val[i])
-					}
-					args[i] = reflect.ValueOf(v2)
-					continue
+			case int64:
+				if method.Type.In(i).ConvertibleTo(reflect.TypeOf(v)) {
+					args[i] = reflect.ValueOf(v).Convert(method.Type.In(i))
+				} else {
+					logger.Logger.Error("talib method argument type mismatch",
+						zap.String("method", name),
+						zap.Int("index", i),
+						zap.String("expected", method.Type.In(i).String()),
+						zap.String("actual", reflect.TypeOf(v).String()))
+					return goja.Null()
 				}
-			}
-
-			{
-				var val bool
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					args[i] = reflect.ValueOf(val)
-					continue
+			case int32:
+				if method.Type.In(i).ConvertibleTo(reflect.TypeOf(v)) {
+					args[i] = reflect.ValueOf(v).Convert(method.Type.In(i))
+				} else {
+					logger.Logger.Error("talib method argument type mismatch",
+						zap.String("method", name),
+						zap.Int("index", i),
+						zap.String("expected", method.Type.In(i).String()),
+						zap.String("actual", reflect.TypeOf(v).String()))
+					return goja.Null()
 				}
-			}
-
-			{
-				var val string
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					args[i] = reflect.ValueOf(val)
-					continue
+			case string:
+				if method.Type.In(i).ConvertibleTo(reflect.TypeOf(v)) {
+					args[i] = reflect.ValueOf(v).Convert(method.Type.In(i))
+				} else {
+					logger.Logger.Error("talib method argument type mismatch",
+						zap.String("method", name),
+						zap.Int("index", i),
+						zap.String("expected", method.Type.In(i).String()),
+						zap.String("actual", reflect.TypeOf(v).String()))
+					return goja.Null()
 				}
-			}
-
-			{
-				var val int64
-				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
-					args[i] = reflect.ValueOf(val)
-					continue
+			case bool:
+				if method.Type.In(i).ConvertibleTo(reflect.TypeOf(v)) {
+					args[i] = reflect.ValueOf(v).Convert(method.Type.In(i))
+				} else {
+					logger.Logger.Error("talib method argument type mismatch",
+						zap.String("method", name),
+						zap.Int("index", i),
+						zap.String("expected", method.Type.In(i).String()),
+						zap.String("actual", reflect.TypeOf(v).String()))
+					return goja.Null()
 				}
+			default:
+				logger.Logger.Info("talib method argument unknown type", zap.String("method", name), zap.Any("type", reflect.TypeOf(v)))
+				return goja.Null()
 			}
-
-			logger.Logger.Debug("talib method argument is not supported",
-				zap.String("method", name),
-				zap.Int("index", i),
-				zap.Any("value", call.Argument(i-1)))
-			return goja.Null()
 		}
 
 		rtn := method.Func.Call(args)

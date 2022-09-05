@@ -112,11 +112,11 @@ func (s *strategyController) barDumpWorkerLoop() {
 				barDataList = nil
 			}
 		default:
-			if len(barDataList) > 0 {
+			if len(barDataList) > 100 {
 				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
 				barDataList = nil
 			} else {
-				time.Sleep(time.Millisecond * 1)
+				time.Sleep(time.Microsecond * 100)
 			}
 		}
 	}
@@ -213,7 +213,7 @@ func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEve
 		dataFeed:          dataFeed,
 		dispatcher:        NewDispatcher(),
 		barProcessedEvent: NewEvent(),
-		barDataDumpC:      make(chan *db.BarData, 100),
+		barDataDumpC:      make(chan *db.BarData, 1000),
 	}
 
 	if cfg.Dump.BarDumpDB != "" {
