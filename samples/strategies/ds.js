@@ -44,6 +44,14 @@ function getCloseSMA(ds, period) {
   return [];
 }
 
+var sma10, sma20, sma30, sma50, atr14, atr20;
+var latestSma10,
+  latestSma20,
+  latestSma30,
+  latestSma50,
+  latestAtr14,
+  latestAtr20;
+
 addEventListener("onBars", function (bars) {
   var bar = bars[0];
   var thisTs = system.now();
@@ -55,12 +63,12 @@ addEventListener("onBars", function (bars) {
     return;
   }
 
-  var sma10 = getCloseSMA(ds, 10);
-  var sma20 = getCloseSMA(ds, 20);
-  var sma30 = getCloseSMA(ds, 30);
-  var sma50 = getCloseSMA(ds, 50);
-  var atr14 = getATR(ds, 14);
-  var atr20 = getATR(ds, 20);
+  sma10 = getCloseSMA(ds, 10);
+  sma20 = getCloseSMA(ds, 20);
+  sma30 = getCloseSMA(ds, 30);
+  sma50 = getCloseSMA(ds, 50);
+  atr14 = getATR(ds, 14);
+  atr20 = getATR(ds, 20);
 
   if (
     sma10 == null ||
@@ -73,12 +81,12 @@ addEventListener("onBars", function (bars) {
     return;
   }
 
-  var latestSma10 = sma10[sma10.length - 1];
-  var latestSma20 = sma20[sma20.length - 1];
-  var latestSma30 = sma30[sma30.length - 1];
-  var latestSma50 = sma50[sma50.length - 1];
-  var latestAtr14 = atr14[atr14.length - 1];
-  var latestAtr20 = atr20[atr20.length - 1];
+  latestSma10 = sma10[sma10.length - 1];
+  latestSma20 = sma20[sma20.length - 1];
+  latestSma30 = sma30[sma30.length - 1];
+  latestSma50 = sma50[sma50.length - 1];
+  latestAtr14 = atr14[atr14.length - 1];
+  latestAtr20 = atr20[atr20.length - 1];
 
   if (thisTs - lastTs > 10) {
     console.log("time: " + bar[symbol].dateTime);
@@ -108,9 +116,15 @@ addEventListener("onIdle", function () {
 });
 
 setInterval(function () {
-  console.log(
-    "time is " + system.strftime("2006-01-02 15:04:05", system.now())
-  );
+  var res =
+    "time: " + system.strftime("2006-01-02 15:04:05", system.now() + "\n");
+  res += "sma10: " + latestSma10 + "\n";
+  res += "sma20: " + latestSma20 + "\n";
+  res += "sma30: " + latestSma30 + "\n";
+  res += "sma50: " + latestSma50 + "\n";
+  res += "atr14: " + latestAtr14 + "\n";
+  res += "atr20: " + latestAtr20 + "\n";
+  alert.info(res);
 }, 1000 * 60 * 60 * 4);
 
 system.start();
