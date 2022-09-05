@@ -32,6 +32,7 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, startCb StartCallback) (
 	sysObj := sys.VM.NewObject()
 	sysObj.Set("start", sys.StartCmd)
 	sysObj.Set("now", sys.TimeCmd)
+	sysObj.Set("strftime", sys.StrftimeCmd)
 	sys.VM.Set("system", sysObj)
 
 	consoleObj := sys.VM.NewObject()
@@ -41,11 +42,24 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, startCb StartCallback) (
 	return sys, nil
 }
 
-func (sys *SysObject) LogCmd(call goja.FunctionCall) goja.Value {
-	for _, arg := range call.Arguments {
-		fmt.Print(arg.String())
+func (sys *SysObject) StrftimeCmd(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) != 2 {
+		logger.Logger.Debug("strftimeCmd needs 2 argument")
+		return goja.Null()
 	}
-	fmt.Println()
+
+	format := call.Argument(0).String()
+	tm := time.Unix(call.Argument(1).ToInteger(), 0)
+
+	return sys.VM.ToValue(tm.Format(format))
+}
+
+func (sys *SysObject) LogCmd(call goja.FunctionCall) goja.Value {
+	res := ""
+	for _, arg := range call.Arguments {
+		res = res + arg.String()
+	}
+	logger.Logger.Info(res)
 	return goja.Undefined()
 }
 

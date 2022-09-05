@@ -205,6 +205,10 @@ func (t *TALib) registerSingleMethod(obj *goja.Object, name string, method refle
 
 		rtn := method.Func.Call(args)
 
+		if len(rtn) == 1 {
+			return t.VM.ToValue(rtn[0].Interface())
+		}
+
 		rtnVal := []interface{}{}
 		for _, v := range rtn {
 			rtnVal = append(rtnVal, v.Interface())

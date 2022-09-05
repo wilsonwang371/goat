@@ -30,7 +30,7 @@ function getATR(ds, period) {
   if (dsClosePrice.length > period) {
     return talib.Atr(dsHighPrice, dsLowPrice, dsClosePrice, period);
   }
-  return null;
+  return [];
 }
 
 function getCloseSMA(ds, period) {
@@ -41,7 +41,7 @@ function getCloseSMA(ds, period) {
   if (dsClosePrice.length > period) {
     return talib.Sma(dsClosePrice, period);
   }
-  return null;
+  return [];
 }
 
 addEventListener("onBars", function (bars) {
@@ -62,17 +62,35 @@ addEventListener("onBars", function (bars) {
   var atr14 = getATR(ds, 14);
   var atr20 = getATR(ds, 20);
 
+  if (
+    sma10 == null ||
+    sma20 == null ||
+    sma30 == null ||
+    sma50 == null ||
+    atr14 == null ||
+    atr20 == null
+  ) {
+    return;
+  }
+
+  var latestSma10 = sma10[sma10.length - 1];
+  var latestSma20 = sma20[sma20.length - 1];
+  var latestSma30 = sma30[sma30.length - 1];
+  var latestSma50 = sma50[sma50.length - 1];
+  var latestAtr14 = atr14[atr14.length - 1];
+  var latestAtr20 = atr20[atr20.length - 1];
+
   if (thisTs - lastTs > 10) {
-    console.log("SMA(10): " + sma10);
-    console.log("SMA(20): " + sma20);
-    console.log("SMA(30): " + sma30);
-    console.log("SMA(50): " + sma50);
-    console.log("ATR(14): " + atr14);
-    console.log("ATR(20): " + atr20);
+    console.log("time: " + bar[symbol].dateTime);
+    console.log("latestSma10: " + latestSma10);
+    console.log("latestSma20: " + latestSma20);
+    console.log("latestSma30: " + latestSma30);
+    console.log("latestSma50: " + latestSma50);
+    console.log("latestAtr14: " + latestAtr14);
+    console.log("latestAtr20: " + latestAtr20);
     console.log(
       "[" + thisTs + "] onBars is called " + c + " times. Data: " + bar
     );
-    // console.log("Data series: " + JSON.stringify(ds));
     lastTs = thisTs;
   }
 });
