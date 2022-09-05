@@ -56,6 +56,11 @@ func TestHookSimple2(t *testing.T) {
 	if v == nil {
 		t.Error("should not be nil")
 	}
+
+	v = ctrl.PossibleOneNewValue()
+	if v != nil {
+		t.Error("should be nil")
+	}
 }
 
 func TestHookVerify(t *testing.T) {

@@ -6,17 +6,17 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	"github.com/robertkrimen/otto"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type DBMappingObject struct {
 	cfg      *config.Config
-	VM       *otto.Otto
+	VM       *goja.Runtime
 	Mappings map[string]interface{}
 }
 
-func NewDBMappingObject(cfg *config.Config, vm *otto.Otto) (*DBMappingObject, error) {
+func NewDBMappingObject(cfg *config.Config, vm *goja.Runtime) (*DBMappingObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -27,26 +27,24 @@ func NewDBMappingObject(cfg *config.Config, vm *otto.Otto) (*DBMappingObject, er
 		Mappings: nil,
 	}
 
-	dbObj, err := db.VM.Object(`dbconvert = {}`)
-	if err != nil {
-		return nil, err
-	}
+	dbObj := db.VM.NewObject()
 	dbObj.Set("set_mappings", db.SetDBMappingCmd)
+	db.VM.Set("dbconvert", dbObj)
 
 	return db, nil
 }
 
-func (db *DBMappingObject) SetDBMappingCmd(call otto.FunctionCall) otto.Value {
-	if len(call.ArgumentList) != 1 {
+func (db *DBMappingObject) SetDBMappingCmd(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) != 1 {
 		logger.Logger.Debug("set_mappings needs 1 argument")
-		return otto.FalseValue()
+		return db.VM.ToValue(false)
 	}
 
-	if call.Argument(0).IsObject() {
-		rawObj, err := call.Argument(0).Export()
-		if err != nil {
-			logger.Logger.Debug("set_mappings argument is not an object")
-			return otto.FalseValue()
+	if call.Argument(0).ToObject(db.VM) != nil {
+		rawObj := call.Argument(0).Export()
+		if rawObj == nil {
+			logger.Logger.Debug("set_mappings argument is nil")
+			return db.VM.ToValue(false)
 		}
 		logger.Logger.Debug("set_mappings", zap.Any("obj", rawObj))
 
@@ -57,5 +55,5 @@ func (db *DBMappingObject) SetDBMappingCmd(call otto.FunctionCall) otto.Value {
 		logger.Logger.Debug("invalid argument")
 	}
 
-	return otto.TrueValue()
+	return db.VM.ToValue(true)
 }

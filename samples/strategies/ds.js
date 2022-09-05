@@ -1,8 +1,18 @@
 var c = 0;
 var lastTs = 0;
 
+var lastNotifyPrice = {};
+var thisPrice = {};
+
+function abs(num) {
+  if (num < 0) {
+    return -num;
+  }
+  return num;
+}
+
 function getDataSeries(sym, freq, len) {
-  ds = feed.dataseries(sym, freq, len);
+  var ds = feed.dataseries(sym, freq, len);
   if (ds == null) {
     console.log("No data series for " + sym + " at frequency " + freq);
     return;
@@ -11,8 +21,7 @@ function getDataSeries(sym, freq, len) {
     console.log("ds is null");
     return;
   }
-  dsData = ds.data;
-  return dsData;
+  return ds.data;
 }
 
 function getATR(ds, period) {
@@ -31,7 +40,7 @@ function getATR(ds, period) {
   if (dsClosePrice.length > period) {
     return talib.Atr(dsHighPrice, dsLowPrice, dsClosePrice, period);
   }
-  return null;
+  return [];
 }
 
 function getCloseSMA(ds, period) {
@@ -42,37 +51,74 @@ function getCloseSMA(ds, period) {
   if (dsClosePrice.length > period) {
     return talib.Sma(dsClosePrice, period);
   }
-  return null;
+  return [];
 }
 
-addEventListener("onBars", function (bar) {
+var sma10, sma20, sma30, sma50, atr14, atr20;
+var latestSma10,
+  latestSma20,
+  latestSma30,
+  latestSma50,
+  latestAtr14,
+  latestAtr20;
+
+addEventListener("onBars", function (bars) {
+  var bar = bars[0];
   var thisTs = system.now();
-  symbol = Object.keys(bar)[0];
+  var symbol = Object.keys(bar);
   c++;
 
-  var ds = getDataSeries(symbol, frequency.DAY, 50);
+  var ds = getDataSeries(symbol, frequency.DAY, 64);
   if (ds == null) {
     return;
   }
 
-  var sma10 = getCloseSMA(ds, 10);
-  var sma20 = getCloseSMA(ds, 20);
-  var sma30 = getCloseSMA(ds, 30);
-  var sma50 = getCloseSMA(ds, 50);
-  var atr14 = getATR(ds, 14);
-  var atr20 = getATR(ds, 20);
+  sma10 = getCloseSMA(ds, 10);
+  sma20 = getCloseSMA(ds, 20);
+  sma30 = getCloseSMA(ds, 30);
+  sma50 = getCloseSMA(ds, 50);
+  atr14 = getATR(ds, 14);
+  atr20 = getATR(ds, 20);
 
-  if (thisTs - lastTs > 10) {
-    console.log("SMA(10): " + sma10);
-    console.log("SMA(20): " + sma20);
-    console.log("SMA(30): " + sma30);
-    console.log("SMA(50): " + sma50);
-    console.log("ATR(14): " + atr14);
-    console.log("ATR(20): " + atr20);
+  if (
+    sma10 == null ||
+    sma20 == null ||
+    sma30 == null ||
+    sma50 == null ||
+    atr14 == null ||
+    atr20 == null
+  ) {
+    return;
+  }
+
+  latestSma10 = sma10[sma10.length - 1];
+  latestSma20 = sma20[sma20.length - 1];
+  latestSma30 = sma30[sma30.length - 1];
+  latestSma50 = sma50[sma50.length - 1];
+  latestAtr14 = atr14[atr14.length - 1];
+  latestAtr20 = atr20[atr20.length - 1];
+
+  thisPrice[symbol] = bar[symbol].close;
+  if (!(symbol in lastNotifyPrice)) {
+    lastNotifyPrice[symbol] = thisPrice[symbol];
+  }
+
+  if (thisTs - lastTs > 60 * 5) {
+    console.log("time: " + bar[symbol].dateTime);
+    console.log("latestSma10: " + latestSma10);
+    console.log("latestSma20: " + latestSma20);
+    console.log("latestSma30: " + latestSma30);
+    console.log("latestSma50: " + latestSma50);
+    console.log("latestAtr14: " + latestAtr14);
+    console.log("latestAtr20: " + latestAtr20);
     console.log(
-      "[" + thisTs + "] onBars is called " + c + " times. Data: " + bar
+      "[" +
+        thisTs +
+        "] onBars is called " +
+        c +
+        " times. Data: " +
+        JSON.stringify(bar)
     );
-    // console.log("Data series: " + JSON.stringify(ds));
     lastTs = thisTs;
   }
 });
@@ -86,7 +132,33 @@ addEventListener("onFinish", function () {
 });
 
 addEventListener("onIdle", function () {
-  // console.log("onIdle is called.");
+  for (var symbol in thisPrice) {
+    if (abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 4.5) {
+      console.log(
+        "price changed: " +
+          symbol +
+          " " +
+          thisPrice[symbol].toFixed(2) +
+          " <- " +
+          lastNotifyPrice[symbol].toFixed(2)
+      );
+      lastNotifyPrice[symbol] = thisPrice[symbol];
+    }
+  }
 });
+
+setInterval(function () {
+  console.log("interval call starts");
+  var res =
+    "time: " + system.strftime("2006-01-02 15:04:05", system.now()) + "\n";
+  res += "sma10: " + latestSma10.toFixed(2) + "\n";
+  res += "sma20: " + latestSma20.toFixed(2) + "\n";
+  res += "sma30: " + latestSma30.toFixed(2) + "\n";
+  res += "sma50: " + latestSma50.toFixed(2) + "\n";
+  res += "atr14: " + latestAtr14.toFixed(2) + "\n";
+  res += "atr20: " + latestAtr20.toFixed(2) + "\n";
+  alert.info("Notification", res);
+  console.log("interval call ends");
+}, 1000 * 60 * 60 * 4);
 
 system.start();

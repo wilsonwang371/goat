@@ -3,13 +3,14 @@ package js
 import (
 	"runtime/debug"
 	"strings"
+	"sync"
 
 	"goat/pkg/config"
 	"goat/pkg/core"
 	"goat/pkg/js/apis"
 	"goat/pkg/logger"
 
-	"github.com/robertkrimen/otto"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 
 	talib "github.com/wilsonwang371/go-talib"
@@ -22,24 +23,25 @@ var supportedEvents []string = []string{
 	"onidle",
 }
 
-type RuntimeFunc func(call otto.FunctionCall) otto.Value
+type RuntimeFunc func(call goja.FunctionCall) goja.Value
 
 type StrategyRuntime interface {
-	Compile(source string) (*otto.Script, error)
-	Execute(script *otto.Script) (otto.Value, error)
+	Compile(source string) (*goja.Program, error)
+	Execute(script *goja.Program) (goja.Value, error)
 	RegisterHostCall(name string, fn RuntimeFunc) error
 	NotifyEvent(eventName string, args ...interface{}) error
 }
 
 type strategyRuntime struct {
 	cfg            *config.Config
-	vm             *otto.Otto
+	vm             *goja.Runtime
+	mu             sync.Mutex
 	kvApi          *apis.KVObject
 	tlApi          *apis.TALib
 	sysApi         *apis.SysObject
 	alertApi       *apis.AlertObject
 	feedApi        *apis.FeedObject
-	eventListeners map[string]otto.Value
+	eventListeners map[string]goja.Value
 	apiHandlers    map[string]RuntimeFunc
 	talib          *talib.TALib
 }
@@ -47,9 +49,13 @@ type strategyRuntime struct {
 // NotifyEvent implements StrategyRuntime
 func (r *strategyRuntime) NotifyEvent(eventName string, args ...interface{}) error {
 	if handler, ok := r.eventListeners[strings.ToLower(eventName)]; ok {
-		if _, err := handler.Call(otto.NullValue(), args...); err != nil {
-			logger.Logger.Error("failed to call handler", zap.Error(err))
-			panic(err)
+		var handlerFunc func(...interface{}) goja.Value
+		if err := r.vm.ExportTo(handler, &handlerFunc); err != nil {
+			return err
+		} else {
+			r.mu.Lock()
+			defer r.mu.Unlock()
+			handlerFunc(args...)
 		}
 	}
 	return nil
@@ -57,27 +63,29 @@ func (r *strategyRuntime) NotifyEvent(eventName string, args ...interface{}) err
 
 // RegisterHostCall implements StrategyRuntime
 func (r *strategyRuntime) RegisterHostCall(name string, fn RuntimeFunc) error {
-	return r.vm.Set(name, func(call otto.FunctionCall) otto.Value {
+	return r.vm.Set(name, func(call goja.FunctionCall) goja.Value {
 		defer func() {
 			if r := recover(); r != nil {
 				logger.Logger.Debug("strategyRuntime panic", zap.Any("panic", r))
 				logger.Logger.Debug(string(debug.Stack()))
 			}
 		}()
-		rtn := otto.NullValue()
+		rtn := goja.Null()
 		rtn = fn(call)
 		return rtn
 	})
 }
 
 // Execute implements StrategyRuntime
-func (r *strategyRuntime) Execute(script *otto.Script) (otto.Value, error) {
-	return r.vm.Run(script)
+func (r *strategyRuntime) Execute(script *goja.Program) (goja.Value, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.vm.RunProgram(script)
 }
 
 // Compile implements StrategyRuntime
-func (r *strategyRuntime) Compile(source string) (*otto.Script, error) {
-	compiled, err := r.vm.Compile("", source)
+func (r *strategyRuntime) Compile(source string) (*goja.Program, error) {
+	compiled, err := goja.Compile("", source, true)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +97,9 @@ func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCal
 
 	res := &strategyRuntime{
 		cfg:            cfg,
-		vm:             otto.New(),
+		vm:             goja.New(),
 		apiHandlers:    make(map[string]RuntimeFunc),
-		eventListeners: make(map[string]otto.Value),
+		eventListeners: make(map[string]goja.Value),
 		talib:          talib.NewTALib(),
 	}
 
@@ -107,7 +115,7 @@ func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCal
 		logger.Logger.Error("failed to create talib object", zap.Error(err))
 		panic(err)
 	}
-	res.sysApi, err = apis.NewSysObject(cfg, res.vm, cb)
+	res.sysApi, err = apis.NewSysObject(cfg, res.vm, &res.mu, cb)
 	if err != nil {
 		logger.Logger.Error("failed to create sys object", zap.Error(err))
 		panic(err)
@@ -129,22 +137,22 @@ func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCal
 	return res
 }
 
-func (r *strategyRuntime) addEventListener(call otto.FunctionCall) otto.Value {
+func (r *strategyRuntime) addEventListener(call goja.FunctionCall) goja.Value {
 	// logger.Logger.Info("addEventListener is called")
-	if len(call.ArgumentList) != 2 {
+	if len(call.Arguments) != 2 {
 		logger.Logger.Error("addEventListener needs 2 arguments")
-		return otto.FalseValue()
+		return r.vm.ToValue(false)
 	}
 	eventName := call.Argument(0).String()
 	handler := call.Argument(1)
 
 	if !contains(supportedEvents, strings.ToLower(eventName)) {
 		logger.Logger.Error("unsupported event", zap.String("event", eventName))
-		return otto.FalseValue()
+		return r.vm.ToValue(false)
 	}
 
 	r.eventListeners[strings.ToLower(eventName)] = handler
-	return otto.TrueValue()
+	return r.vm.ToValue(true)
 }
 
 func (r *strategyRuntime) setupStrategyAPIs() {

@@ -6,7 +6,7 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	"github.com/robertkrimen/otto"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
@@ -15,9 +15,9 @@ func TestRuntimeSimple(t *testing.T) {
 		KVDB: "",
 	}
 	rt := NewStrategyRuntime(cfg, nil, nil)
-	err := rt.RegisterHostCall("test_print", func(call otto.FunctionCall) otto.Value {
+	err := rt.RegisterHostCall("test_print", func(call goja.FunctionCall) goja.Value {
 		logger.Logger.Info("test_print is called")
-		return otto.NullValue()
+		return goja.Null()
 	})
 	if err != nil {
 		t.Error(err)
@@ -85,7 +85,7 @@ func TestRuntimeTALibSimple(t *testing.T) {
 	rt := NewStrategyRuntime(cfg, nil, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
-		res = talib.Ema([.1,.2,.3,.4,.5,.6,.7,.8], 4);
+		var res = talib.Ema([.1,.2,.3,.4,.5,.6,.7,.8], 4);
 		console.log("res"+res);
 	});
 `)

@@ -7,17 +7,17 @@ import (
 	"goat/pkg/logger"
 	"goat/pkg/notify"
 
-	"github.com/robertkrimen/otto"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type AlertObject struct {
 	cfg       *config.Config
-	VM        *otto.Otto
+	VM        *goja.Runtime
 	notifiers []notify.Notifier
 }
 
-func NewAlertObject(cfg *config.Config, vm *otto.Otto) (*AlertObject, error) {
+func NewAlertObject(cfg *config.Config, vm *goja.Runtime) (*AlertObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -27,15 +27,15 @@ func NewAlertObject(cfg *config.Config, vm *otto.Otto) (*AlertObject, error) {
 		VM:  vm,
 	}
 
-	alertObj, err := alert.VM.Object(`alert = {}`)
-	if err != nil {
-		return nil, err
-	}
+	alertObj := alert.VM.NewObject()
 	alertObj.Set("info", alert.InfoCmd)
 	alertObj.Set("warn", alert.WarnCmd)
 	alertObj.Set("error", alert.ErrorCmd)
 	alertObj.Set("email_msg", alert.EmailCmd)
 	alertObj.Set("mobile_msg", alert.MobileCmd)
+	if err := alert.VM.Set("alert", alertObj); err != nil {
+		return nil, err
+	}
 
 	if cfg.Notification.Pushover.Enabled {
 		alert.notifiers = append(alert.notifiers, notify.NewPushoverNotifier(cfg))
@@ -52,8 +52,8 @@ func NewAlertObject(cfg *config.Config, vm *otto.Otto) (*AlertObject, error) {
 	return alert, nil
 }
 
-func (a *AlertObject) parseArgs(call otto.FunctionCall) (title, msg string, err error) {
-	if len(call.ArgumentList) != 2 {
+func (a *AlertObject) parseArgs(call goja.FunctionCall) (title, msg string, err error) {
+	if len(call.Arguments) != 2 {
 		return "", "", fmt.Errorf("invalid number of arguments")
 	}
 	title = call.Argument(0).String()
@@ -61,11 +61,11 @@ func (a *AlertObject) parseArgs(call otto.FunctionCall) (title, msg string, err 
 	return title, msg, nil
 }
 
-func (a *AlertObject) InfoCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) InfoCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
 			if n.Level() <= config.InfoLevel {
@@ -79,16 +79,16 @@ func (a *AlertObject) InfoCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	if errorCount > 0 {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	}
-	return otto.TrueValue()
+	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) WarnCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) WarnCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
 			if n.Level() <= config.WarnLevel {
@@ -103,16 +103,16 @@ func (a *AlertObject) WarnCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	if errorCount > 0 {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	}
-	return otto.TrueValue()
+	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) ErrorCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) ErrorCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
 			if n.Level() <= config.ErrorLevel {
@@ -127,16 +127,16 @@ func (a *AlertObject) ErrorCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	if errorCount > 0 {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	}
-	return otto.TrueValue()
+	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) EmailCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) EmailCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
 			if n.FeatureFlags()&config.NotifyIsEmailFlag != 0 {
@@ -151,16 +151,16 @@ func (a *AlertObject) EmailCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	if errorCount > 0 {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	}
-	return otto.TrueValue()
+	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) MobileCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) MobileCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
 			if n.FeatureFlags()&config.NotifyIsMobileFlag != 0 {
@@ -175,7 +175,7 @@ func (a *AlertObject) MobileCmd(call otto.FunctionCall) otto.Value {
 	}
 
 	if errorCount > 0 {
-		return otto.FalseValue()
+		return a.VM.ToValue(false)
 	}
-	return otto.TrueValue()
+	return a.VM.ToValue(true)
 }

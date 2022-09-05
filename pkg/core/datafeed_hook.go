@@ -93,7 +93,7 @@ func (d *dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) {
 	if isRecovery {
 		return
 	}
-	if !(value.f >= REALTIME || value.f < DAY) {
+	if !(value.f >= REALTIME && value.f < DAY) {
 		// we don't care about other data frequencies
 		return
 	}
