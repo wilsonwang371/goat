@@ -2,7 +2,7 @@ var c = 0;
 var lastTs = 0;
 
 function getDataSeries(sym, freq, len) {
-  ds = feed.dataseries(sym, freq, len);
+  var ds = feed.dataseries(sym, freq, len);
   if (ds == null) {
     console.log("No data series for " + sym + " at frequency " + freq);
     return;
@@ -11,8 +11,7 @@ function getDataSeries(sym, freq, len) {
     console.log("ds is null");
     return;
   }
-  dsData = ds.data;
-  return dsData;
+  return ds.data;
 }
 
 function getATR(ds, period) {
@@ -45,9 +44,10 @@ function getCloseSMA(ds, period) {
   return null;
 }
 
-addEventListener("onBars", function (bar) {
+addEventListener("onBars", function (bars) {
+  var bar = bars[0];
   var thisTs = system.now();
-  symbol = Object.keys(bar)[0];
+  var symbol = Object.keys(bar);
   c++;
 
   var ds = getDataSeries(symbol, frequency.DAY, 50);

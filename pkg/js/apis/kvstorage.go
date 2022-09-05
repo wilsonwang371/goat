@@ -8,20 +8,20 @@ import (
 	"goat/pkg/logger"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/robertkrimen/otto"
+	otto "github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type KVObject struct {
 	cfg      *config.Config
-	VM       *otto.Otto
+	VM       *otto.Runtime
 	KVDBPath string
 	KVDB     *badger.DB
 }
 
 var CleanUpDuration = time.Second * 30
 
-func NewKVObject(cfg *config.Config, vm *otto.Otto, kvdbFilePath string) (*KVObject, error) {
+func NewKVObject(cfg *config.Config, vm *otto.Runtime, kvdbFilePath string) (*KVObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -48,12 +48,11 @@ func NewKVObject(cfg *config.Config, vm *otto.Otto, kvdbFilePath string) (*KVObj
 		kv.KVDB = kvdb
 	}
 
-	kvObj, err := kv.VM.Object(`kvstorage = {}`)
-	if err != nil {
-		return nil, err
-	}
+	kvObj := kv.VM.NewObject()
 	kvObj.Set("save", kv.SaveState)
 	kvObj.Set("load", kv.LoadState)
+
+	kv.VM.Set("kvstorage", kvObj)
 
 	go kv.cleanup()
 
@@ -98,46 +97,29 @@ func (kv *KVObject) DBSaveState(key []byte, data []byte) error {
 }
 
 func (kv *KVObject) SaveState(call otto.FunctionCall) otto.Value {
-	if len(call.ArgumentList) != 2 {
+	if len(call.Arguments) != 2 {
 		logger.Logger.Debug("saveState needs 2 arguments")
-		return otto.FalseValue()
-	}
-	for i := 0; i < len(call.ArgumentList); i++ {
-		if !call.ArgumentList[i].IsString() {
-			logger.Logger.Debug("saveState needs string arguments")
-			return otto.FalseValue()
-		}
+		return kv.VM.ToValue(false)
 	}
 	key := call.Argument(0).String()
 	data := call.Argument(1).String()
 	if err := kv.DBSaveState([]byte(key), []byte(data)); err != nil {
 		logger.Logger.Debug("failed to save state", zap.Error(err))
-		return otto.FalseValue()
+		return kv.VM.ToValue(false)
 	}
-	return otto.TrueValue()
+	return kv.VM.ToValue(true)
 }
 
 func (kv *KVObject) LoadState(call otto.FunctionCall) otto.Value {
-	if len(call.ArgumentList) != 1 {
+	if len(call.Arguments) != 1 {
 		logger.Logger.Debug("loadState needs 1 argument")
-		return otto.NullValue()
-	}
-	for i := 0; i < len(call.ArgumentList); i++ {
-		if !call.ArgumentList[i].IsString() {
-			logger.Logger.Debug("loadState needs string arguments")
-			return otto.NullValue()
-		}
+		return otto.Null()
 	}
 	key := call.Argument(0).String()
 	data, err := kv.DBLoadState([]byte(key))
 	if err != nil {
 		logger.Logger.Debug("failed to load state", zap.Error(err))
-		return otto.NullValue()
+		return otto.Null()
 	}
-	if val, err := otto.ToValue(string(data)); err != nil {
-		logger.Logger.Debug("failed to convert data to otto.Value", zap.Error(err))
-		return otto.NullValue()
-	} else {
-		return val
-	}
+	return kv.VM.ToValue(string(data))
 }

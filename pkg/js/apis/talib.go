@@ -7,19 +7,19 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	"github.com/robertkrimen/otto"
+	otto "github.com/dop251/goja"
 	"github.com/wilsonwang371/go-talib"
 	"go.uber.org/zap"
 )
 
 type TALib struct {
 	cfg     *config.Config
-	VM      *otto.Otto
+	VM      *otto.Runtime
 	Methods map[string]reflect.Method
 	TALib   *talib.TALib
 }
 
-func NewTALibObject(cfg *config.Config, vm *otto.Otto) (*TALib, error) {
+func NewTALibObject(cfg *config.Config, vm *otto.Runtime) (*TALib, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -29,11 +29,12 @@ func NewTALibObject(cfg *config.Config, vm *otto.Otto) (*TALib, error) {
 		VM:  vm,
 	}
 	t.populateMethods()
-	obj, err := t.VM.Object(`talib = {}`)
-	if err != nil {
+	obj := t.VM.NewObject()
+	t.registerMethods(obj)
+	if err := vm.Set("talib", obj); err != nil {
+		logger.Logger.Error("failed to register talib object", zap.Error(err))
 		return nil, err
 	}
-	t.registerMethods(obj)
 
 	return t, nil
 }
@@ -56,12 +57,12 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 		numArgs := method.Type.NumIn()
 		args := make([]reflect.Value, numArgs)
 
-		if numArgs-1 != len(call.ArgumentList) {
+		if numArgs-1 != len(call.Arguments) {
 			logger.Logger.Debug("talib method needs correct number of arguments",
 				zap.String("method", name),
 				zap.Int("expected", numArgs-1),
-				zap.Int("actual", len(call.ArgumentList)))
-			return otto.NullValue()
+				zap.Int("actual", len(call.Arguments)))
+			return otto.Null()
 		}
 
 		// convert otto.Value to reflect.Value
@@ -70,61 +71,80 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 				args[0] = reflect.ValueOf(t.TALib)
 				continue
 			}
-			if call.Argument(i - 1).IsObject() {
-				// Object
-				obj := call.Argument(i - 1).Object()
-				if obj.Class() == "Array" &&
-					(method.Type.In(i).Kind() == reflect.Array ||
-						method.Type.In(i).Kind() == reflect.Slice) {
-					inArgRaw, err := obj.Value().Export()
-					if err != nil {
-						logger.Logger.Debug("talib method argument is not an array")
-						return otto.NullValue()
-					}
 
-					switch v := inArgRaw.(type) {
-					case []float64:
-						args[i] = reflect.ValueOf(v)
-					case []float32:
-					case []int:
-					case []int32:
-					case []int64:
-						v2 := make([]float64, len(v))
-						for i := 0; i < len(v); i++ {
-							v2[i] = float64(v[i])
-						}
-						args[i] = reflect.ValueOf(v2)
-					default:
-						logger.Logger.Debug("talib method argument unknown type")
-						return otto.NullValue()
-					}
-				} else {
-					logger.Logger.Debug("talib method argument is not an array")
-					return otto.NullValue()
+			{
+				var val []float64
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					args[i] = reflect.ValueOf(val)
+					continue
 				}
-			} else if call.Argument(i - 1).IsString() {
-				// String
-				logger.Logger.Debug("talib method argument is a string, not supported")
-				return otto.NullValue()
-			} else if call.Argument(i - 1).IsBoolean() {
-				// Boolean
-				logger.Logger.Debug("talib method argument is a boolean, not supported")
-				return otto.NullValue()
-			} else if call.Argument(i - 1).IsNumber() {
-				// Number
-				inArgInt, err := call.Argument(i - 1).ToInteger()
-				if err != nil {
-					logger.Logger.Debug("talib method argument is not a number")
-					return otto.NullValue()
-				}
-				args[i] = reflect.ValueOf(int(inArgInt))
-			} else {
-				logger.Logger.Debug("talib method argument is not supported",
-					zap.String("method", name),
-					zap.Int("index", i),
-					zap.Any("value", call.Argument(i-1)))
-				return otto.NullValue()
 			}
+
+			{
+				var val []float32
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					v2 := make([]float64, len(val))
+					for i := 0; i < len(val); i++ {
+						v2[i] = float64(val[i])
+					}
+					args[i] = reflect.ValueOf(v2)
+					continue
+				}
+			}
+
+			{
+				var val []int32
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					v2 := make([]float64, len(val))
+					for i := 0; i < len(val); i++ {
+						v2[i] = float64(val[i])
+					}
+					args[i] = reflect.ValueOf(v2)
+					continue
+				}
+			}
+
+			{
+				var val []int64
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					v2 := make([]float64, len(val))
+					for i := 0; i < len(val); i++ {
+						v2[i] = float64(val[i])
+					}
+					args[i] = reflect.ValueOf(v2)
+					continue
+				}
+			}
+
+			{
+				var val bool
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					args[i] = reflect.ValueOf(val)
+					continue
+				}
+			}
+
+			{
+				var val string
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					args[i] = reflect.ValueOf(val)
+					continue
+				}
+			}
+
+			{
+				var val int64
+				if t.VM.ExportTo(call.Argument(i-1), &val) != nil {
+					args[i] = reflect.ValueOf(val)
+					continue
+				}
+			}
+
+			logger.Logger.Debug("talib method argument is not supported",
+				zap.String("method", name),
+				zap.Int("index", i),
+				zap.Any("value", call.Argument(i-1)))
+			return otto.Null()
 		}
 
 		rtn := method.Func.Call(args)
@@ -134,13 +154,7 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 			rtnVal = append(rtnVal, v.Interface())
 		}
 
-		if val, err := t.VM.ToValue(rtnVal); err != nil {
-			logger.Logger.Error("talib method returned invalid value",
-				zap.String("method", name))
-			return otto.NullValue()
-		} else {
-			return val
-		}
+		return t.VM.ToValue(rtnVal)
 	})
 }
 

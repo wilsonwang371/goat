@@ -7,17 +7,17 @@ import (
 	"goat/pkg/core"
 	"goat/pkg/logger"
 
-	"github.com/robertkrimen/otto"
+	otto "github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type FeedObject struct {
 	cfg  *config.Config
 	feed core.DataFeed
-	VM   *otto.Otto
+	VM   *otto.Runtime
 }
 
-func NewFeedObject(cfg *config.Config, vm *otto.Otto, f core.DataFeed) (*FeedObject, error) {
+func NewFeedObject(cfg *config.Config, vm *otto.Runtime, f core.DataFeed) (*FeedObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -28,16 +28,14 @@ func NewFeedObject(cfg *config.Config, vm *otto.Otto, f core.DataFeed) (*FeedObj
 		VM:   vm,
 	}
 
-	feedObj, err := feed.VM.Object(`feed = {}`)
-	if err != nil {
-		return nil, err
-	}
+	feedObj := feed.VM.NewObject()
 	feedObj.Set("dataseries", feed.DataSeriesCmd)
-
-	freqObj, err := feed.VM.Object(`frequency = {}`)
-	if err != nil {
+	if err := feed.VM.Set("feed", feedObj); err != nil {
+		logger.Logger.Fatal("failed to set feed object", zap.Error(err))
 		return nil, err
 	}
+
+	freqObj := feed.VM.NewObject()
 	freqObj.Set("REALTIME", core.REALTIME)
 	freqObj.Set("SECOND", core.SECOND)
 	freqObj.Set("MINUTE", core.MINUTE)
@@ -47,62 +45,52 @@ func NewFeedObject(cfg *config.Config, vm *otto.Otto, f core.DataFeed) (*FeedObj
 	freqObj.Set("WEEK", core.WEEK)
 	freqObj.Set("MONTH", core.MONTH)
 	freqObj.Set("YEAR", core.YEAR)
+	if err := feed.VM.Set("frequency", freqObj); err != nil {
+		logger.Logger.Fatal("failed to set frequency object", zap.Error(err))
+		return nil, err
+	}
 
 	return feed, nil
 }
 
 func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
-	var err error
 	var symbol string
 	var length int64
 	var freq int64
 
-	if len(call.ArgumentList) != 3 {
+	if len(call.Arguments) != 3 {
 		logger.Logger.Debug("DataSeriesCmd needs 3 arguments")
-		return otto.NullValue()
+		return otto.Null()
 	}
 
 	symbol = call.Argument(0).String()
 	if symbol == "" {
 		logger.Logger.Debug("invalid symbol")
-		return otto.NullValue()
+		return otto.Null()
 	}
 
-	length, err = call.Argument(2).ToInteger()
-	if err != nil || length <= 0 {
-		logger.Logger.Error("invalid length")
-		return otto.NullValue()
-	}
+	length = call.Argument(2).ToInteger()
 
-	if freq, err = call.Argument(1).ToInteger(); err == nil {
-		switch core.Frequency(freq) {
-		case core.REALTIME, core.SECOND, core.MINUTE, core.HOUR, core.HOUR_4, core.DAY, core.WEEK, core.MONTH, core.YEAR:
-			if f.feed == nil {
-				logger.Logger.Error("feed is nil")
-				return otto.NullValue()
-			}
-			if ds, err := f.feed.GetDataSeries(symbol, core.Frequency(freq)); err != nil {
-				logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
-				return otto.NullValue()
-			} else {
-				if obj, err := ds.GetDataAsObjects(int(length)); err != nil {
-					logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
-					return otto.NullValue()
-				} else {
-					if ret, err := f.VM.ToValue(obj); err != nil {
-						logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
-						return otto.NullValue()
-					} else {
-						return ret
-					}
-				}
-			}
-		default:
-			logger.Logger.Error("invalid frequency")
-			return otto.NullValue()
+	freq = call.Argument(1).ToInteger()
+	switch core.Frequency(freq) {
+	case core.REALTIME, core.SECOND, core.MINUTE, core.HOUR, core.HOUR_4, core.DAY, core.WEEK, core.MONTH, core.YEAR:
+		if f.feed == nil {
+			logger.Logger.Error("feed is nil")
+			return otto.Null()
 		}
-	} else {
-		logger.Logger.Debug("invalid frequency")
-		return otto.NullValue()
+		if ds, err := f.feed.GetDataSeries(symbol, core.Frequency(freq)); err != nil {
+			logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
+			return otto.Null()
+		} else {
+			if obj, err := ds.GetDataAsObjects(int(length)); err != nil {
+				logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
+				return otto.Null()
+			} else {
+				return f.VM.ToValue(obj)
+			}
+		}
+	default:
+		logger.Logger.Error("invalid frequency")
+		return otto.Null()
 	}
 }

@@ -13,28 +13,28 @@ import (
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/araddon/dateparse"
-	"github.com/robertkrimen/otto"
+	otto "github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 const dbBatchCreateSize = 2048
 
 type ConvertRuntime interface {
-	Compile(source string) (*otto.Script, error)
-	Execute(script *otto.Script) (otto.Value, error)
+	Compile(source string) (*otto.Program, error)
+	Execute(script *otto.Program) (otto.Value, error)
 	Convert(dbsource convert.DBSource, dboutput *db.DB) error
 }
 
 type convertRt struct {
 	cfg     *config.Config
-	vm      *otto.Otto
+	vm      *otto.Runtime
 	mapping *apis.DBMappingObject
 	bar     *progressbar.ProgressBar
 }
 
 // Compile implements ConvertRuntime
-func (c *convertRt) Compile(source string) (*otto.Script, error) {
-	compiled, err := c.vm.Compile("", source)
+func (c *convertRt) Compile(source string) (*otto.Program, error) {
+	compiled, err := otto.Compile("", source, true)
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +168,8 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *db.DB) error {
 }
 
 // Execute implements ConvertRuntime
-func (c *convertRt) Execute(script *otto.Script) (otto.Value, error) {
-	return c.vm.Run(script)
+func (c *convertRt) Execute(script *otto.Program) (otto.Value, error) {
+	return c.vm.RunProgram(script)
 }
 
 func NewDBConvertRuntime(cfg *config.Config) ConvertRuntime {

@@ -5,7 +5,7 @@ import (
 
 	"goat/pkg/config"
 
-	"github.com/robertkrimen/otto"
+	otto "github.com/dop251/goja"
 )
 
 func TestAlertSim(t *testing.T) {
