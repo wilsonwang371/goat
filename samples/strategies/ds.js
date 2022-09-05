@@ -107,4 +107,8 @@ addEventListener("onIdle", function () {
   // console.log("onIdle is called.");
 });
 
+setInterval(function () {
+  console.log("time is " + system.strftime("2006-01-02 15:04:05", system.now()));
+}, 1000 * 60 * 60 * 4);
+
 system.start();
