@@ -116,15 +116,17 @@ addEventListener("onIdle", function () {
 });
 
 setInterval(function () {
+  console.log("interval call starts");
   var res =
-    "time: " + system.strftime("2006-01-02 15:04:05", system.now() + "\n");
-  res += "sma10: " + latestSma10 + "\n";
-  res += "sma20: " + latestSma20 + "\n";
-  res += "sma30: " + latestSma30 + "\n";
-  res += "sma50: " + latestSma50 + "\n";
-  res += "atr14: " + latestAtr14 + "\n";
-  res += "atr20: " + latestAtr20 + "\n";
-  alert.info(res);
+    "time: " + system.strftime("2006-01-02 15:04:05", system.now()) + "\n";
+  res += "sma10: " + latestSma10.toFixed(2) + "\n";
+  res += "sma20: " + latestSma20.toFixed(2) + "\n";
+  res += "sma30: " + latestSma30.toFixed(2) + "\n";
+  res += "sma50: " + latestSma50.toFixed(2) + "\n";
+  res += "atr14: " + latestAtr14.toFixed(2) + "\n";
+  res += "atr20: " + latestAtr20.toFixed(2) + "\n";
+  alert.info("Notification", res);
+  console.log("interval call ends");
 }, 1000 * 60 * 60 * 4);
 
 system.start();

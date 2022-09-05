@@ -38,7 +38,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
-		"config file (default is $HOME/.goat.yaml)")
+		"config file (default is $HOME/.goat.json)")
 	rootCmd.PersistentFlags().StringVarP(&cfg.KVDB, "kv-db", "d", "",
 		"state key-value db file used for strategy (default is using in-memory db)")
 	rootCmd.PersistentFlags().StringVarP(&cfg.Dump.BarDumpDB, "bar-dump", "b", "",
