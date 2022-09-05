@@ -138,9 +138,9 @@ addEventListener("onIdle", function () {
         "price changed: " +
           symbol +
           " " +
-          thisPrice[symbol] +
+          thisPrice[symbol].toFixed(2) +
           " <- " +
-          lastNotifyPrice[symbol]
+          lastNotifyPrice[symbol].toFixed(2)
       );
       lastNotifyPrice[symbol] = thisPrice[symbol];
     }
