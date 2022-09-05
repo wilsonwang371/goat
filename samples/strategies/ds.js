@@ -1,6 +1,16 @@
 var c = 0;
 var lastTs = 0;
 
+var lastNotifyPrice = {};
+var thisPrice = {};
+
+function abs(num) {
+  if (num < 0) {
+    return -num;
+  }
+  return num;
+}
+
 function getDataSeries(sym, freq, len) {
   var ds = feed.dataseries(sym, freq, len);
   if (ds == null) {
@@ -88,7 +98,12 @@ addEventListener("onBars", function (bars) {
   latestAtr14 = atr14[atr14.length - 1];
   latestAtr20 = atr20[atr20.length - 1];
 
-  if (thisTs - lastTs > 10) {
+  thisPrice[symbol] = bar[symbol].close;
+  if (!(symbol in lastNotifyPrice)) {
+    lastNotifyPrice[symbol] = thisPrice[symbol];
+  }
+
+  if (thisTs - lastTs > 60 * 5) {
     console.log("time: " + bar[symbol].dateTime);
     console.log("latestSma10: " + latestSma10);
     console.log("latestSma20: " + latestSma20);
@@ -97,7 +112,12 @@ addEventListener("onBars", function (bars) {
     console.log("latestAtr14: " + latestAtr14);
     console.log("latestAtr20: " + latestAtr20);
     console.log(
-      "[" + thisTs + "] onBars is called " + c + " times. Data: " + bar
+      "[" +
+        thisTs +
+        "] onBars is called " +
+        c +
+        " times. Data: " +
+        JSON.stringify(bar)
     );
     lastTs = thisTs;
   }
@@ -112,7 +132,19 @@ addEventListener("onFinish", function () {
 });
 
 addEventListener("onIdle", function () {
-  // console.log("onIdle is called.");
+  for (var symbol in thisPrice) {
+    if (abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 4.5) {
+      console.log(
+        "price changed: " +
+          symbol +
+          " " +
+          thisPrice[symbol] +
+          " <- " +
+          lastNotifyPrice[symbol]
+      );
+      lastNotifyPrice[symbol] = thisPrice[symbol];
+    }
+  }
 });
 
 setInterval(function () {
