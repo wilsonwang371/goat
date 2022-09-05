@@ -7,18 +7,18 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 )
 
 type StartCallback func() error
 
 type SysObject struct {
 	cfg *config.Config
-	VM  *otto.Runtime
+	VM  *goja.Runtime
 	Cb  StartCallback
 }
 
-func NewSysObject(cfg *config.Config, vm *otto.Runtime, startCb StartCallback) (*SysObject, error) {
+func NewSysObject(cfg *config.Config, vm *goja.Runtime, startCb StartCallback) (*SysObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -41,15 +41,15 @@ func NewSysObject(cfg *config.Config, vm *otto.Runtime, startCb StartCallback) (
 	return sys, nil
 }
 
-func (sys *SysObject) LogCmd(call otto.FunctionCall) otto.Value {
+func (sys *SysObject) LogCmd(call goja.FunctionCall) goja.Value {
 	for _, arg := range call.Arguments {
 		fmt.Print(arg.String())
 	}
 	fmt.Println()
-	return otto.Undefined()
+	return goja.Undefined()
 }
 
-func (sys *SysObject) StartCmd(call otto.FunctionCall) otto.Value {
+func (sys *SysObject) StartCmd(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) != 0 {
 		logger.Logger.Debug("startCmd needs 0 argument")
 		return sys.VM.ToValue(false)
@@ -67,7 +67,7 @@ func (sys *SysObject) StartCmd(call otto.FunctionCall) otto.Value {
 	return sys.VM.ToValue(true)
 }
 
-func (sys *SysObject) TimeCmd(call otto.FunctionCall) otto.Value {
+func (sys *SysObject) TimeCmd(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) != 0 {
 		logger.Logger.Debug("startCmd needs 0 argument")
 		return sys.VM.ToValue(false)

@@ -13,28 +13,28 @@ import (
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/araddon/dateparse"
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 const dbBatchCreateSize = 2048
 
 type ConvertRuntime interface {
-	Compile(source string) (*otto.Program, error)
-	Execute(script *otto.Program) (otto.Value, error)
+	Compile(source string) (*goja.Program, error)
+	Execute(script *goja.Program) (goja.Value, error)
 	Convert(dbsource convert.DBSource, dboutput *db.DB) error
 }
 
 type convertRt struct {
 	cfg     *config.Config
-	vm      *otto.Runtime
+	vm      *goja.Runtime
 	mapping *apis.DBMappingObject
 	bar     *progressbar.ProgressBar
 }
 
 // Compile implements ConvertRuntime
-func (c *convertRt) Compile(source string) (*otto.Program, error) {
-	compiled, err := otto.Compile("", source, true)
+func (c *convertRt) Compile(source string) (*goja.Program, error) {
+	compiled, err := goja.Compile("", source, true)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func (c *convertRt) Convert(dbsource convert.DBSource, dboutput *db.DB) error {
 }
 
 // Execute implements ConvertRuntime
-func (c *convertRt) Execute(script *otto.Program) (otto.Value, error) {
+func (c *convertRt) Execute(script *goja.Program) (goja.Value, error) {
 	return c.vm.RunProgram(script)
 }
 
@@ -176,7 +176,7 @@ func NewDBConvertRuntime(cfg *config.Config) ConvertRuntime {
 	var err error
 	res := &convertRt{
 		cfg: cfg,
-		vm:  otto.New(),
+		vm:  goja.New(),
 		bar: nil,
 	}
 

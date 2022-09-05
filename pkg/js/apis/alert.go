@@ -7,17 +7,17 @@ import (
 	"goat/pkg/logger"
 	"goat/pkg/notify"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type AlertObject struct {
 	cfg       *config.Config
-	VM        *otto.Runtime
+	VM        *goja.Runtime
 	notifiers []notify.Notifier
 }
 
-func NewAlertObject(cfg *config.Config, vm *otto.Runtime) (*AlertObject, error) {
+func NewAlertObject(cfg *config.Config, vm *goja.Runtime) (*AlertObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -52,7 +52,7 @@ func NewAlertObject(cfg *config.Config, vm *otto.Runtime) (*AlertObject, error) 
 	return alert, nil
 }
 
-func (a *AlertObject) parseArgs(call otto.FunctionCall) (title, msg string, err error) {
+func (a *AlertObject) parseArgs(call goja.FunctionCall) (title, msg string, err error) {
 	if len(call.Arguments) != 2 {
 		return "", "", fmt.Errorf("invalid number of arguments")
 	}
@@ -61,7 +61,7 @@ func (a *AlertObject) parseArgs(call otto.FunctionCall) (title, msg string, err 
 	return title, msg, nil
 }
 
-func (a *AlertObject) InfoCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) InfoCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
@@ -84,7 +84,7 @@ func (a *AlertObject) InfoCmd(call otto.FunctionCall) otto.Value {
 	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) WarnCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) WarnCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
@@ -108,7 +108,7 @@ func (a *AlertObject) WarnCmd(call otto.FunctionCall) otto.Value {
 	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) ErrorCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) ErrorCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
@@ -132,7 +132,7 @@ func (a *AlertObject) ErrorCmd(call otto.FunctionCall) otto.Value {
 	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) EmailCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) EmailCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
@@ -156,7 +156,7 @@ func (a *AlertObject) EmailCmd(call otto.FunctionCall) otto.Value {
 	return a.VM.ToValue(true)
 }
 
-func (a *AlertObject) MobileCmd(call otto.FunctionCall) otto.Value {
+func (a *AlertObject) MobileCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {

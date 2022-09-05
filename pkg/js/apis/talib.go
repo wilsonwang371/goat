@@ -7,19 +7,19 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"github.com/wilsonwang371/go-talib"
 	"go.uber.org/zap"
 )
 
 type TALib struct {
 	cfg     *config.Config
-	VM      *otto.Runtime
+	VM      *goja.Runtime
 	Methods map[string]reflect.Method
 	TALib   *talib.TALib
 }
 
-func NewTALibObject(cfg *config.Config, vm *otto.Runtime) (*TALib, error) {
+func NewTALibObject(cfg *config.Config, vm *goja.Runtime) (*TALib, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -51,8 +51,8 @@ func (t *TALib) populateMethods() {
 	}
 }
 
-func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method reflect.Method) {
-	obj.Set(name, func(call otto.FunctionCall) otto.Value {
+func (t *TALib) registerSingleMethod(obj *goja.Object, name string, method reflect.Method) {
+	obj.Set(name, func(call goja.FunctionCall) goja.Value {
 		logger.Logger.Debug("calling talib method", zap.String("method", name))
 		numArgs := method.Type.NumIn()
 		args := make([]reflect.Value, numArgs)
@@ -62,10 +62,10 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 				zap.String("method", name),
 				zap.Int("expected", numArgs-1),
 				zap.Int("actual", len(call.Arguments)))
-			return otto.Null()
+			return goja.Null()
 		}
 
-		// convert otto.Value to reflect.Value
+		// convert goja.Value to reflect.Value
 		for i := 0; i < numArgs; i++ {
 			if i == 0 {
 				args[0] = reflect.ValueOf(t.TALib)
@@ -144,7 +144,7 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 				zap.String("method", name),
 				zap.Int("index", i),
 				zap.Any("value", call.Argument(i-1)))
-			return otto.Null()
+			return goja.Null()
 		}
 
 		rtn := method.Func.Call(args)
@@ -158,7 +158,7 @@ func (t *TALib) registerSingleMethod(obj *otto.Object, name string, method refle
 	})
 }
 
-func (t *TALib) registerMethods(obj *otto.Object) {
+func (t *TALib) registerMethods(obj *goja.Object) {
 	for k, v := range t.Methods {
 		// logger.Logger.Debug("registering talib method", zap.String("method", k))
 		t.registerSingleMethod(obj, k, v)

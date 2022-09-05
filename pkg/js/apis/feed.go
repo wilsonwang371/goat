@@ -7,17 +7,17 @@ import (
 	"goat/pkg/core"
 	"goat/pkg/logger"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type FeedObject struct {
 	cfg  *config.Config
 	feed core.DataFeed
-	VM   *otto.Runtime
+	VM   *goja.Runtime
 }
 
-func NewFeedObject(cfg *config.Config, vm *otto.Runtime, f core.DataFeed) (*FeedObject, error) {
+func NewFeedObject(cfg *config.Config, vm *goja.Runtime, f core.DataFeed) (*FeedObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -53,20 +53,20 @@ func NewFeedObject(cfg *config.Config, vm *otto.Runtime, f core.DataFeed) (*Feed
 	return feed, nil
 }
 
-func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
+func (f *FeedObject) DataSeriesCmd(call goja.FunctionCall) goja.Value {
 	var symbol string
 	var length int64
 	var freq int64
 
 	if len(call.Arguments) != 3 {
 		logger.Logger.Debug("DataSeriesCmd needs 3 arguments")
-		return otto.Null()
+		return goja.Null()
 	}
 
 	symbol = call.Argument(0).String()
 	if symbol == "" {
 		logger.Logger.Debug("invalid symbol")
-		return otto.Null()
+		return goja.Null()
 	}
 
 	length = call.Argument(2).ToInteger()
@@ -76,21 +76,21 @@ func (f *FeedObject) DataSeriesCmd(call otto.FunctionCall) otto.Value {
 	case core.REALTIME, core.SECOND, core.MINUTE, core.HOUR, core.HOUR_4, core.DAY, core.WEEK, core.MONTH, core.YEAR:
 		if f.feed == nil {
 			logger.Logger.Error("feed is nil")
-			return otto.Null()
+			return goja.Null()
 		}
 		if ds, err := f.feed.GetDataSeries(symbol, core.Frequency(freq)); err != nil {
 			logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
-			return otto.Null()
+			return goja.Null()
 		} else {
 			if obj, err := ds.GetDataAsObjects(int(length)); err != nil {
 				logger.Logger.Info("DataSeriesCmd", zap.String("symbol", symbol), zap.Int64("freq", freq), zap.Error(err))
-				return otto.Null()
+				return goja.Null()
 			} else {
 				return f.VM.ToValue(obj)
 			}
 		}
 	default:
 		logger.Logger.Error("invalid frequency")
-		return otto.Null()
+		return goja.Null()
 	}
 }

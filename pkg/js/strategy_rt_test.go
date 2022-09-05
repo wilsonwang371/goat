@@ -6,7 +6,7 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
@@ -15,9 +15,9 @@ func TestRuntimeSimple(t *testing.T) {
 		KVDB: "",
 	}
 	rt := NewStrategyRuntime(cfg, nil, nil)
-	err := rt.RegisterHostCall("test_print", func(call otto.FunctionCall) otto.Value {
+	err := rt.RegisterHostCall("test_print", func(call goja.FunctionCall) goja.Value {
 		logger.Logger.Info("test_print is called")
-		return otto.Null()
+		return goja.Null()
 	})
 	if err != nil {
 		t.Error(err)

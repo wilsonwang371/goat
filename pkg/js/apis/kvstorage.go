@@ -8,20 +8,20 @@ import (
 	"goat/pkg/logger"
 
 	"github.com/dgraph-io/badger/v3"
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type KVObject struct {
 	cfg      *config.Config
-	VM       *otto.Runtime
+	VM       *goja.Runtime
 	KVDBPath string
 	KVDB     *badger.DB
 }
 
 var CleanUpDuration = time.Second * 30
 
-func NewKVObject(cfg *config.Config, vm *otto.Runtime, kvdbFilePath string) (*KVObject, error) {
+func NewKVObject(cfg *config.Config, vm *goja.Runtime, kvdbFilePath string) (*KVObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -96,7 +96,7 @@ func (kv *KVObject) DBSaveState(key []byte, data []byte) error {
 	})
 }
 
-func (kv *KVObject) SaveState(call otto.FunctionCall) otto.Value {
+func (kv *KVObject) SaveState(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) != 2 {
 		logger.Logger.Debug("saveState needs 2 arguments")
 		return kv.VM.ToValue(false)
@@ -110,16 +110,16 @@ func (kv *KVObject) SaveState(call otto.FunctionCall) otto.Value {
 	return kv.VM.ToValue(true)
 }
 
-func (kv *KVObject) LoadState(call otto.FunctionCall) otto.Value {
+func (kv *KVObject) LoadState(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) != 1 {
 		logger.Logger.Debug("loadState needs 1 argument")
-		return otto.Null()
+		return goja.Null()
 	}
 	key := call.Argument(0).String()
 	data, err := kv.DBLoadState([]byte(key))
 	if err != nil {
 		logger.Logger.Debug("failed to load state", zap.Error(err))
-		return otto.Null()
+		return goja.Null()
 	}
 	return kv.VM.ToValue(string(data))
 }

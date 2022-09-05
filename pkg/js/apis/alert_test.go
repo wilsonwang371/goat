@@ -5,7 +5,7 @@ import (
 
 	"goat/pkg/config"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 )
 
 func TestAlertSim(t *testing.T) {
@@ -20,7 +20,7 @@ func TestAlertSim(t *testing.T) {
 		t.Error("expected nil, got", cli)
 	}
 
-	cli, err = NewAlertObject(cfg, otto.New())
+	cli, err = NewAlertObject(cfg, goja.New())
 	if err != nil {
 		t.Error(err)
 	}

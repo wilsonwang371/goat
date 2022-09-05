@@ -6,17 +6,17 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	otto "github.com/dop251/goja"
+	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
 
 type DBMappingObject struct {
 	cfg      *config.Config
-	VM       *otto.Runtime
+	VM       *goja.Runtime
 	Mappings map[string]interface{}
 }
 
-func NewDBMappingObject(cfg *config.Config, vm *otto.Runtime) (*DBMappingObject, error) {
+func NewDBMappingObject(cfg *config.Config, vm *goja.Runtime) (*DBMappingObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
@@ -34,7 +34,7 @@ func NewDBMappingObject(cfg *config.Config, vm *otto.Runtime) (*DBMappingObject,
 	return db, nil
 }
 
-func (db *DBMappingObject) SetDBMappingCmd(call otto.FunctionCall) otto.Value {
+func (db *DBMappingObject) SetDBMappingCmd(call goja.FunctionCall) goja.Value {
 	if len(call.Arguments) != 1 {
 		logger.Logger.Debug("set_mappings needs 1 argument")
 		return db.VM.ToValue(false)
