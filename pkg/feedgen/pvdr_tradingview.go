@@ -54,6 +54,7 @@ func GetAuthToken(username, password string) (string, error) {
 		"remember": "on",
 	}
 
+	// req.EnableInsecureTLS(true)
 	resp, err := req.Post(TradingViewSignInUrl, headers, param)
 	if err != nil {
 		return "", err

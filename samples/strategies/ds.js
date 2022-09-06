@@ -98,6 +98,17 @@ addEventListener("onBars", function (bars) {
   latestAtr14 = atr14[atr14.length - 1];
   latestAtr20 = atr20[atr20.length - 1];
 
+  if (
+    latestSma10 == null ||
+    latestSma20 == null ||
+    latestSma30 == null ||
+    latestSma50 == null ||
+    latestAtr14 == null ||
+    latestAtr20 == null
+  ) {
+    return;
+  }
+
   thisPrice[symbol] = bar[symbol].close;
   if (!(symbol in lastNotifyPrice)) {
     lastNotifyPrice[symbol] = thisPrice[symbol];
