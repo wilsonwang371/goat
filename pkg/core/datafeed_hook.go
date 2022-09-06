@@ -1,6 +1,8 @@
 package core
 
-import "time"
+import (
+	"time"
+)
 
 type DataFeedHooksControl interface {
 	FilterNewValue(value *PendingDataFeedValue, isRecovery bool)
@@ -80,6 +82,7 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(),
 			d.startTime.Day(),
 			0, 0, 0, 0, time.UTC)
+		// fmt.Printf("newDayBar: %+v starttime %+v\n", newDayBar, d.startTime)
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
@@ -98,6 +101,7 @@ func (d *dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) {
 		return
 	}
 	if d.startTime == nil {
+		// fmt.Printf("startTime: %+v\n", value.t)
 		d.startTime = &value.t
 		// set the stop time
 		stopTime := time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(),

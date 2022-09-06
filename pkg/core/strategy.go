@@ -151,6 +151,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 				AdjClose:  bar.AdjClose(),
 				Frequency: int64(bar.Frequency()),
 			}
+			// fmt.Printf("%+v\n", data)
 			s.barDataDumpC <- data
 		}
 	}

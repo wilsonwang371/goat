@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"goat/pkg/core"
+	"goat/pkg/logger"
 
 	lg "goat/pkg/logger"
 
@@ -32,9 +33,10 @@ var frequencyTable map[core.Frequency]string
 
 func init() {
 	frequencyTable = map[core.Frequency]string{
-		core.MINUTE: "1",
-		core.HOUR:   "60",
-		core.DAY:    "1D",
+		core.REALTIME: "1",
+		core.MINUTE:   "1",
+		core.HOUR:     "60",
+		core.DAY:      "1D",
 	}
 }
 
@@ -162,8 +164,8 @@ type pTypeDef struct {
 			BarCloseTime int `json:"bar_close_time"`
 		} `json:"lbs"`
 		Ns struct {
-			D       string        `json:"d"`
-			Indexes []interface{} `json:"indexes"`
+			D       string      `json:"d"`
+			Indexes interface{} `json:"indexes"`
 		} `json:"ns"`
 		S []struct {
 			I int       `json:"i"`
@@ -176,11 +178,15 @@ type pTypeDef struct {
 func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error) {
 	var res []core.Bar
 	parsedData := dTypeDef{}
+
 	freq := core.INVALID
 	for _, v := range t.freqList {
-		if v != core.REALTIME {
+		if v < core.REALTIME {
+			logger.Logger.Fatal("invalid frequency")
+			return nil, fmt.Errorf("invalid frequency")
+		}
+		if freq == core.INVALID || v < freq {
 			freq = v
-			break
 		}
 	}
 	if freq == core.INVALID {
@@ -190,6 +196,7 @@ func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error)
 		return nil, err
 	}
 	if parsedData.M == "du" {
+		// logger.Logger.Info("received data update")
 		for _, pvalue := range parsedData.P {
 			data2, err := json.Marshal(pvalue)
 			if err != nil {
@@ -198,13 +205,18 @@ func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error)
 
 			parsedInnerData := pTypeDef{}
 			if err := json.Unmarshal(data2, &parsedInnerData); err != nil {
+				if data2[0] == '"' && data2[len(data2)-1] == '"' {
+					continue
+				}
+				logger.Logger.Error("invalid data 1", zap.Error(err),
+					zap.String("data", string(data2)))
 				continue
 			}
 			if len(parsedInnerData.S1.S) == 0 {
 				return nil, fmt.Errorf("no data")
 			}
 			for _, svalue := range parsedInnerData.S1.S {
-				// lg.Logger.Debug("parsed data", zap.Any("quote", svalue))
+				lg.Logger.Debug("parsed data", zap.Any("quote", svalue))
 				bar := core.NewBasicBar(time.Unix(int64(svalue.V[0]), 0),
 					svalue.V[1], svalue.V[2], svalue.V[3], svalue.V[4], svalue.V[4],
 					int64(svalue.V[5]), core.REALTIME)
@@ -222,6 +234,11 @@ func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error)
 
 			parsedInnerData := pTypeDef{}
 			if err := json.Unmarshal(data2, &parsedInnerData); err != nil {
+				if data2[0] == '"' && data2[len(data2)-1] == '"' {
+					continue
+				}
+				logger.Logger.Error("invalid data 1", zap.Error(err),
+					zap.String("data", string(data2)))
 				continue
 			}
 			if len(parsedInnerData.S1.S) == 0 {
@@ -235,10 +252,11 @@ func (t *tradingViewWSDataProvider) tvDataParse(data []byte) ([]core.Bar, error)
 			}
 			return res, nil
 		}
+		lg.Logger.Info("no new data")
 		// TODO: implement me
 	} else {
 		// lg.Logger.Debug("skip the data we dont care", zap.String("method", parsedData.M), zap.String("data", string(data)))
-		return nil, fmt.Errorf("skipped data")
+		return nil, nil
 	}
 	return nil, fmt.Errorf("invalid data 3")
 }
@@ -259,9 +277,6 @@ func (t *tradingViewWSDataProvider) sendMessage(methodName string, paramList []i
 func (t *tradingViewWSDataProvider) init(instrument string, freqList []core.Frequency) error {
 	count := 0
 	for _, freq := range freqList {
-		if freq == core.REALTIME {
-			continue
-		}
 		if _, ok := frequencyTable[freq]; !ok {
 			return fmt.Errorf("frequency not supported")
 		}
@@ -280,9 +295,12 @@ func (t *tradingViewWSDataProvider) init(instrument string, freqList []core.Freq
 func (t *tradingViewWSDataProvider) setupConnection() error {
 	freq := core.INVALID
 	for _, v := range t.freqList {
-		if v != core.REALTIME {
+		if v < core.REALTIME {
+			logger.Logger.Fatal("invalid frequency")
+			return fmt.Errorf("invalid frequency")
+		}
+		if freq == core.INVALID || v < freq {
 			freq = v
-			break
 		}
 	}
 	if freq == core.INVALID {
@@ -406,7 +424,10 @@ func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
 					if len(v) == 0 {
 						continue
 					}
-					barList, _ := t.tvDataParse([]byte(v))
+					barList, err := t.tvDataParse([]byte(v))
+					if err != nil {
+						logger.Logger.Info("failed to parse data", zap.Error(err))
+					}
 					if len(barList) > 0 {
 						for _, bar := range barList {
 							// t.barC <- bar

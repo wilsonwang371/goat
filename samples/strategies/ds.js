@@ -103,14 +103,14 @@ addEventListener("onBars", function (bars) {
     lastNotifyPrice[symbol] = thisPrice[symbol];
   }
 
-  if (thisTs - lastTs > 60 * 5) {
+  if (thisTs - lastTs > 60 * 60 * 3) {
     console.log("time: " + bar[symbol].dateTime);
-    console.log("latestSma10: " + latestSma10);
-    console.log("latestSma20: " + latestSma20);
-    console.log("latestSma30: " + latestSma30);
-    console.log("latestSma50: " + latestSma50);
-    console.log("latestAtr14: " + latestAtr14);
-    console.log("latestAtr20: " + latestAtr20);
+    console.log("latestSma10: " + latestSma10.toFixed(2));
+    console.log("latestSma20: " + latestSma20.toFixed(2));
+    console.log("latestSma30: " + latestSma30.toFixed(2));
+    console.log("latestSma50: " + latestSma50.toFixed(2));
+    console.log("latestAtr14: " + latestAtr14.toFixed(2));
+    console.log("latestAtr20: " + latestAtr20.toFixed(2));
     console.log(
       "[" +
         thisTs +
