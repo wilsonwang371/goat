@@ -132,6 +132,7 @@ func (l *LiveBarFeedGenerator) Run() error {
 				continue
 			}
 			var freq *core.Frequency
+			var tm *time.Time
 			for _, v := range bars {
 				if freq == nil {
 					f := v.(core.Bar).Frequency()
@@ -140,12 +141,19 @@ func (l *LiveBarFeedGenerator) Run() error {
 				if *freq != v.(core.Bar).Frequency() {
 					panic("freq mismatch")
 				}
+				if tm == nil {
+					t := v.(core.Bar).DateTime()
+					tm = &t
+				}
 			}
 			res := make(map[string]interface{}, len(bars))
 			for k, v := range bars {
 				res[k] = v
 			}
-			l.AppendNewValueToBuffer(time.Time{}, res, *freq)
+			if tm == nil || freq == nil {
+				panic("tm or freq is nil")
+			}
+			l.AppendNewValueToBuffer(*tm, res, *freq)
 
 			// reset error count
 			errorCount = 0

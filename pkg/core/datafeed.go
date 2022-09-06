@@ -268,6 +268,7 @@ func (d *genericDataFeed) Dispatch() bool {
 	}
 
 	if v != nil {
+		// fmt.Printf("%s %s %s\n", t, f, v)
 		d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f},
 			isRecovery)
 
