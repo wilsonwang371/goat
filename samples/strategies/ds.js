@@ -145,14 +145,16 @@ addEventListener("onFinish", function () {
 addEventListener("onIdle", function () {
   for (var symbol in thisPrice) {
     if (abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 4.5) {
-      console.log(
+      var msg =
         "price changed: " +
-          symbol +
-          " " +
-          thisPrice[symbol].toFixed(2) +
-          " <- " +
-          lastNotifyPrice[symbol].toFixed(2)
-      );
+        symbol +
+        " " +
+        thisPrice[symbol].toFixed(2) +
+        " <- " +
+        lastNotifyPrice[symbol].toFixed(2);
+
+      // notify mobile about price change
+      alert.mobile_msg(msg);
       lastNotifyPrice[symbol] = thisPrice[symbol];
     }
   }

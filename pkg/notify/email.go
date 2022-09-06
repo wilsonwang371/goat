@@ -3,6 +3,7 @@ package notify
 import (
 	"crypto/tls"
 	"fmt"
+	"strings"
 
 	"goat/pkg/config"
 
@@ -54,6 +55,12 @@ func (e *emailNotifier) Send() error {
 
 // SetContent implements Notifier
 func (e *emailNotifier) SetContent(c string) error {
+	if strings.Contains(c, "<html>") {
+		e.content = c
+	} else {
+		newC := strings.Replace(c, "\n", "<br>", -1)
+		e.content = fmt.Sprintf("<html><body>%s</body></html>", newC)
+	}
 	e.content = c
 	return nil
 }
