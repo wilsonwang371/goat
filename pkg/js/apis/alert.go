@@ -70,6 +70,7 @@ func (a *AlertObject) InfoCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
+		logger.Logger.Error("failed to parse args: %s", zap.Error(err))
 		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
@@ -93,6 +94,7 @@ func (a *AlertObject) WarnCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
+		logger.Logger.Error("failed to parse args: %s", zap.Error(err))
 		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
@@ -117,6 +119,7 @@ func (a *AlertObject) ErrorCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
+		logger.Logger.Error("failed to parse args: %s", zap.Error(err))
 		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
@@ -141,6 +144,7 @@ func (a *AlertObject) EmailCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
+		logger.Logger.Error("failed to parse args: %s", zap.Error(err))
 		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
@@ -165,6 +169,7 @@ func (a *AlertObject) MobileCmd(call goja.FunctionCall) goja.Value {
 	errorCount := 0
 
 	if title, msg, err := a.parseArgs(call); err != nil {
+		logger.Logger.Error("failed to parse args: %s", zap.Error(err))
 		return a.VM.ToValue(false)
 	} else {
 		for _, n := range a.notifiers {
