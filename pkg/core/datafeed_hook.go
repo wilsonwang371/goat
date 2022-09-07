@@ -1,8 +1,9 @@
 package core
 
 import (
-	"goat/pkg/logger"
 	"time"
+
+	"goat/pkg/logger"
 
 	"go.uber.org/zap"
 )
