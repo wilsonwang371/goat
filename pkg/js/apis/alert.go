@@ -53,11 +53,16 @@ func NewAlertObject(cfg *config.Config, vm *goja.Runtime) (*AlertObject, error) 
 }
 
 func (a *AlertObject) parseArgs(call goja.FunctionCall) (title, msg string, err error) {
-	if len(call.Arguments) != 2 {
+	if len(call.Arguments) > 2 {
 		return "", "", fmt.Errorf("invalid number of arguments")
 	}
-	title = call.Argument(0).String()
-	msg = call.Argument(1).String()
+	if len(call.Arguments) == 1 {
+		title = "<empty>"
+		msg = call.Argument(0).String()
+	} else {
+		title = call.Argument(0).String()
+		msg = call.Argument(1).String()
+	}
 	return title, msg, nil
 }
 

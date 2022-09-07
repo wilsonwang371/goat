@@ -154,7 +154,8 @@ addEventListener("onIdle", function () {
         lastNotifyPrice[symbol].toFixed(2);
 
       // notify mobile about price change
-      alert.mobile_msg(msg);
+      console.log(msg);
+      alert.info("price alert", msg);
       lastNotifyPrice[symbol] = thisPrice[symbol];
     }
   }
