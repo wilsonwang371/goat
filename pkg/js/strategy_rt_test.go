@@ -100,3 +100,24 @@ func TestRuntimeTALibSimple(t *testing.T) {
 
 	rt.NotifyEvent("onbars", "foo")
 }
+
+func TestRuntimeRequire(t *testing.T) {
+	cfg := &config.Config{
+		KVDB: "",
+	}
+	rt := NewStrategyRuntime(cfg, nil, nil)
+	script, err := rt.Compile(`
+	var m = require("../../samples/misc/require-test.js");
+	m.test();
+`)
+	if err != nil {
+		t.Error(err)
+	}
+	val, err := rt.Execute(script)
+	if err != nil {
+		t.Error(err)
+	}
+	logger.Logger.Info("result:", zap.Any("val", val))
+
+	rt.NotifyEvent("onbars", "foo")
+}
