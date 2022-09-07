@@ -1,7 +1,10 @@
 package core
 
 import (
+	"goat/pkg/logger"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type DataFeedHooksControl interface {
@@ -92,6 +95,7 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 			return nil
 		}
 		d.lastGeneratedTime = &newDayBar.t
+		logger.Logger.Info("new day bar generated", zap.Any("newDayBar", newDayBar))
 		return &newDayBar
 	}
 	return nil
@@ -108,7 +112,8 @@ func (d *dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) {
 	}
 	if d.startTime == nil {
 		// fmt.Printf("startTime: %+v\n", value.t)
-		d.startTime = &value.t
+		startTime := value.t.UTC()
+		d.startTime = &startTime
 		// set the stop time
 		stopTime := time.Date(d.startTime.Year(), d.startTime.Month(), d.startTime.Day(),
 			23, 59, 59, 0, time.UTC)
