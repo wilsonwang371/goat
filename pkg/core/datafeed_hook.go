@@ -48,16 +48,18 @@ type DataFeedHook interface {
 }
 
 type dataFeedHook struct {
-	dayBarMap map[string]Bar
-	startTime *time.Time
-	stopTime  *time.Time
+	dayBarMap         map[string]Bar
+	lastGeneratedTime *time.Time
+	startTime         *time.Time
+	stopTime          *time.Time
 }
 
 func NewDayBarGenHook() DataFeedHook {
 	return &dataFeedHook{
-		dayBarMap: make(map[string]Bar),
-		startTime: nil,
-		stopTime:  nil,
+		dayBarMap:         make(map[string]Bar),
+		lastGeneratedTime: nil,
+		startTime:         nil,
+		stopTime:          nil,
 	}
 }
 
@@ -86,6 +88,10 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
+		if d.lastGeneratedTime != nil && newDayBar.t.After(*d.lastGeneratedTime) {
+			return nil
+		}
+		d.lastGeneratedTime = &newDayBar.t
 		return &newDayBar
 	}
 	return nil
