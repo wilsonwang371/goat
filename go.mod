@@ -39,6 +39,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dop251/goja v0.0.0-20220815083517-0c74f9139fd6
+	github.com/dop251/goja_nodejs v0.0.0-20220905124449-678b33ca5009
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gobuffalo/envy v1.10.1 // indirect

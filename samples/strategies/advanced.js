@@ -1,58 +1,10 @@
+var commons = require("./lib/commons.js"); // you need to run goat at the root of the project
+
 var c = 0;
 var lastTs = 0;
 
 var lastNotifyPrice = {};
 var thisPrice = {};
-
-function abs(num) {
-  if (num < 0) {
-    return -num;
-  }
-  return num;
-}
-
-function getDataSeries(sym, freq, len) {
-  var ds = feed.dataseries(sym, freq, len);
-  if (ds == null) {
-    console.log("No data series for " + sym + " at frequency " + freq);
-    return;
-  }
-  if (Object.keys(ds).length == 0) {
-    console.log("ds is null");
-    return;
-  }
-  return ds.data;
-}
-
-function getATR(ds, period) {
-  var dsHighPrice = [];
-  for (var i = 0; i < ds.length; i++) {
-    dsHighPrice.push(ds[i].high);
-  }
-  var dsLowPrice = [];
-  for (var i = 0; i < ds.length; i++) {
-    dsLowPrice.push(ds[i].low);
-  }
-  var dsClosePrice = [];
-  for (var i = 0; i < ds.length; i++) {
-    dsClosePrice.push(ds[i].close);
-  }
-  if (dsClosePrice.length > period) {
-    return talib.Atr(dsHighPrice, dsLowPrice, dsClosePrice, period);
-  }
-  return [];
-}
-
-function getCloseSMA(ds, period) {
-  var dsClosePrice = [];
-  for (var i = 0; i < ds.length; i++) {
-    dsClosePrice.push(ds[i].close);
-  }
-  if (dsClosePrice.length > period) {
-    return talib.Sma(dsClosePrice, period);
-  }
-  return [];
-}
 
 var sma10, sma20, sma30, sma50, atr14, atr20;
 var latestSma10,
@@ -68,17 +20,17 @@ addEventListener("onBars", function (bars) {
   var symbol = Object.keys(bar);
   c++;
 
-  var ds = getDataSeries(symbol, frequency.DAY, 64);
+  var ds = commons.fetchDataSeries(symbol, frequency.DAY, 64);
   if (ds == null) {
     return;
   }
 
-  sma10 = getCloseSMA(ds, 10);
-  sma20 = getCloseSMA(ds, 20);
-  sma30 = getCloseSMA(ds, 30);
-  sma50 = getCloseSMA(ds, 50);
-  atr14 = getATR(ds, 14);
-  atr20 = getATR(ds, 20);
+  sma10 = commons.calcCloseSMA(ds, 10);
+  sma20 = commons.calcCloseSMA(ds, 20);
+  sma30 = commons.calcCloseSMA(ds, 30);
+  sma50 = commons.calcCloseSMA(ds, 50);
+  atr14 = commons.calcATR(ds, 14);
+  atr20 = commons.calcATR(ds, 20);
 
   if (
     sma10 == null ||
@@ -144,7 +96,7 @@ addEventListener("onFinish", function () {
 
 addEventListener("onIdle", function () {
   for (var symbol in thisPrice) {
-    if (abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 4.5) {
+    if (Math.abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 4.5) {
       var msg =
         "price changed: " +
         symbol +

@@ -9,6 +9,7 @@ import (
 	"goat/pkg/logger"
 
 	"github.com/dop251/goja"
+	"github.com/dop251/goja_nodejs/require"
 )
 
 type StartCallback func() error
@@ -43,8 +44,14 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, runMu *sync.Mutex, start
 	sys.VM.Set("console", consoleObj)
 
 	sys.VM.Set("setInterval", sys.SetIntervalCmd)
+	sys.registerRequire()
 
 	return sys, nil
+}
+
+func (sys *SysObject) registerRequire() {
+	registry := require.Registry{}
+	registry.Enable(sys.VM)
 }
 
 func (sys *SysObject) SetIntervalCmd(call goja.FunctionCall) goja.Value {
