@@ -20,7 +20,7 @@ ${BUILDX_CMD} build \
     --tag=wilsonny/goat-build:latest -f ${SCRIPT_DIR}/build.dockerfile ${SCRIPT_DIR}/..
 
 if [ ! -f ${SCRIPT_DIR}/goat-arm64 ] || [ ! -f ${SCRIPT_DIR}/goat-amd64 ] ; then
-    ${SCRIPT_DIR}/build-docker.sh compile
+    ${SCRIPT_DIR}/../run-build.sh compile
 fi
 
 ${BUILDX_CMD} build \
