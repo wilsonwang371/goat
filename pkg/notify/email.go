@@ -61,7 +61,6 @@ func (e *emailNotifier) SetContent(c string) error {
 		newC := strings.Replace(c, "\n", "<br>", -1)
 		e.content = fmt.Sprintf("<html><body>%s</body></html>", newC)
 	}
-	e.content = c
 	return nil
 }
 
