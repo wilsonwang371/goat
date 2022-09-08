@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -8,7 +9,7 @@ import (
 
 func TestSimpleDispatcher(t *testing.T) {
 	fmt.Println("start dispatcher")
-	d := NewDispatcher()
+	d := NewDispatcher(context.TODO())
 	go d.Run()
 	time.Sleep(time.Second * 2)
 	fmt.Println("stop dispatcher")

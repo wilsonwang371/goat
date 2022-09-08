@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 )
 
 type KVObject struct {
+	ctx      context.Context
 	cfg      *config.Config
 	VM       *goja.Runtime
 	KVDBPath string
@@ -21,12 +23,13 @@ type KVObject struct {
 
 var CleanUpDuration = time.Second * 30
 
-func NewKVObject(cfg *config.Config, vm *goja.Runtime, kvdbFilePath string) (*KVObject, error) {
+func NewKVObject(ctx context.Context, cfg *config.Config, vm *goja.Runtime, kvdbFilePath string) (*KVObject, error) {
 	if cfg == nil || vm == nil {
 		return nil, fmt.Errorf("invalid config or vm")
 	}
 
 	kv := &KVObject{
+		ctx:      ctx,
 		cfg:      cfg,
 		VM:       vm,
 		KVDBPath: kvdbFilePath,
@@ -62,12 +65,12 @@ func NewKVObject(cfg *config.Config, vm *goja.Runtime, kvdbFilePath string) (*KV
 func (kv *KVObject) cleanup() {
 	ticker := time.NewTicker(CleanUpDuration)
 	defer ticker.Stop()
-	for range ticker.C {
-	again:
-		err := kv.KVDB.RunValueLogGC(0.7)
-		if err == nil {
-			goto again
-		}
+	select {
+	case <-ticker.C:
+		kv.KVDB.RunValueLogGC(0.5)
+	case <-kv.ctx.Done():
+		kv.KVDB.Close()
+		return
 	}
 }
 

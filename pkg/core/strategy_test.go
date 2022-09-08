@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -13,10 +14,10 @@ func TestSimpleStrategy(t *testing.T) {
 	gen := NewBarFeedGenerator(
 		[]Frequency{REALTIME, DAY, HOUR},
 		100)
-	feed := NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
+	feed := NewGenericDataFeed(context.TODO(), &config.Config{}, gen, nil, 100, "")
 	sel := NewSimpleStrategyEventListener()
 	broker := NewDummyBroker(feed)
-	strategy := NewStrategyController(cfg, sel, broker, feed)
+	strategy := NewStrategyController(context.TODO(), cfg, sel, broker, feed)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

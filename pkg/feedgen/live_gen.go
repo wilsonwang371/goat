@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -24,6 +25,7 @@ type BarDataProvider interface {
 }
 
 type LiveBarFeedGenerator struct {
+	ctx        context.Context
 	bfg        core.FeedGenerator
 	provider   BarDataProvider
 	instrument string
@@ -69,11 +71,12 @@ func (l *LiveBarFeedGenerator) PopNextValues() (time.Time, map[string]interface{
 	return l.bfg.PopNextValues()
 }
 
-func NewLiveBarFeedGenerator(provider BarDataProvider, instrument string,
+func NewLiveBarFeedGenerator(ctx context.Context, provider BarDataProvider, instrument string,
 	freq []core.Frequency,
 	maxLen int,
 ) *LiveBarFeedGenerator {
 	res := &LiveBarFeedGenerator{
+		ctx:        ctx,
 		bfg:        core.NewBarFeedGenerator(freq, maxLen),
 		provider:   provider,
 		instrument: instrument,
@@ -115,6 +118,11 @@ func (l *LiveBarFeedGenerator) Run() error {
 
 	for {
 		logger.Logger.Debug("LiveBarFeedGenerator::Run", zap.String("instrument", l.instrument))
+		select {
+		case <-l.ctx.Done():
+			return nil
+		default:
+		}
 		if l.stopped {
 			break
 		}

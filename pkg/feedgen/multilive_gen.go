@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 const noDataSleepDuration = 100 * time.Millisecond
 
 type MultiLiveBarFeedGenerator struct {
+	ctx        context.Context
 	bfg        core.FeedGenerator
 	providers  []BarDataProvider
 	pvdrChan   []chan core.Bars
@@ -63,7 +65,7 @@ func (l *MultiLiveBarFeedGenerator) PopNextValues() (time.Time, map[string]inter
 	return l.bfg.PopNextValues()
 }
 
-func NewMultiLiveBarFeedGenerator(providers []BarDataProvider, instrument string,
+func NewMultiLiveBarFeedGenerator(ctx context.Context, providers []BarDataProvider, instrument string,
 	freq []core.Frequency,
 	maxLen int,
 ) *MultiLiveBarFeedGenerator {
@@ -71,6 +73,7 @@ func NewMultiLiveBarFeedGenerator(providers []BarDataProvider, instrument string
 		panic("providers is empty")
 	}
 	res := &MultiLiveBarFeedGenerator{
+		ctx:        ctx,
 		bfg:        core.NewBarFeedGenerator(freq, maxLen),
 		providers:  providers,
 		pvdrChan:   make([]chan core.Bars, len(providers)),
@@ -103,6 +106,11 @@ func (l *MultiLiveBarFeedGenerator) ProviderFetcher(idx int) {
 	pvdrChan := l.pvdrChan[idx]
 	errorCount := 0
 	for {
+		select {
+		case <-l.ctx.Done():
+			return
+		default:
+		}
 		if l.stopped {
 			break
 		}
@@ -154,6 +162,11 @@ func (l *MultiLiveBarFeedGenerator) Run() error {
 	pendingBars := make([]core.Bars, len(l.providers))
 
 	for {
+		select {
+		case <-l.ctx.Done():
+			return nil
+		default:
+		}
 		if l.stopped {
 			logger.Logger.Info("stopped")
 			break

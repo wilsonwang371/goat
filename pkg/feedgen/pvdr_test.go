@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,13 +23,13 @@ func TestTradingViewSimple(t *testing.T) {
 	if user == "" || pass == "" {
 		t.Skip("TRADINGVIEW_USER and TRADINGVIEW_PASS must be set")
 	}
-	gen := NewLiveBarFeedGenerator(
+	gen := NewLiveBarFeedGenerator(context.TODO(),
 		NewTradingViewDataProvider(user, pass),
 		"XAUUSD",
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
+	disp := core.NewDispatcher(context.TODO())
+	feed := core.NewGenericDataFeed(context.TODO(), &config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go gen.Run()
@@ -39,13 +40,13 @@ func TestTradingViewSimple(t *testing.T) {
 }
 
 func TestFakeSimple(t *testing.T) {
-	gen := NewLiveBarFeedGenerator(
+	gen := NewLiveBarFeedGenerator(context.TODO(),
 		NewFakeDataProvider(),
 		"XAUUSD",
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
+	disp := core.NewDispatcher(context.TODO())
+	feed := core.NewGenericDataFeed(context.TODO(), &config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go gen.Run()
@@ -56,13 +57,13 @@ func TestFakeSimple(t *testing.T) {
 }
 
 func Test2FakeSimple(t *testing.T) {
-	gen := NewMultiLiveBarFeedGenerator(
+	gen := NewMultiLiveBarFeedGenerator(context.TODO(),
 		[]BarDataProvider{NewFakeDataProvider(), NewFakeDataProvider()},
 		"XAUUSD",
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	disp := core.NewDispatcher()
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
+	disp := core.NewDispatcher(context.TODO())
+	feed := core.NewGenericDataFeed(context.TODO(), &config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
 	go gen.Run()
@@ -135,6 +136,7 @@ func TestMultiProviders(t *testing.T) {
 		NewFakeDataProvider(),
 	}
 	gen := NewMultiLiveBarFeedGenerator(
+		context.TODO(),
 		pArr,
 		cfg.Symbol,
 		[]core.Frequency{core.REALTIME},
@@ -149,9 +151,9 @@ func TestMultiProviders(t *testing.T) {
 
 	go gen.WaitAndRun(runWg)
 
-	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
+	feed := core.NewGenericDataFeed(context.TODO(), &config.Config{}, gen, nil, 100, "")
 
-	rt := js.NewStrategyRuntime(&cfg, feed, startLive)
+	rt := js.NewStrategyRuntime(context.TODO(), &cfg, feed, startLive)
 	script, err := ioutil.ReadFile("../../samples/strategies/simple.js")
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -163,7 +165,7 @@ func TestMultiProviders(t *testing.T) {
 	} else {
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
-		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
+		strategy := core.NewStrategyController(context.TODO(), &cfg, sel, broker, feed)
 
 		if val, err := rt.Execute(compiledScript); err != nil {
 			fmt.Println(err)

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -77,6 +78,7 @@ func NewSimpleStrategyEventListener() StrategyEventListener {
 }
 
 type strategyController struct {
+	ctx      context.Context
 	cfg      *config.Config
 	dumpDB   *db.DB
 	listener StrategyEventListener
@@ -111,6 +113,8 @@ func (s *strategyController) barDumpWorkerLoop() {
 				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
 				barDataList = nil
 			}
+		case <-s.ctx.Done():
+			return
 		default:
 			if len(barDataList) > 100 {
 				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
@@ -203,16 +207,17 @@ func (s *strategyController) Stop() {
 	s.dispatcher.Stop()
 }
 
-func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEventListener,
+func NewStrategyController(ctx context.Context, cfg *config.Config, strategyEventListener StrategyEventListener,
 	broker Broker, dataFeed DataFeed,
 ) StrategyController {
 	controller := &strategyController{
+		ctx:               ctx,
 		cfg:               cfg,
 		dumpDB:            nil,
 		listener:          strategyEventListener,
 		broker:            broker,
 		dataFeed:          dataFeed,
-		dispatcher:        NewDispatcher(),
+		dispatcher:        NewDispatcher(ctx),
 		barProcessedEvent: NewEvent(),
 		barDataDumpC:      make(chan *db.BarData, 1000),
 	}
@@ -231,7 +236,6 @@ func NewStrategyController(cfg *config.Config, strategyEventListener StrategyEve
 	controller.dataFeed.GetNewValueEvent().Subscribe(controller.onBars)
 	controller.broker.GetOrderUpdatedEvent().Subscribe(controller.onOrderEvent)
 
-	// TODO: handle proper shutdown
 	go controller.barDumpWorkerLoop()
 
 	return controller

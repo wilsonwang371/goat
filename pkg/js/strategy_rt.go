@@ -1,6 +1,7 @@
 package js
 
 import (
+	"context"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -33,6 +34,7 @@ type StrategyRuntime interface {
 }
 
 type strategyRuntime struct {
+	ctx            context.Context
 	cfg            *config.Config
 	vm             *goja.Runtime
 	mu             sync.Mutex
@@ -92,10 +94,11 @@ func (r *strategyRuntime) Compile(source string) (*goja.Program, error) {
 	return compiled, nil
 }
 
-func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCallback) StrategyRuntime {
+func NewStrategyRuntime(ctx context.Context, cfg *config.Config, feed core.DataFeed, cb apis.StartCallback) StrategyRuntime {
 	var err error
 
 	res := &strategyRuntime{
+		ctx:            ctx,
 		cfg:            cfg,
 		vm:             goja.New(),
 		apiHandlers:    make(map[string]RuntimeFunc),
@@ -105,7 +108,7 @@ func NewStrategyRuntime(cfg *config.Config, feed core.DataFeed, cb apis.StartCal
 
 	logger.Logger.Debug("using kvdb file.", zap.String("kvdb", cfg.KVDB))
 
-	res.kvApi, err = apis.NewKVObject(cfg, res.vm, cfg.KVDB)
+	res.kvApi, err = apis.NewKVObject(ctx, cfg, res.vm, cfg.KVDB)
 	if err != nil {
 		logger.Logger.Error("failed to create kv object", zap.Error(err))
 		panic(err)
