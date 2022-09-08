@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -139,6 +140,7 @@ type PendingDataFeedValue struct {
 }
 
 type genericDataFeed struct {
+	ctx               context.Context
 	cfg               *config.Config
 	newValueEvent     Event
 	dataSeriesManager *dataSeriesManager
@@ -325,7 +327,7 @@ func (d *genericDataFeed) GetNewValueEvent() Event {
 }
 
 // GetOrderUpdatedEvent implements Broker
-func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeedHooksControl,
+func NewGenericDataFeed(ctx context.Context, cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeedHooksControl,
 	maxLen int, recoveryDB string,
 ) DataFeed {
 	var recDB *db.DB
@@ -341,6 +343,7 @@ func NewGenericDataFeed(cfg *config.Config, fg FeedGenerator, hooksCtrl DataFeed
 		hooksCtrl.AddNewHook(NewDayBarGenHook())
 	}
 	df := &genericDataFeed{
+		ctx:                  ctx,
 		cfg:                  cfg,
 		newValueEvent:        NewEvent(),
 		feedGenerator:        fg,

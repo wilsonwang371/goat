@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -52,13 +53,13 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 
 	// setup provider, data generator and feed
 	providers := strings.Split(feedProviders, ",")
-	gen, wg := GetLiveFeedGenerator(providers)
+	gen, wg := GetLiveFeedGenerator(ctx, providers)
 	if gen == nil {
 		logger.Logger.Error("failed to create feed generator")
 		os.Exit(1)
 	}
 	runWg = wg
-	feed := core.NewGenericDataFeed(&cfg, gen, nil, 250, liveRecoveryDBFile)
+	feed := core.NewGenericDataFeed(ctx, &cfg, gen, nil, 250, liveRecoveryDBFile)
 
 	// setup js runtime
 	rt := js.NewStrategyRuntime(ctx, &cfg, feed, startLive)
@@ -103,7 +104,7 @@ func CreateOneProvider(p string) (feedgen.BarDataProvider, error) {
 	return provider, nil
 }
 
-func GetLiveFeedGenerator(providers []string) (core.FeedGenerator, *sync.WaitGroup) {
+func GetLiveFeedGenerator(ctx context.Context, providers []string) (core.FeedGenerator, *sync.WaitGroup) {
 	if len(providers) == 0 {
 		logger.Logger.Error("no feed provider specified")
 		os.Exit(1)
@@ -113,7 +114,7 @@ func GetLiveFeedGenerator(providers []string) (core.FeedGenerator, *sync.WaitGro
 			logger.Logger.Error("failed to create feed provider", zap.Error(err))
 			os.Exit(1)
 		}
-		gen := feedgen.NewLiveBarFeedGenerator(
+		gen := feedgen.NewLiveBarFeedGenerator(ctx,
 			p,
 			cfg.Symbol,
 			[]core.Frequency{core.REALTIME},
@@ -134,7 +135,7 @@ func GetLiveFeedGenerator(providers []string) (core.FeedGenerator, *sync.WaitGro
 			}
 			pArr[i] = p
 		}
-		gen := feedgen.NewMultiLiveBarFeedGenerator(
+		gen := feedgen.NewMultiLiveBarFeedGenerator(ctx,
 			pArr,
 			cfg.Symbol,
 			[]core.Frequency{core.REALTIME},
