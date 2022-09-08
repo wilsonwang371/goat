@@ -10,7 +10,9 @@ else
     BUILDX_CMD=docker-buildx
 fi
 
-${BUILDX_CMD} create --use --name goat-builder 
+${BUILDX_CMD} create --use --name goat-builder
+
+docker run --privileged --rm tonistiigi/binfmt --install all
 
 ${BUILDX_CMD} build \
     --cache-to=type=local,dest=./  \
