@@ -92,11 +92,11 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
-		if d.lastGeneratedTime != nil && newDayBar.t.After(*d.lastGeneratedTime) {
+		if d.lastGeneratedTime != nil && d.lastGeneratedTime.After(newDayBar.t) {
 			return nil
 		}
 		d.lastGeneratedTime = &newDayBar.t
-		logger.Logger.Info("new day bar generated", zap.Any("newDayBar", newDayBar))
+		logger.Logger.Info("new day bar generated", zap.Time("newDayBar.t", newDayBar.t))
 		return &newDayBar
 	}
 	return nil
@@ -123,7 +123,9 @@ func (d *dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) {
 	for k, v := range value.v {
 		if d.dayBarMap[k] == nil {
 			bar := v.(Bar)
-			d.dayBarMap[k] = NewBasicBar(value.t,
+			tmDay := time.Date(value.t.UTC().Year(), value.t.UTC().Month(), value.t.UTC().Day(),
+				0, 0, 0, 0, time.UTC)
+			d.dayBarMap[k] = NewBasicBar(tmDay,
 				bar.Open(), bar.High(), bar.Low(), bar.Close(),
 				bar.AdjClose(), bar.Volume(), DAY)
 		} else {
