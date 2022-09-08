@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
@@ -42,6 +43,7 @@ type Event interface {
 }
 
 type dispatcher struct {
+	ctx        context.Context
 	subjects   []Subject
 	stopC      chan struct{}
 	stopCMutex sync.Mutex
@@ -130,6 +132,15 @@ func (d *dispatcher) Run() {
 			}
 			close(d.stopC)
 			return
+		case <-d.ctx.Done():
+			for _, subject := range d.subjects {
+				subject.Stop()
+			}
+			for _, subject := range d.subjects {
+				subject.Join()
+			}
+			close(d.stopC)
+			return
 		default:
 			if eof, dispatched := d.dispatch(); eof {
 				d.Stop()
@@ -157,8 +168,9 @@ func (d *dispatcher) GetSubjects() []Subject {
 	return d.subjects
 }
 
-func NewDispatcher() Dispatcher {
+func NewDispatcher(ctx context.Context) Dispatcher {
 	return &dispatcher{
+		ctx:        ctx,
 		stopC:      make(chan struct{}, 2),
 		stopCMutex: sync.Mutex{},
 		startEvent: NewEvent(),

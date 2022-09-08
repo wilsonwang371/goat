@@ -1,6 +1,7 @@
 package js
 
 import (
+	"context"
 	"testing"
 
 	"goat/pkg/config"
@@ -14,7 +15,7 @@ func TestRuntimeSimple(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewStrategyRuntime(cfg, nil, nil)
+	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	err := rt.RegisterHostCall("test_print", func(call goja.FunctionCall) goja.Value {
 		logger.Logger.Info("test_print is called")
 		return goja.Null()
@@ -37,7 +38,7 @@ func TestRuntimeSimple2(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewStrategyRuntime(cfg, nil, nil)
+	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		console.log("onbars", e);
@@ -59,7 +60,7 @@ func TestRuntimeKV(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewStrategyRuntime(cfg, nil, nil)
+	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		kvstorage.save("foo", "bar");
@@ -82,7 +83,7 @@ func TestRuntimeTALibSimple(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewStrategyRuntime(cfg, nil, nil)
+	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
 	addEventListener("onbars", function(e) {
 		var res = talib.Ema([.1,.2,.3,.4,.5,.6,.7,.8], 4);
@@ -105,7 +106,7 @@ func TestRuntimeRequire(t *testing.T) {
 	cfg := &config.Config{
 		KVDB: "",
 	}
-	rt := NewStrategyRuntime(cfg, nil, nil)
+	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
 	var m = require("../../samples/misc/require-test.js");
 	m.test();

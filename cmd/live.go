@@ -11,6 +11,7 @@ import (
 	"goat/pkg/feedgen"
 	"goat/pkg/js"
 	"goat/pkg/logger"
+	"goat/pkg/util"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -47,6 +48,8 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	logger.Logger.Debug("running script", zap.String("liveScriptFile", liveScriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 
+	ctx := util.NewTerminationContext()
+
 	// setup provider, data generator and feed
 	providers := strings.Split(feedProviders, ",")
 	gen, wg := GetLiveFeedGenerator(providers)
@@ -58,7 +61,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	feed := core.NewGenericDataFeed(&cfg, gen, nil, 250, liveRecoveryDBFile)
 
 	// setup js runtime
-	rt := js.NewStrategyRuntime(&cfg, feed, startLive)
+	rt := js.NewStrategyRuntime(ctx, &cfg, feed, startLive)
 	script, err := ioutil.ReadFile(liveScriptFile)
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -76,7 +79,7 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
-		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
+		strategy := core.NewStrategyController(ctx, &cfg, sel, broker, feed)
 
 		strategy.Run()
 	}

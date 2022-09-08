@@ -1,6 +1,7 @@
 package feedgen
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,7 +28,7 @@ func TestTradingViewSimple(t *testing.T) {
 		"XAUUSD",
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	disp := core.NewDispatcher()
+	disp := core.NewDispatcher(context.TODO())
 	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
@@ -44,7 +45,7 @@ func TestFakeSimple(t *testing.T) {
 		"XAUUSD",
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	disp := core.NewDispatcher()
+	disp := core.NewDispatcher(context.TODO())
 	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
@@ -61,7 +62,7 @@ func Test2FakeSimple(t *testing.T) {
 		"XAUUSD",
 		[]core.Frequency{core.REALTIME, core.DAY},
 		100)
-	disp := core.NewDispatcher()
+	disp := core.NewDispatcher(context.TODO())
 	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 	disp.AddSubject(feed)
 
@@ -151,7 +152,7 @@ func TestMultiProviders(t *testing.T) {
 
 	feed := core.NewGenericDataFeed(&config.Config{}, gen, nil, 100, "")
 
-	rt := js.NewStrategyRuntime(&cfg, feed, startLive)
+	rt := js.NewStrategyRuntime(context.TODO(), &cfg, feed, startLive)
 	script, err := ioutil.ReadFile("../../samples/strategies/simple.js")
 	if err != nil {
 		logger.Logger.Error("failed to read script file", zap.Error(err))
@@ -163,7 +164,7 @@ func TestMultiProviders(t *testing.T) {
 	} else {
 		sel := js.NewJSStrategyEventListener(rt)
 		broker := core.NewDummyBroker(feed)
-		strategy := core.NewStrategyController(&cfg, sel, broker, feed)
+		strategy := core.NewStrategyController(context.TODO(), &cfg, sel, broker, feed)
 
 		if val, err := rt.Execute(compiledScript); err != nil {
 			fmt.Println(err)
