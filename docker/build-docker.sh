@@ -13,7 +13,7 @@ fi
 ${BUILDX_CMD} create --use --name goat-builder 
 
 ${BUILDX_CMD} build \
-    --load \
+    --cache-to=type=local,dest=./  \
     --platform=linux/amd64,linux/arm64 \
     --tag=wilsonny/goat-build:latest -f ${SCRIPT_DIR}/build.dockerfile ${SCRIPT_DIR}/..
 
@@ -22,7 +22,7 @@ if [ ! -f ${SCRIPT_DIR}/goat-arm64 ] || [ ! -f ${SCRIPT_DIR}/goat-amd64 ] ; then
 fi
 
 ${BUILDX_CMD} build \
-    --load \
+    --cache-to=type=local,dest=./ \
     --platform=linux/amd64,linux/arm64 \
     --tag=wilsonny/goat-release:latest -f ${SCRIPT_DIR}/release.dockerfile ${SCRIPT_DIR}/..
 
