@@ -67,7 +67,10 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: wilsonny/goat-build:latest
-    
+
+    - name: Compile GoAT Binaries
+      run: ./run-build.sh compile
+
     - name: Build and Push Release Image
       uses: docker/build-push-action@v3
       with:

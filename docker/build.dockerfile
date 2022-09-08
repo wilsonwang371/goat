@@ -1,4 +1,5 @@
 FROM golang:1.18
+ARG TARGETARCH
 
 RUN apt-get update
 RUN go install mvdan.cc/gofumpt@latest
