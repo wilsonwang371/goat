@@ -68,7 +68,7 @@ jobs:
         push: true
         tags: wilsonny/goat-build:latest
 
-    - name: Compile
+    - name: Compile GoAT Binaries
       run: ./run-build.sh compile
 
     - name: Build and Push Release Image
