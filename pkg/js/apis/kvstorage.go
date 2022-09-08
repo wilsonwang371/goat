@@ -69,6 +69,7 @@ func (kv *KVObject) cleanup() {
 	case <-ticker.C:
 		kv.KVDB.RunValueLogGC(0.5)
 	case <-kv.ctx.Done():
+		logger.Logger.Info("closing kvdb")
 		kv.KVDB.Close()
 		return
 	}
