@@ -6,3 +6,5 @@ site/**
 coverage.out
 *.db
 *-journal
+goat-amd64
+goat-arm64

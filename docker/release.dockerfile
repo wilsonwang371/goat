@@ -1,4 +1,5 @@
 FROM ubuntu:latest
+ARG TARGETARCH
 
 RUN apt-get update
 
