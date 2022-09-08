@@ -2,7 +2,7 @@
 
 set -e
 
-BUILD_IMG=wilsonny/goat-build:latest
+BUILD_IMG=wilsonny/goat-compile:latest
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 if [ -z "${IN_DOCKER}" ]; then

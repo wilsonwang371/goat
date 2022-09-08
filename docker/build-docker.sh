@@ -17,7 +17,7 @@ docker run --privileged --rm tonistiigi/binfmt --install all
 ${BUILDX_CMD} build \
     --cache-to=type=local,dest=./  \
     --platform=linux/amd64,linux/arm64 \
-    --tag=wilsonny/goat-build:latest -f ${SCRIPT_DIR}/build.dockerfile ${SCRIPT_DIR}/..
+    --tag=wilsonny/goat-compile:latest -f ${SCRIPT_DIR}/build.dockerfile ${SCRIPT_DIR}/..
 
 if [ ! -f ${SCRIPT_DIR}/goat-arm64 ] || [ ! -f ${SCRIPT_DIR}/goat-amd64 ] ; then
     ${SCRIPT_DIR}/../run-build.sh compile
@@ -26,6 +26,6 @@ fi
 ${BUILDX_CMD} build \
     --cache-to=type=local,dest=./ \
     --platform=linux/amd64,linux/arm64 \
-    --tag=wilsonny/goat-release:latest -f ${SCRIPT_DIR}/release.dockerfile ${SCRIPT_DIR}/..
+    --tag=wilsonny/goat:latest -f ${SCRIPT_DIR}/release.dockerfile ${SCRIPT_DIR}/..
 
 ${BUILDX_CMD} rm goat-builder

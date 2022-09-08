@@ -66,7 +66,7 @@ jobs:
         file: docker/build.dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: wilsonny/goat-build:latest
+        tags: wilsonny/goat-compile:latest
 
     - name: Compile GoAT Binaries
       run: ./run-build.sh compile
@@ -78,4 +78,4 @@ jobs:
         file: docker/release.dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: wilsonny/goat-release:latest
+        tags: wilsonny/goat:latest
