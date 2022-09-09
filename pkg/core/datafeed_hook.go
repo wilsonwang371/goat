@@ -92,7 +92,7 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
-		if d.lastGeneratedTime != nil && d.lastGeneratedTime.After(newDayBar.t) {
+		if d.lastGeneratedTime != nil && !d.lastGeneratedTime.Before(newDayBar.t) {
 			return nil
 		}
 		d.lastGeneratedTime = &newDayBar.t
