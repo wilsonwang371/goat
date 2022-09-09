@@ -105,7 +105,12 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 // Invoke implements DataFeedHook
 func (d *dataFeedHook) Invoke(value *PendingDataFeedValue, isRecovery bool) {
 	if isRecovery {
-		return
+		y, m, d := time.Now().UTC().Date()
+		y2, m2, d2 := value.t.UTC().Date()
+		if !(y == y2 && m == m2 && d == d2) {
+			return
+		}
+		// lets continue if it is the same day
 	}
 	if !(value.f >= REALTIME && value.f < DAY) {
 		// we don't care about other data frequencies
