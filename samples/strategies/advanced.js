@@ -96,7 +96,7 @@ addEventListener("onFinish", function () {
 
 addEventListener("onIdle", function () {
   for (var symbol in thisPrice) {
-    if (Math.abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 4.5) {
+    if (Math.abs(thisPrice[symbol] - lastNotifyPrice[symbol]) > 5.5) {
       var msg =
         "price changed: " +
         symbol +
@@ -125,6 +125,6 @@ setInterval(function () {
   res += "atr20: " + latestAtr20.toFixed(2) + "\n";
   alert.info("Notification", res);
   console.log("interval call ends");
-}, 1000 * 60 * 60 * 4);
+}, 1000 * 60 * 60 * 3);
 
 system.start();
