@@ -114,7 +114,6 @@ addEventListener("onIdle", function () {
 });
 
 setInterval(function () {
-  console.log("interval call starts");
   var res =
     "time: " + system.strftime("2006-01-02 15:04:05", system.now()) + "\n";
   res += "sma10: " + latestSma10.toFixed(2) + "\n";
@@ -124,7 +123,6 @@ setInterval(function () {
   res += "atr14: " + latestAtr14.toFixed(2) + "\n";
   res += "atr20: " + latestAtr20.toFixed(2) + "\n";
   alert.info("Notification", res);
-  console.log("interval call ends");
 }, 1000 * 60 * 60 * 3);
 
 system.start();
