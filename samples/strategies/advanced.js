@@ -116,6 +116,7 @@ addEventListener("onIdle", function () {
 setInterval(function () {
   var res =
     "time: " + system.strftime("2006-01-02 15:04:05", system.now()) + "\n";
+  res += "latestPrice: " + JSON.stringify(thisPrice) + "\n";
   res += "sma10: " + latestSma10.toFixed(2) + "\n";
   res += "sma20: " + latestSma20.toFixed(2) + "\n";
   res += "sma30: " + latestSma30.toFixed(2) + "\n";
@@ -123,6 +124,6 @@ setInterval(function () {
   res += "atr14: " + latestAtr14.toFixed(2) + "\n";
   res += "atr20: " + latestAtr20.toFixed(2) + "\n";
   alert.info("Notification", res);
-}, 1000 * 60 * 60 * 3);
+}, 1000 * 60 * 60 * 4);
 
 system.start();
