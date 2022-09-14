@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"time"
 
 	"goat/pkg/logger"
@@ -88,7 +89,8 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		newDayBar.t = time.Date(d.startTime.Year(), d.startTime.Month(),
 			d.startTime.Day(),
 			0, 0, 0, 0, time.UTC)
-		// fmt.Printf("newDayBar: %+v starttime %+v\n", newDayBar, d.startTime)
+		barData := fmt.Sprintf("newDayBar: %+v, starttime %+v, stoptime %+v\n",
+			newDayBar, d.startTime, d.stopTime)
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
@@ -96,7 +98,7 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 			return nil
 		}
 		d.lastGeneratedTime = &newDayBar.t
-		logger.Logger.Info("new day bar generated", zap.Time("newDayBar.t", newDayBar.t))
+		logger.Logger.Info("new day bar generated", zap.Time("newDayBar.t", newDayBar.t), zap.String("barData", barData))
 		return &newDayBar
 	}
 	return nil
