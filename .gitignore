@@ -8,3 +8,6 @@ coverage.out
 *-journal
 goat-amd64
 goat-arm64
+docker/ingest*
+docker/blobs*
+docker/index.json
