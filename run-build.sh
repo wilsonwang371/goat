@@ -11,6 +11,6 @@ if [ -z "${IN_DOCKER}" ]; then
 else
 	# We are in docker, so we can run the build script directly.
 	pushd /goat
-	make "$1"
+	make $1
 	popd
 fi

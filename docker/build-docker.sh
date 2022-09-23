@@ -5,7 +5,7 @@ set -xe
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 if [ "$(which docker-buildx)" == "" ]; then
-    BUILDX_CMD=docker buildx
+    BUILDX_CMD="docker buildx"
 else
     BUILDX_CMD=docker-buildx
 fi

@@ -434,8 +434,6 @@ github.com/prometheus/procfs v0.0.2/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsT
 github.com/prometheus/procfs v0.0.8/go.mod h1:7Qr8sr6344vo1JqZ6HhLceV9o3AJ1Ff+GxbHq6oeK9A=
 github.com/prometheus/procfs v0.1.3/go.mod h1:lV6e/gmhEcM9IjHGsFOCxxuZ+z1YqCvr4OA4YeYWdaU=
 github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
-github.com/recws-org/recws v1.3.1 h1:vtRhYpgNPBs3iFyu/+zxBqNzLYgID7UPC5siThkvbs0=
-github.com/recws-org/recws v1.3.1/go.mod h1:gRH/uJLMsO7lbcecAB1Im1Zc6eKxs93ftGR0R39QeYA=
 github.com/rivo/uniseg v0.1.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
@@ -498,6 +496,8 @@ github.com/twilio/twilio-go v0.26.0/go.mod h1:lz62Hopu4vicpQ056H5TJ0JE4AP0rS3sQ3
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c h1:yGeYqiSk1CjGllIp1sGa3CrVkrZT/9Ora7+16VZQA/I=
 github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c/go.mod h1:giV4wgc+qRaiqmreXc3IeKDySheM3eAQUDcorTdVrMs=
+github.com/wilsonwang371/recws v0.0.0-20220923173431-21aed1171b54 h1:w4vLprfFw5RlXMXSiMNrDswFzzrgahqAc1ZZFxu1USE=
+github.com/wilsonwang371/recws v0.0.0-20220923173431-21aed1171b54/go.mod h1:8b3duJTrnOEhhFqIQEUNoU/oj1l1RMYMpx9xnvWrHoU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

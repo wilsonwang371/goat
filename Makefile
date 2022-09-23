@@ -26,7 +26,7 @@ clean:
 	@git clean -fdX
 	@echo "Cleaning done."
 
-all: format build test
+all: format compile test
 	@echo "All done."
 
 docs:

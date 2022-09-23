@@ -11,7 +11,6 @@ require (
 	github.com/gregdel/pushover v1.1.0
 	github.com/imroc/req v0.3.2
 	github.com/piquette/finance-go v1.0.0
-	github.com/recws-org/recws v1.3.1
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.1
@@ -29,6 +28,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/wilsonwang371/recws v0.0.0-20220923173431-21aed1171b54 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 )

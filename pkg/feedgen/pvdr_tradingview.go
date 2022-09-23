@@ -19,7 +19,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/imroc/req"
-	"github.com/recws-org/recws"
+	"github.com/wilsonwang371/recws"
 )
 
 // TradingViewSessionStringLength ...
