@@ -2,8 +2,8 @@ PHONY: all
 
 compile:
 	@echo "Compiling..."
-	@GOOS=linux GOARCH=amd64 go build -v -o ./goat-amd64 ./main.go
-	@GOOS=linux GOARCH=arm64 go build -v -o ./goat-arm64 ./main.go
+	@GOARCH=amd64 go build -v -o ./goat-amd64 ./main.go
+	@GOARCH=arm64 go build -v -o ./goat-arm64 ./main.go
 	@echo "Compiling done."
 
 test:
