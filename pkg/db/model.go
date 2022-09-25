@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"os"
 
 	"goat/pkg/logger"
@@ -46,7 +47,8 @@ func NewSQLiteDataBase(dbpath string, delIfExists bool) *DB {
 				panic(err)
 			}
 		} else {
-			panic("db file already exists, please delete it first or use \"-D\" to delete it")
+			panic(fmt.Sprintf("db file %s already exists, please delete it first or use \"-D\" to delete it",
+				dbpath))
 		}
 	}
 	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
