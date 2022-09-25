@@ -276,7 +276,7 @@ func (d *genericDataFeed) Dispatch() bool {
 
 		if v != nil {
 			// this is to avoid duplicated data
-			if tVal, ok := d.lastDispatchedTime[f]; ok && t.Before(tVal) {
+			if tVal, ok := d.lastDispatchedTime[f]; ok && !t.After(tVal) {
 				if !isRecovery {
 					// we have already dispatched this data, skip it
 					logger.Logger.Info("skip outdated data")
