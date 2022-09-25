@@ -43,7 +43,7 @@ func init() {
 		"state key-value db file used for strategy (default is using in-memory db)")
 	rootCmd.PersistentFlags().StringVarP(&cfg.Dump.BarDumpDB, "bar-dump", "b", "",
 		"sqlite file used for bar dump in execution (leave empty to disable bar dump during execution)")
-	rootCmd.PersistentFlags().BoolVarP(&cfg.Dump.DeleteIfExist, "delete-old-bar-dump", "D", true,
+	rootCmd.PersistentFlags().BoolVarP(&cfg.Dump.DeleteIfExist, "delete-old-bar-dump", "D", false,
 		"delete old bar dump file if it exists")
 	rootCmd.PersistentFlags().StringVarP(&cfg.Symbol, "symbol", "S", "",
 		"live feed data symbol name")

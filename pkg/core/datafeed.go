@@ -154,6 +154,9 @@ type genericDataFeed struct {
 
 	pendingData          []*PendingDataFeedValue
 	dataFeedHooksControl DataFeedHooksControl
+
+	// last dispatched time for different data frequencies
+	lastDispatchedTime map[Frequency]time.Time
 }
 
 // GetDataSeries implements DataFeed
@@ -205,6 +208,7 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 				barData.AdjClose,
 				barData.Volume,
 				Frequency(barData.Frequency))
+			bar.SetMeta(BarMetaIsRecovery, true)
 
 			// NOTE:  we replace the value with the one from the recovery database
 			t = time.Unix(barData.DateTime, 0)
@@ -260,32 +264,51 @@ func (d *genericDataFeed) Dispatch() bool {
 		isRecovery = false
 	}
 
-	if len(d.pendingData) != 0 {
-		// we have data from the recovery database, use it
-		pendingData := d.pendingData[0]
-		t = pendingData.t
-		v = pendingData.v
-		f = pendingData.f
-		d.pendingData = d.pendingData[1:]
-	}
-
-	if v != nil {
-		// fmt.Printf("%s %s %s\n", t, f, v)
-		d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f},
-			isRecovery)
-
-		if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
-			panic(err)
+	for {
+		if len(d.pendingData) != 0 {
+			// we have data from the recovery database, use it
+			pendingData := d.pendingData[0]
+			t = pendingData.t
+			v = pendingData.v
+			f = pendingData.f
+			d.pendingData = d.pendingData[1:]
 		}
-		for _, val := range v {
-			if _, ok := val.(Bar); !ok {
-				panic(fmt.Errorf("value is not a bar"))
+
+		if v != nil {
+			// this is to avoid duplicated data
+			if tVal, ok := d.lastDispatchedTime[f]; ok && t.Before(tVal) {
+				if !isRecovery {
+					// we have already dispatched this data, skip it
+					logger.Logger.Info("skip obsolete data")
+					t = time.Time{}
+					v = nil
+					f = UNKNOWN
+					continue
+				} else {
+					// we are in recovery mode, we should not skip this data
+					panic(fmt.Errorf("duplicated data in recovery database"))
+				}
+			} else {
+				d.lastDispatchedTime[f] = t
 			}
+
+			// fmt.Printf("%s %s %s\n", t, f, v)
+			d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f},
+				isRecovery)
+
+			if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
+				panic(err)
+			}
+			for _, val := range v {
+				if _, ok := val.(Bar); !ok {
+					panic(fmt.Errorf("value is not a bar"))
+				}
+			}
+			d.newValueEvent.Emit(t, v)
+			return true
 		}
-		d.newValueEvent.Emit(t, v)
-		return true
+		return false
 	}
-	return false
 }
 
 // Eof implements DataFeed
@@ -353,6 +376,7 @@ func NewGenericDataFeed(ctx context.Context, cfg *config.Config, fg FeedGenerato
 		recoveryBar:          progressbar.Default(recCount),
 		pendingData:          []*PendingDataFeedValue{},
 		dataFeedHooksControl: hooksCtrl,
+		lastDispatchedTime:   map[Frequency]time.Time{},
 	}
 	df.dataSeriesManager = newDataSeriesManager(fg.CreateDataSeries, maxLen)
 	return df

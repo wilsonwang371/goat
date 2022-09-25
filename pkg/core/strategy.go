@@ -144,6 +144,10 @@ func (s *strategyController) onBars(args ...interface{}) error {
 	// 	zap.Any("bars", bars))
 	if s.dumpDB != nil {
 		for symbol, bar := range bars {
+			if r := bar.GetMeta(BarMetaIsRecovery); r != nil && r.(bool) {
+				// we need to skip saving recovery bars
+				continue
+			}
 			data := &db.BarData{
 				Symbol:    symbol,
 				DateTime:  bar.DateTime().Unix(),
@@ -155,7 +159,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 				AdjClose:  bar.AdjClose(),
 				Frequency: int64(bar.Frequency()),
 			}
-			// fmt.Printf("%+v\n", data)
+			// dump the new data to dump channel
 			s.barDataDumpC <- data
 		}
 	}

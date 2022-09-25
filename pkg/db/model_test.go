@@ -17,6 +17,9 @@ func TestDBOpen(t *testing.T) {
 	defer os.Remove(file.Name())
 	file.Close()
 
-	db := NewSQLiteDataBase(file.Name(), false)
+	db := NewSQLiteDataBase(file.Name(), true)
 	assert.NotNil(t, db)
+
+	db2 := NewSQLiteDataBase("/tmp/test.999.db", false)
+	assert.NotNil(t, db2)
 }

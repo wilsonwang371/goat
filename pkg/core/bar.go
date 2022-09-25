@@ -18,19 +18,27 @@ type Bar interface {
 	DateTime() time.Time
 	SetUseAdjustedValue(bool)
 	String() string
+	SetMeta(key int, value interface{})
+	GetMeta(key int) interface{}
 }
 
 type BasicBarData struct {
-	OpenV        float64   `json:"open"`
-	HighV        float64   `json:"high"`
-	LowV         float64   `json:"low"`
-	CloseV       float64   `json:"close"`
-	VolumeV      int64     `json:"volume"`
-	AdjCloseV    float64   `json:"adjClose"`
-	FrequencyV   Frequency `json:"frequency"`
-	DateTimeV    time.Time `json:"dateTime"`
-	UseAdjustedV bool      `json:"useAdjusted"`
+	OpenV        float64             `json:"open"`
+	HighV        float64             `json:"high"`
+	LowV         float64             `json:"low"`
+	CloseV       float64             `json:"close"`
+	VolumeV      int64               `json:"volume"`
+	AdjCloseV    float64             `json:"adjClose"`
+	FrequencyV   Frequency           `json:"frequency"`
+	DateTimeV    time.Time           `json:"dateTime"`
+	UseAdjustedV bool                `json:"useAdjusted"`
+	Meta         map[int]interface{} `json:"meta"`
 }
+
+const (
+	BarMetaIsRecovery = iota + 1
+	BarMetaEnd
+)
 
 // String implements Bar
 func (b *BasicBarData) String() string {
@@ -83,6 +91,29 @@ func (b *BasicBarData) Volume() int64 {
 	return b.VolumeV
 }
 
+func (b *BasicBarData) SetMeta(key int, value interface{}) {
+	if key <= 0 || key >= BarMetaEnd {
+		panic("invalid key")
+	}
+	if b.Meta == nil {
+		b.Meta = make(map[int]interface{})
+	}
+	b.Meta[key] = value
+}
+
+func (b *BasicBarData) GetMeta(key int) interface{} {
+	if key <= 0 || key >= BarMetaEnd {
+		panic("invalid key")
+	}
+	if b.Meta == nil {
+		return nil
+	}
+	if v, ok := b.Meta[key]; ok {
+		return v
+	}
+	return nil
+}
+
 func NewBasicBar(t time.Time, open, high, low, close, adj_close float64, volume int64, frequency Frequency) Bar {
 	return &BasicBarData{
 		OpenV:      open,
@@ -92,5 +123,6 @@ func NewBasicBar(t time.Time, open, high, low, close, adj_close float64, volume 
 		VolumeV:    volume,
 		FrequencyV: frequency,
 		DateTimeV:  t,
+		Meta:       make(map[int]interface{}),
 	}
 }
