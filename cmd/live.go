@@ -4,22 +4,19 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
 	"sync"
 
-	"goat/pkg/common"
 	"goat/pkg/core"
 	"goat/pkg/feedgen"
 	"goat/pkg/js"
 	"goat/pkg/logger"
+	"goat/pkg/metrics"
 	"goat/pkg/util"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -65,9 +62,8 @@ func runLiveCmd(cmd *cobra.Command, args []string) {
 	runWg = wg
 	feed := core.NewGenericDataFeed(ctx, &cfg, gen, nil, 250, liveRecoveryDBFile)
 
-	// setup prometheus metrics
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(fmt.Sprintf(":%d", common.MetricsPort), nil)
+	// setup metrics server
+	metrics.StartMetricsServer()
 
 	// setup js runtime
 	rt := js.NewStrategyRuntime(ctx, &cfg, feed, startLive)
