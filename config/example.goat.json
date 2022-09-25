@@ -3,7 +3,7 @@
   "symbol": "GLD",
   "dump": {
     "bardumpdb": "dump.db",
-    "delete_if_exists": false
+    "delete_old_bars": false
   },
   "live": {
     "tradingview": {

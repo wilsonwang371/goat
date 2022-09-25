@@ -230,7 +230,7 @@ func NewStrategyController(ctx context.Context, cfg *config.Config, strategyEven
 
 	if cfg.Dump.BarDumpDB != "" {
 		controller.dumpDB = db.NewSQLiteDataBase(cfg.Dump.BarDumpDB,
-			cfg.Dump.DeleteIfExist)
+			cfg.Dump.RemoveOldBars)
 	}
 
 	controller.dispatcher.AddSubject(controller.broker)

@@ -18,8 +18,8 @@ type Config struct {
 	KVDB   string `mapstructure:"kvdb"`
 	Symbol string `mapstructure:"symbol"`
 	Dump   struct {
-		BarDumpDB     string `mapstructure:"bardumpdb"`        // name of db to dump live feed data, leave empty to disable
-		DeleteIfExist bool   `mapstructure:"delete_if_exists"` // delete db if exist
+		BarDumpDB     string `mapstructure:"bardumpdb"`       // name of db to dump live feed data, leave empty to disable
+		RemoveOldBars bool   `mapstructure:"delete_old_bars"` // delete db if exist
 	} `mapstructure:"dump"`
 	Live struct {
 		TradingView struct {

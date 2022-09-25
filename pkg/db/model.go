@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"os"
 
 	"goat/pkg/logger"
@@ -33,22 +32,19 @@ type DB struct {
 	err      error
 }
 
-func NewSQLiteDataBase(dbpath string, delIfExists bool) *DB {
+func NewSQLiteDataBase(dbpath string, removeOldData bool) *DB {
 	if _, err := os.Stat(dbpath); err != nil && os.IsNotExist(err) {
 		// file does not exist
 		logger.Logger.Info("using new database file", zap.String("dbpath", dbpath))
 	} else {
 		// file exists
-		if delIfExists {
+		if removeOldData {
 			logger.Logger.Info("delete existing db", zap.String("dbpath", dbpath))
 			err = os.Remove(dbpath)
 			if err != nil {
 				logger.Logger.Fatal("failed to remove db file", zap.Error(err))
 				panic(err)
 			}
-		} else {
-			panic(fmt.Sprintf("db file %s already exists, please delete it first or use \"-D\" to delete it",
-				dbpath))
 		}
 	}
 	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
