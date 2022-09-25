@@ -10,7 +10,7 @@ import (
 	"goat/pkg/db"
 	"goat/pkg/logger"
 
-	"github.com/schollz/progressbar/v3"
+	progressBar "github.com/schollz/progressbar/v3"
 	"go.uber.org/zap"
 )
 
@@ -149,7 +149,7 @@ type genericDataFeed struct {
 	recoveryDB       *db.DB
 	recoveryCount    int64
 	recoveryProgress int64
-	recoveryBar      *progressbar.ProgressBar
+	recoveryBar      *progressBar.ProgressBar
 	recoveryLastTime time.Time
 
 	pendingData          []*PendingDataFeedValue
@@ -279,7 +279,7 @@ func (d *genericDataFeed) Dispatch() bool {
 			if tVal, ok := d.lastDispatchedTime[f]; ok && t.Before(tVal) {
 				if !isRecovery {
 					// we have already dispatched this data, skip it
-					logger.Logger.Info("skip obsolete data")
+					logger.Logger.Info("skip outdated data")
 					t = time.Time{}
 					v = nil
 					f = UNKNOWN
@@ -373,7 +373,7 @@ func NewGenericDataFeed(ctx context.Context, cfg *config.Config, fg FeedGenerato
 		recoveryDB:           recDB,
 		recoveryCount:        recCount,
 		recoveryProgress:     0,
-		recoveryBar:          progressbar.Default(recCount),
+		recoveryBar:          progressBar.Default(recCount),
 		pendingData:          []*PendingDataFeedValue{},
 		dataFeedHooksControl: hooksCtrl,
 		lastDispatchedTime:   map[Frequency]time.Time{},

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"goat/pkg/consts"
+	"goat/pkg/common"
 	"goat/pkg/core"
 	"goat/pkg/logger"
 
@@ -118,7 +118,7 @@ func (l *MultiLiveBarFeedGenerator) ProviderFetcher(idx int) {
 			lg.Logger.Warn("nextBars failed", zap.Error(err),
 				zap.Any("pvdr", pvdr),
 				zap.Int("errorCount", errorCount))
-			time.Sleep(consts.LiveGenFailureSleepDuration)
+			time.Sleep(common.LiveGenFailureSleepDuration)
 			errorCount++
 		} else {
 			if bars == nil {

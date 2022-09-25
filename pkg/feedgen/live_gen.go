@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"goat/pkg/consts"
+	"goat/pkg/common"
 	"goat/pkg/core"
 	"goat/pkg/logger"
 
@@ -128,9 +128,9 @@ func (l *LiveBarFeedGenerator) Run() error {
 		}
 		if bars, err := l.provider.nextBars(); err != nil {
 			lg.Logger.Error("nextBars failed", zap.Error(err))
-			time.Sleep(consts.LiveGenFailureSleepDuration)
+			time.Sleep(common.LiveGenFailureSleepDuration)
 			errorCount++
-			if errorCount > consts.LiveGenFailureMaxCount {
+			if errorCount > common.LiveGenFailureMaxCount {
 				lg.Logger.Error("too many errors, stop")
 				return err
 			}

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"goat/pkg/common"
 	"goat/pkg/config"
-	"goat/pkg/consts"
 	"goat/pkg/db"
 	"goat/pkg/logger"
+	"goat/pkg/metrics"
 
 	"go.uber.org/zap"
 )
@@ -99,7 +100,7 @@ func (s *strategyController) onStart(args ...interface{}) error {
 
 func (s *strategyController) onIdle(args ...interface{}) error {
 	// logger.Logger.Info("onIdle")
-	time.Sleep(consts.IdelSleepDuration)
+	time.Sleep(common.IdelSleepDuration)
 	return s.listener.OnIdle()
 }
 
@@ -146,6 +147,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 		for symbol, bar := range bars {
 			if r := bar.GetMeta(BarMetaIsRecovery); r != nil && r.(bool) {
 				// we need to skip saving recovery bars
+				metrics.SkippedBars.Inc()
 				continue
 			}
 			data := &db.BarData{
