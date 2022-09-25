@@ -11,10 +11,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var SkippedBars = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "goat_skipped_bars",
-	Help: "The total number of skipped bars",
-})
+var (
+	BarsNotSaved = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "goat_bars_not_saved",
+		Help: "The total number of bars not saved from recovery",
+	})
+	OutdatedBars = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "goat_outdated_bars",
+		Help: "The total number of outdated bars",
+	})
+)
 
 func StartMetricsServer() {
 	go func() {

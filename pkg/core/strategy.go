@@ -147,7 +147,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 		for symbol, bar := range bars {
 			if r := bar.GetMeta(BarMetaIsRecovery); r != nil && r.(bool) {
 				// we need to skip saving recovery bars
-				metrics.SkippedBars.Inc()
+				metrics.BarsNotSaved.Inc()
 				continue
 			}
 			data := &db.BarData{

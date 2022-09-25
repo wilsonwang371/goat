@@ -9,6 +9,7 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/db"
 	"goat/pkg/logger"
+	"goat/pkg/metrics"
 
 	progressBar "github.com/schollz/progressbar/v3"
 	"go.uber.org/zap"
@@ -276,10 +277,11 @@ func (d *genericDataFeed) Dispatch() bool {
 
 		if v != nil {
 			// this is to avoid duplicated data
-			if tVal, ok := d.lastDispatchedTime[f]; ok && !t.After(tVal) {
+			if tVal, ok := d.lastDispatchedTime[f]; ok && t.Before(tVal) {
 				if !isRecovery {
 					// we have already dispatched this data, skip it
 					logger.Logger.Info("skip outdated data")
+					metrics.OutdatedBars.Inc()
 					t = time.Time{}
 					v = nil
 					f = UNKNOWN
