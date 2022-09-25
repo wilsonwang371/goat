@@ -285,8 +285,9 @@ func (d *genericDataFeed) Dispatch() bool {
 					f = UNKNOWN
 					continue
 				} else {
+					logger.Logger.Info("outdated data", zap.Time("time", t), zap.Time("last_time", tVal))
 					// we are in recovery mode, we should not skip this data
-					panic(fmt.Errorf("duplicated data in recovery database"))
+					panic(fmt.Errorf("outdated data in recovery database"))
 				}
 			} else {
 				d.lastDispatchedTime[f] = t
