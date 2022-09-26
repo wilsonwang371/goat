@@ -14,11 +14,15 @@ import (
 var (
 	BarsNotSaved = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "goat_bars_not_saved",
-		Help: "The total number of bars not saved from recovery",
+		Help: "The total number of bars read but not saved in dump while replaying recovery db",
 	})
-	OutdatedBars = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "goat_outdated_bars",
-		Help: "The total number of outdated bars",
+	OutdatedDBBars = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "goat_outdated_db_bars",
+		Help: "The total number of outdated bars in recovery db",
+	})
+	OutOfOrderBars = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "goat_out_of_order_bars",
+		Help: "The total number of out of order bars",
 	})
 )
 

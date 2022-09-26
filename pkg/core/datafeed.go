@@ -281,15 +281,17 @@ func (d *genericDataFeed) Dispatch() bool {
 				if !isRecovery {
 					// we have already dispatched this data, skip it
 					logger.Logger.Info("skip outdated data")
-					metrics.OutdatedBars.Inc()
+					metrics.OutdatedDBBars.Inc()
 					t = time.Time{}
 					v = nil
 					f = UNKNOWN
 					continue
 				} else {
-					logger.Logger.Info("outdated data", zap.Time("time", t), zap.Time("last_time", tVal))
-					// we are in recovery mode, we should not skip this data
-					panic(fmt.Errorf("outdated data in recovery database"))
+					// we are in recovery mode, ideally, we should not skip recovery data
+					// but we have to do it to in case.
+					metrics.OutOfOrderBars.Inc()
+					logger.Logger.Warn("outdated data", zap.Time("time", t),
+						zap.Time("last_time", tVal))
 				}
 			} else {
 				d.lastDispatchedTime[f] = t
