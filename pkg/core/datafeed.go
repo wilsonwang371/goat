@@ -138,6 +138,7 @@ type PendingDataFeedValue struct {
 	t time.Time
 	v map[string]interface{}
 	f Frequency
+	d string
 }
 
 type genericDataFeed struct {
@@ -229,7 +230,12 @@ func (d *genericDataFeed) maybeFetchNextRecoveryData() {
 
 			// logger.Logger.Info("read bar from recovery database",
 			//	zap.Time("time", t), zap.String("symbol", barData.Symbol), zap.Any("bar", bar))
-			d.pendingData = append(d.pendingData, &PendingDataFeedValue{t, v, f})
+			d.pendingData = append(d.pendingData, &PendingDataFeedValue{
+				t: t,
+				v: v,
+				f: f,
+				d: fmt.Sprintf("%d", barData.ID),
+			})
 			return
 		} else {
 			// error happens and we cannot continue
@@ -247,6 +253,7 @@ func (d *genericDataFeed) Dispatch() bool {
 	var t time.Time
 	var v map[string]interface{}
 	var f Frequency
+	var dstr string
 	var err error
 	var isRecovery bool
 
@@ -272,13 +279,21 @@ func (d *genericDataFeed) Dispatch() bool {
 			t = pendingData.t
 			v = pendingData.v
 			f = pendingData.f
+			dstr = pendingData.d
 			d.pendingData = d.pendingData[1:]
 		}
 
 		if v != nil {
 			// this is to avoid duplicated data
 			if tVal, ok := d.lastDispatchedTime[f]; ok && t.Before(tVal) {
-				if !isRecovery {
+				if isRecovery {
+					// we are in recovery mode, ideally, we should not skip recovery data
+					// but we have to do it to in case.
+					metrics.OutOfOrderBars.Inc()
+					logger.Logger.Info("outdated data", zap.Time("time", t),
+						zap.Time("last_time", tVal),
+						zap.String("debug string", dstr))
+				} else {
 					// we have already dispatched this data, skip it
 					logger.Logger.Info("skip outdated data")
 					metrics.OutdatedDBBars.Inc()
@@ -286,20 +301,18 @@ func (d *genericDataFeed) Dispatch() bool {
 					v = nil
 					f = UNKNOWN
 					continue
-				} else {
-					// we are in recovery mode, ideally, we should not skip recovery data
-					// but we have to do it to in case.
-					metrics.OutOfOrderBars.Inc()
-					logger.Logger.Warn("outdated data", zap.Time("time", t),
-						zap.Time("last_time", tVal))
 				}
 			} else {
 				d.lastDispatchedTime[f] = t
 			}
 
 			// fmt.Printf("%s %s %s\n", t, f, v)
-			d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{t, v, f},
-				isRecovery)
+			d.dataFeedHooksControl.FilterNewValue(&PendingDataFeedValue{
+				t: t,
+				v: v,
+				f: f,
+				d: dstr,
+			}, isRecovery)
 
 			if err := d.dataSeriesManager.newValueUpdate(t, v, f); err != nil {
 				panic(err)
