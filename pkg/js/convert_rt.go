@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	"goat/pkg/cmd/convert"
 	"goat/pkg/config"
-	"goat/pkg/convert"
 	"goat/pkg/db"
 	"goat/pkg/js/apis"
 	"goat/pkg/logger"

@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"goat/pkg/convert"
+	"goat/pkg/cmd/convert"
 	"goat/pkg/db"
 	"goat/pkg/js"
 	"goat/pkg/logger"

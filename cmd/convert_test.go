@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"goat/pkg/convert"
+	"goat/pkg/cmd/convert"
 	"goat/pkg/db"
 	"goat/pkg/js"
 )
