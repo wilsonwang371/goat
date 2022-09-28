@@ -7,7 +7,6 @@ require (
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/go-gota/gota v0.12.0
 	github.com/golang-module/carbon v1.5.5
-	github.com/gorilla/websocket v1.4.2
 	github.com/gregdel/pushover v1.1.0
 	github.com/imroc/req v0.3.2
 	github.com/piquette/finance-go v1.0.0
@@ -33,7 +32,7 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/wilsonwang371/recws v0.0.0-20220923173431-21aed1171b54 // indirect
+	github.com/wilsonwang371/websocket v0.0.0-20220928010921-7d53884752ff // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 )
@@ -80,6 +79,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
+	github.com/wilsonwang371/recws v0.0.0-20220928012151-59f6b3233c7d
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect

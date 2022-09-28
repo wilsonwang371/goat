@@ -16,7 +16,7 @@ import (
 	"github.com/go-gota/gota/series"
 	"go.uber.org/zap"
 
-	"github.com/gorilla/websocket"
+	"github.com/wilsonwang371/websocket"
 
 	"github.com/imroc/req"
 	"github.com/wilsonwang371/recws"

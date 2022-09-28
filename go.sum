@@ -278,8 +278,6 @@ github.com/googleapis/gax-go/v2 v2.2.0/go.mod h1:as02EH8zWkzwUoLbBaFeQ+arQaj/Oth
 github.com/googleapis/gax-go/v2 v2.3.0/go.mod h1:b8LNqSzNabLiUpXKkY7HAR5jr6bIT99EXz9pXxye9YM=
 github.com/googleapis/gax-go/v2 v2.4.0/go.mod h1:XOTVJ59hdnfJLIP/dh8n5CGryZR2LxK9wbMD5+iXC6c=
 github.com/googleapis/google-cloud-go-testing v0.0.0-20200911160855-bcd43fbb19e8/go.mod h1:dvDLG8qkwmyD9a/MJJN3XJcT3xFxOKAvTZGvuZmac9g=
-github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
-github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gregdel/pushover v1.1.0 h1:dwHyvrcpZCOS9V1fAnKPaGRRI5OC55cVaKhMybqNsKQ=
 github.com/gregdel/pushover v1.1.0/go.mod h1:EcaO66Nn1StkpEm1iKtBTV3d2A16SoMsVER1PthX7to=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
@@ -513,8 +511,10 @@ github.com/twilio/twilio-go v0.26.0/go.mod h1:lz62Hopu4vicpQ056H5TJ0JE4AP0rS3sQ3
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c h1:yGeYqiSk1CjGllIp1sGa3CrVkrZT/9Ora7+16VZQA/I=
 github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c/go.mod h1:giV4wgc+qRaiqmreXc3IeKDySheM3eAQUDcorTdVrMs=
-github.com/wilsonwang371/recws v0.0.0-20220923173431-21aed1171b54 h1:w4vLprfFw5RlXMXSiMNrDswFzzrgahqAc1ZZFxu1USE=
-github.com/wilsonwang371/recws v0.0.0-20220923173431-21aed1171b54/go.mod h1:8b3duJTrnOEhhFqIQEUNoU/oj1l1RMYMpx9xnvWrHoU=
+github.com/wilsonwang371/recws v0.0.0-20220928012151-59f6b3233c7d h1:5PvFJrqb/WsiHY1Qy1gVLxdB3isAKipjBgykCK2pQJQ=
+github.com/wilsonwang371/recws v0.0.0-20220928012151-59f6b3233c7d/go.mod h1:BHyhXJLkPsZ5BFeQNpz29BARXYMov2TE+G2uNkK/yrE=
+github.com/wilsonwang371/websocket v0.0.0-20220928010921-7d53884752ff h1:7w4luIvmxAssPtY1N2+uLrNB3+fk0b4qQYZuTFnXT9k=
+github.com/wilsonwang371/websocket v0.0.0-20220928010921-7d53884752ff/go.mod h1:uedNEDJKD87PdSN6JWORk9MD+XnmIyYEwOQHLXrtbik=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
