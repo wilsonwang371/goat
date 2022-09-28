@@ -511,8 +511,8 @@ github.com/twilio/twilio-go v0.26.0/go.mod h1:lz62Hopu4vicpQ056H5TJ0JE4AP0rS3sQ3
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c h1:yGeYqiSk1CjGllIp1sGa3CrVkrZT/9Ora7+16VZQA/I=
 github.com/wilsonwang371/go-talib v0.0.0-20220812201128-553100bf515c/go.mod h1:giV4wgc+qRaiqmreXc3IeKDySheM3eAQUDcorTdVrMs=
-github.com/wilsonwang371/recws v0.0.0-20220928012151-59f6b3233c7d h1:5PvFJrqb/WsiHY1Qy1gVLxdB3isAKipjBgykCK2pQJQ=
-github.com/wilsonwang371/recws v0.0.0-20220928012151-59f6b3233c7d/go.mod h1:BHyhXJLkPsZ5BFeQNpz29BARXYMov2TE+G2uNkK/yrE=
+github.com/wilsonwang371/recws v0.0.0-20220928163418-7c3e895d7136 h1:KcIAsOBXuo0fRPhkDvh4AP7aahmLGL9DIjU2rnOb7WI=
+github.com/wilsonwang371/recws v0.0.0-20220928163418-7c3e895d7136/go.mod h1:BHyhXJLkPsZ5BFeQNpz29BARXYMov2TE+G2uNkK/yrE=
 github.com/wilsonwang371/websocket v0.0.0-20220928010921-7d53884752ff h1:7w4luIvmxAssPtY1N2+uLrNB3+fk0b4qQYZuTFnXT9k=
 github.com/wilsonwang371/websocket v0.0.0-20220928010921-7d53884752ff/go.mod h1:uedNEDJKD87PdSN6JWORk9MD+XnmIyYEwOQHLXrtbik=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
