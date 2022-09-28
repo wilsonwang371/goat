@@ -19,10 +19,10 @@ var mergeCmd = &cobra.Command{
 }
 
 func MergeFunction(cmd *cobra.Command, args []string) {
-	//TODO: implement merge command
+	// TODO: implement merge command
 }
 
 func init() {
-	//TODO: add flags
+	// TODO: add flags
 	rootCmd.AddCommand(mergeCmd)
 }
