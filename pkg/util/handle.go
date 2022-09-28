@@ -2,10 +2,12 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 
 	"goat/pkg/logger"
+	"goat/pkg/notify"
 
 	"go.uber.org/zap"
 )
@@ -23,4 +25,16 @@ func NewTerminationContext() context.Context {
 	}()
 
 	return ctx
+}
+
+func PanicHandler(n notify.Notifier) {
+	if r := recover(); r != nil {
+		logger.Logger.Error("panic", zap.Any("panic", r))
+		n.SetSubject("PANIC")
+		n.SetContent(fmt.Sprintf("PANIC: %v", r))
+		if err := n.Send(); err != nil {
+			logger.Logger.Error("failed to send panic notification", zap.Error(err))
+			return
+		}
+	}
 }

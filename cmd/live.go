@@ -13,6 +13,7 @@ import (
 	"goat/pkg/js"
 	"goat/pkg/logger"
 	"goat/pkg/metrics"
+	"goat/pkg/notify"
 	"goat/pkg/util"
 
 	"github.com/spf13/cobra"
@@ -47,6 +48,9 @@ func startLive() error {
 }
 
 func runLiveCmd(cmd *cobra.Command, args []string) {
+	// handle panic
+	defer util.PanicHandler(notify.NewEmailNotifier(&cfg))
+
 	logger.Logger.Debug("running script", zap.String("liveScriptFile", liveScriptFile))
 	logger.Logger.Debug("running with symbol", zap.String("symbol", cfg.Symbol))
 

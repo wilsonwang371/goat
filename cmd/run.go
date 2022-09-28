@@ -12,6 +12,7 @@ import (
 	"goat/pkg/feedgen"
 	"goat/pkg/js"
 	"goat/pkg/logger"
+	"goat/pkg/notify"
 	"goat/pkg/util"
 
 	"github.com/spf13/cobra"
@@ -32,6 +33,9 @@ var (
 )
 
 func RunFunction(cmd *cobra.Command, args []string) {
+	// handle panic
+	defer util.PanicHandler(notify.NewEmailNotifier(&cfg))
+
 	logger.Logger.Debug("running script", zap.String("runScriptFile", runScriptFile))
 
 	ctx := util.NewTerminationContext()

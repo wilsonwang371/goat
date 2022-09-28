@@ -9,6 +9,8 @@ import (
 	"goat/pkg/db"
 	"goat/pkg/js"
 	"goat/pkg/logger"
+	"goat/pkg/notify"
+	"goat/pkg/util"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -30,6 +32,9 @@ var convertCmd = &cobra.Command{
 }
 
 func ConvertFunction(cmd *cobra.Command, args []string) {
+	// handle panic
+	defer util.PanicHandler(notify.NewEmailNotifier(&cfg))
+
 	rt := js.NewDBConvertRuntime(&cfg)
 	script, err := ioutil.ReadFile(convertScriptFile)
 	if err != nil {

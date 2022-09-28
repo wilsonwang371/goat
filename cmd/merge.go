@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"goat/pkg/notify"
+	"goat/pkg/util"
+
 	"github.com/spf13/cobra"
 )
 
@@ -15,10 +18,13 @@ var mergeCmd = &cobra.Command{
 	Short: "merge command merges two data inputs into one",
 	Long: `merge command merges two data inputs into one.
 	`,
-	Run: ConvertFunction,
+	Run: MergeFunction,
 }
 
 func MergeFunction(cmd *cobra.Command, args []string) {
+	// handle panic
+	defer util.PanicHandler(notify.NewEmailNotifier(&cfg))
+
 	// TODO: implement merge command
 }
 
