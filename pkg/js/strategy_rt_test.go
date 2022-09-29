@@ -2,6 +2,7 @@ package js
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"goat/pkg/config"
@@ -12,8 +13,10 @@ import (
 )
 
 func TestRuntimeSimple(t *testing.T) {
+	os.RemoveAll("default.kvdb")
+	defer os.RemoveAll("default.kvdb")
 	cfg := &config.Config{
-		KVDB: "",
+		KVDB: "default.kvdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	err := rt.RegisterHostCall("test_print", func(call goja.FunctionCall) goja.Value {
@@ -35,8 +38,10 @@ func TestRuntimeSimple(t *testing.T) {
 }
 
 func TestRuntimeSimple2(t *testing.T) {
+	os.RemoveAll("default.kvdb")
+	defer os.RemoveAll("default.kvdb")
 	cfg := &config.Config{
-		KVDB: "",
+		KVDB: "default.kvdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
@@ -57,8 +62,10 @@ func TestRuntimeSimple2(t *testing.T) {
 }
 
 func TestRuntimeKV(t *testing.T) {
+	os.RemoveAll("default.kvdb")
+	defer os.RemoveAll("default.kvdb")
 	cfg := &config.Config{
-		KVDB: "",
+		KVDB: "default.kvdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
@@ -80,8 +87,10 @@ func TestRuntimeKV(t *testing.T) {
 }
 
 func TestRuntimeTALibSimple(t *testing.T) {
+	os.RemoveAll("default.kvdb")
+	defer os.RemoveAll("default.kvdb")
 	cfg := &config.Config{
-		KVDB: "",
+		KVDB: "default.kvdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
@@ -103,8 +112,10 @@ func TestRuntimeTALibSimple(t *testing.T) {
 }
 
 func TestRuntimeRequire(t *testing.T) {
+	os.RemoveAll("default.kvdb")
+	defer os.RemoveAll("default.kvdb")
 	cfg := &config.Config{
-		KVDB: "",
+		KVDB: "default.kvdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`

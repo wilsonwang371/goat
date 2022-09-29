@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/go-gota/gota v0.12.0
 	github.com/golang-module/carbon v1.5.5
 	github.com/gregdel/pushover v1.1.0
@@ -23,6 +22,7 @@ require (
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect

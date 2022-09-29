@@ -8,7 +8,7 @@ import (
 	"goat/pkg/config"
 	"goat/pkg/logger"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/boltdb/bolt"
 	"github.com/dop251/goja"
 	"go.uber.org/zap"
 )
@@ -18,7 +18,7 @@ type KVObject struct {
 	cfg      *config.Config
 	VM       *goja.Runtime
 	KVDBPath string
-	KVDB     *badger.DB
+	KVDB     *bolt.DB
 }
 
 var CleanUpDuration = time.Second * 30
@@ -36,19 +36,24 @@ func NewKVObject(ctx context.Context, cfg *config.Config, vm *goja.Runtime, kvdb
 	}
 
 	if kvdbFilePath != "" {
-		kvdb, err := badger.Open(badger.DefaultOptions(kvdbFilePath).WithLoggingLevel(badger.ERROR))
+		kvdb, err := bolt.Open(kvdbFilePath, 0o600, nil)
 		if err != nil {
-			logger.Logger.Fatal("failed to open badger kvdb file", zap.Error(err))
+			logger.Logger.Fatal("failed to open kvdb file", zap.Error(err))
 			return nil, err
+		}
+		err = kvdb.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists([]byte("default"))
+			if err != nil {
+				return fmt.Errorf("could not create root bucket: %v", err)
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("could not set up buckets, %v", err)
 		}
 		kv.KVDB = kvdb
 	} else {
-		kvdb, err := badger.Open(badger.DefaultOptions("").WithInMemory(true).WithLoggingLevel(badger.ERROR))
-		if err != nil {
-			logger.Logger.Fatal("failed to open in-memory badger kvdb", zap.Error(err))
-			return nil, err
-		}
-		kv.KVDB = kvdb
+		return nil, fmt.Errorf("invalid kvdb file path")
 	}
 
 	kvObj := kv.VM.NewObject()
@@ -57,35 +62,17 @@ func NewKVObject(ctx context.Context, cfg *config.Config, vm *goja.Runtime, kvdb
 
 	kv.VM.Set("kvstorage", kvObj)
 
-	go kv.cleanup()
-
 	return kv, nil
-}
-
-func (kv *KVObject) cleanup() {
-	ticker := time.NewTicker(CleanUpDuration)
-	defer ticker.Stop()
-	select {
-	case <-ticker.C:
-		kv.KVDB.RunValueLogGC(0.5)
-	case <-kv.ctx.Done():
-		logger.Logger.Info("closing kvdb")
-		kv.KVDB.Close()
-		return
-	}
 }
 
 func (kv *KVObject) DBLoadState(key []byte) ([]byte, error) {
 	var data []byte
-	err := kv.KVDB.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(key))
-		if err != nil {
-			return err
+	err := kv.KVDB.View(func(txn *bolt.Tx) error {
+		item := txn.Bucket([]byte("default")).Get([]byte(key))
+		if item == nil {
+			return fmt.Errorf("could not find key: %v", key)
 		}
-		item.Value(func(val []byte) error {
-			data = append([]byte{}, val...)
-			return nil
-		})
+		data = append([]byte{}, item...)
 		return nil
 	})
 	if err != nil {
@@ -95,8 +82,12 @@ func (kv *KVObject) DBLoadState(key []byte) ([]byte, error) {
 }
 
 func (kv *KVObject) DBSaveState(key []byte, data []byte) error {
-	return kv.KVDB.Update(func(txn *badger.Txn) error {
-		return txn.Set(key, data)
+	return kv.KVDB.Update(func(txn *bolt.Tx) error {
+		err := txn.Bucket([]byte("default")).Put(key, data)
+		if err != nil {
+			return fmt.Errorf("could not insert weight: %v", err)
+		}
+		return nil
 	})
 }
 
