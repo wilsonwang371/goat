@@ -1,5 +1,5 @@
 {
-  "kvdb": "",
+  "kvdb": "default.boltdb",
   "symbol": "GLD",
   "dump": {
     "bardumpdb": "dump.db",

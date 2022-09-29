@@ -129,10 +129,10 @@ func startLive() error {
 }
 
 func TestMultiProviders(t *testing.T) {
-	os.RemoveAll("default.kvdb")
-	defer os.RemoveAll("default.kvdb")
+	os.RemoveAll("default.boltdb")
+	defer os.RemoveAll("default.boltdb")
 	cfg := config.Config{
-		KVDB: "default.kvdb",
+		KVDB: "default.boltdb",
 	}
 
 	pArr := []BarDataProvider{

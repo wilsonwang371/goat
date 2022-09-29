@@ -13,10 +13,10 @@ import (
 )
 
 func TestRuntimeSimple(t *testing.T) {
-	os.RemoveAll("default.kvdb")
-	defer os.RemoveAll("default.kvdb")
+	os.RemoveAll("default.boltdb")
+	defer os.RemoveAll("default.boltdb")
 	cfg := &config.Config{
-		KVDB: "default.kvdb",
+		KVDB: "default.boltdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	err := rt.RegisterHostCall("test_print", func(call goja.FunctionCall) goja.Value {
@@ -38,10 +38,10 @@ func TestRuntimeSimple(t *testing.T) {
 }
 
 func TestRuntimeSimple2(t *testing.T) {
-	os.RemoveAll("default.kvdb")
-	defer os.RemoveAll("default.kvdb")
+	os.RemoveAll("default.boltdb")
+	defer os.RemoveAll("default.boltdb")
 	cfg := &config.Config{
-		KVDB: "default.kvdb",
+		KVDB: "default.boltdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
@@ -62,10 +62,10 @@ func TestRuntimeSimple2(t *testing.T) {
 }
 
 func TestRuntimeKV(t *testing.T) {
-	os.RemoveAll("default.kvdb")
-	defer os.RemoveAll("default.kvdb")
+	os.RemoveAll("default.boltdb")
+	defer os.RemoveAll("default.boltdb")
 	cfg := &config.Config{
-		KVDB: "default.kvdb",
+		KVDB: "default.boltdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
@@ -87,10 +87,10 @@ func TestRuntimeKV(t *testing.T) {
 }
 
 func TestRuntimeTALibSimple(t *testing.T) {
-	os.RemoveAll("default.kvdb")
-	defer os.RemoveAll("default.kvdb")
+	os.RemoveAll("default.boltdb")
+	defer os.RemoveAll("default.boltdb")
 	cfg := &config.Config{
-		KVDB: "default.kvdb",
+		KVDB: "default.boltdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
@@ -112,10 +112,10 @@ func TestRuntimeTALibSimple(t *testing.T) {
 }
 
 func TestRuntimeRequire(t *testing.T) {
-	os.RemoveAll("default.kvdb")
-	defer os.RemoveAll("default.kvdb")
+	os.RemoveAll("default.boltdb")
+	defer os.RemoveAll("default.boltdb")
 	cfg := &config.Config{
-		KVDB: "default.kvdb",
+		KVDB: "default.boltdb",
 	}
 	rt := NewStrategyRuntime(context.TODO(), cfg, nil, nil)
 	script, err := rt.Compile(`
