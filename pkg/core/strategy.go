@@ -115,6 +115,9 @@ func (s *strategyController) barDumpWorkerLoop() {
 				barDataList = nil
 			}
 		case <-s.ctx.Done():
+			s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+			barDataList = nil
+			s.dumpDB.Commit()
 			return
 		default:
 			if len(barDataList) > 100 {
@@ -163,6 +166,7 @@ func (s *strategyController) onBars(args ...interface{}) error {
 			}
 			// dump the new data to dump channel
 			s.barDataDumpC <- data
+			// logger.Logger.Debug("barDataDumpC", zap.Any("data", data))
 		}
 	}
 
