@@ -32,13 +32,13 @@ const (
 )
 
 type CSVFeedGenerator struct {
-	barfeed        core.FeedGenerator
-	path           string
-	dateTimeFormat string
-	columnNames    map[ColumnName]string
-	haveAdjClose   bool
-	frequency      core.Frequency
-	instrument     string // default instrument name in case of no symbol column
+	barfeed         core.FeedGenerator
+	path            string
+	dateTimeFormats []string
+	columnNames     map[ColumnName]string
+	haveAdjClose    bool
+	frequency       core.Frequency
+	instrument      string // default instrument name in case of no symbol column
 }
 
 // IsComplete implements core.FeedGenerator
@@ -73,9 +73,9 @@ func (c *CSVFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, c
 
 func NewCSVBarFeedGenerator(path string, instrument string, freq core.Frequency) core.FeedGenerator {
 	c := &CSVFeedGenerator{
-		barfeed:        core.NewBarFeedGenerator([]core.Frequency{freq}, 100),
-		path:           path,
-		dateTimeFormat: "%Y-%m-%d %H:%M:%S",
+		barfeed:         core.NewBarFeedGenerator([]core.Frequency{freq}, 100),
+		path:            path,
+		dateTimeFormats: []string{"%Y-%m-%d %H:%M:%S", "%Y-%m-%d"},
 		columnNames: map[ColumnName]string{
 			ColumnDateTime:  "Date",
 			ColumnOpen:      "Open",
@@ -153,6 +153,7 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 }
 
 func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.Bar, error) {
+	// logger.Logger.Info("parseRawToBar", zap.Any("dict", dict), zap.Any("columnNames", c.columnNames))
 	dateTimeRaw := dict[c.columnNames[ColumnDateTime]]
 	openRaw := dict[c.columnNames[ColumnOpen]]
 	highRaw := dict[c.columnNames[ColumnHigh]]
@@ -188,39 +189,54 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.B
 	}
 
 	dateTime := time.Time{}
-	carbonResult := carbon.ParseByFormat(c.dateTimeFormat, dateTimeRaw)
-	if carbonResult.Error != nil {
+	parseFailed := true
+	for _, format := range c.dateTimeFormats {
+		// logger.Logger.Info("parse date time", zap.String("raw", dateTimeRaw), zap.String("format", format))
+		carbonResult := carbon.ParseByFormat(format, dateTimeRaw)
+		if carbonResult.Error == nil {
+			dateTime = carbonResult.Carbon2Time()
+			parseFailed = false
+			break
+		}
+	}
+
+	if parseFailed {
 		// logger.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
 		if val, err := dateparse.ParseAny(dateTimeRaw); err == nil {
 			dateTime = val
 		} else {
+			// logger.Logger.Error("dateparse failed", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(err))
 			return "", nil, err
 		}
-	} else {
-		dateTime = carbonResult.Carbon2Time()
 	}
 	open, err := strconv.ParseFloat(openRaw, 64)
 	if err != nil {
+		// logger.Logger.Error("parse open error", zap.Error(err))
 		return "", nil, err
 	}
 	high, err := strconv.ParseFloat(highRaw, 64)
 	if err != nil {
+		// logger.Logger.Error("parse high error", zap.Error(err))
 		return "", nil, err
 	}
 	low, err := strconv.ParseFloat(lowRaw, 64)
 	if err != nil {
+		// logger.Logger.Error("parse low error", zap.Error(err))
 		return "", nil, err
 	}
 	closeVal, err := strconv.ParseFloat(closeRaw, 64)
 	if err != nil {
+		// logger.Logger.Error("parse close error", zap.Error(err))
 		return "", nil, err
 	}
 	volume, err := strconv.ParseFloat(volumeRaw, 64)
 	if err != nil {
+		// logger.Logger.Error("parse volume error", zap.Error(err))
 		return "", nil, err
 	}
 	adjClose, err := strconv.ParseFloat(adjCloseRaw, 64)
 	if err != nil {
+		// logger.Logger.Error("parse adjClose error", zap.Error(err))
 		adjClose = .0
 	}
 	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, adjClose, int64(volume), frequency)
