@@ -258,7 +258,7 @@ func NewStrategyController(ctx context.Context, cfg *config.Config, strategyEven
 		dispatcher:        NewDispatcher(ctx),
 		barProcessedEvent: NewEvent(),
 		barDataDumpC:      make(chan *db.BarData, 1000),
-		closeC:            make(chan struct{}),
+		closeC:            make(chan struct{}, 1),
 		dumpWg:            sync.WaitGroup{},
 	}
 

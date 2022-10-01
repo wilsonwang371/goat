@@ -10,6 +10,7 @@ import (
 
 	"github.com/dop251/goja"
 	"github.com/dop251/goja_nodejs/require"
+	"go.uber.org/zap"
 )
 
 type StartCallback func() error
@@ -66,7 +67,9 @@ func (sys *SysObject) SetIntervalCmd(call goja.FunctionCall) goja.Value {
 			for {
 				time.Sleep(time.Duration(interval) * time.Millisecond)
 				mu.Lock()
-				cb(goja.Undefined())
+				if _, err := cb(goja.Undefined()); err != nil {
+					logger.Logger.Error("setIntervalCmd callback error", zap.Error(err))
+				}
 				mu.Unlock()
 			}
 		}(cb, interval, sys.Mu)
