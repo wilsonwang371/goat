@@ -124,9 +124,11 @@ func (s *strategyController) barDumpWorkerLoop() {
 				case barData := <-s.barDataDumpC:
 					barDataList = append(barDataList, barData)
 				default:
-					s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
-					barDataList = nil
-					s.dumpDB.Commit()
+					if s.dumpDB != nil && len(barDataList) > 0 {
+						s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+						barDataList = nil
+						s.dumpDB.Commit()
+					}
 					s.dumpDB = nil
 					return
 				}
@@ -137,9 +139,11 @@ func (s *strategyController) barDumpWorkerLoop() {
 				case barData := <-s.barDataDumpC:
 					barDataList = append(barDataList, barData)
 				default:
-					s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
-					barDataList = nil
-					s.dumpDB.Commit()
+					if s.dumpDB != nil && len(barDataList) > 0 {
+						s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+						barDataList = nil
+						s.dumpDB.Commit()
+					}
 					s.dumpDB = nil
 					return
 				}
