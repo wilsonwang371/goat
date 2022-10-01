@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 
@@ -47,7 +48,9 @@ func (c *CSVFeedGenerator) IsComplete() bool {
 }
 
 // AppendNewValueToBuffer implements core.FeedGenerator
-func (c *CSVFeedGenerator) AppendNewValueToBuffer(time.Time, map[string]interface{}, core.Frequency) error {
+func (c *CSVFeedGenerator) AppendNewValueToBuffer(time.Time, map[string]interface{},
+	core.Frequency,
+) error {
 	panic("unimplemented")
 }
 
@@ -67,11 +70,15 @@ func (c *CSVFeedGenerator) PeekNextTime() *time.Time {
 }
 
 // PopNextValues implements core.FeedGenerator
-func (c *CSVFeedGenerator) PopNextValues() (time.Time, map[string]interface{}, core.Frequency, error) {
+func (c *CSVFeedGenerator) PopNextValues() (time.Time, map[string]interface{},
+	core.Frequency, error,
+) {
 	return c.barfeed.PopNextValues()
 }
 
-func NewCSVBarFeedGenerator(path string, instrument string, freq core.Frequency) core.FeedGenerator {
+func NewCSVBarFeedGenerator(path string, instrument string,
+	freq core.Frequency,
+) core.FeedGenerator {
 	c := &CSVFeedGenerator{
 		barfeed:         core.NewBarFeedGenerator([]core.Frequency{freq}, 100),
 		path:            path,
@@ -95,6 +102,12 @@ func NewCSVBarFeedGenerator(path string, instrument string, freq core.Frequency)
 	return c
 }
 
+type pendingData struct {
+	time   time.Time
+	symbol string
+	bar    core.Bar
+}
+
 func (c *CSVFeedGenerator) addBarsFromCSV() {
 	isHeader := true
 	var headers []string
@@ -105,6 +118,7 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 		os.Exit(1)
 	}
 
+	pendingDataBuffer := make([]pendingData, 0, 1000)
 	reader := csv.NewReader(file)
 	for {
 		// Read each record from csv
@@ -130,7 +144,8 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 				if i < len(headers) {
 					data[headers[i]] = v
 				} else {
-					logger.Logger.Warn("header not found", zap.Int("index", i), zap.String("value", v))
+					logger.Logger.Warn("header not found",
+						zap.Int("index", i), zap.String("value", v))
 				}
 			}
 			symbol, bar, err := c.parseRawToBar(data)
@@ -138,22 +153,36 @@ func (c *CSVFeedGenerator) addBarsFromCSV() {
 				logger.Logger.Error("parse error", zap.Error(err))
 				os.Exit(1)
 			}
-			for {
-				if err := c.barfeed.AppendNewValueToBuffer(bar.DateTime(), map[string]interface{}{symbol: bar}, bar.Frequency()); err != nil {
-					logger.Logger.Warn("append error", zap.Error(err))
-					time.Sleep(time.Second)
-				} else {
-					break
-				}
-			}
 
+			pendingDataBuffer = append(pendingDataBuffer, pendingData{
+				time:   bar.DateTime(),
+				symbol: symbol,
+				bar:    bar,
+			})
+		}
+	}
+	sort.SliceStable(pendingDataBuffer, func(i, j int) bool {
+		return pendingDataBuffer[i].time.Before(pendingDataBuffer[j].time)
+	})
+	for _, v := range pendingDataBuffer {
+		for {
+			if err := c.barfeed.AppendNewValueToBuffer(v.bar.DateTime(),
+				map[string]interface{}{v.symbol: v.bar},
+				v.bar.Frequency()); err != nil {
+				logger.Logger.Warn("append error", zap.Error(err))
+				time.Sleep(time.Second)
+			} else {
+				break
+			}
 		}
 	}
 	c.Finish()
 }
 
-func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.Bar, error) {
-	// logger.Logger.Info("parseRawToBar", zap.Any("dict", dict), zap.Any("columnNames", c.columnNames))
+func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string,
+	core.Bar,
+	error,
+) {
 	dateTimeRaw := dict[c.columnNames[ColumnDateTime]]
 	openRaw := dict[c.columnNames[ColumnOpen]]
 	highRaw := dict[c.columnNames[ColumnHigh]]
@@ -191,7 +220,6 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.B
 	dateTime := time.Time{}
 	parseFailed := true
 	for _, format := range c.dateTimeFormats {
-		// logger.Logger.Info("parse date time", zap.String("raw", dateTimeRaw), zap.String("format", format))
 		carbonResult := carbon.ParseByFormat(format, dateTimeRaw)
 		if carbonResult.Error == nil {
 			dateTime = carbonResult.Carbon2Time()
@@ -201,45 +229,38 @@ func (c *CSVFeedGenerator) parseRawToBar(dict map[string]string) (string, core.B
 	}
 
 	if parseFailed {
-		// logger.Logger.Debug("carbon failed, try dateparse", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(carbonResult.Error))
 		if val, err := dateparse.ParseAny(dateTimeRaw); err == nil {
 			dateTime = val
 		} else {
-			// logger.Logger.Error("dateparse failed", zap.String("dateTimeRaw", dateTimeRaw), zap.Error(err))
 			return "", nil, err
 		}
 	}
 	open, err := strconv.ParseFloat(openRaw, 64)
 	if err != nil {
-		// logger.Logger.Error("parse open error", zap.Error(err))
 		return "", nil, err
 	}
 	high, err := strconv.ParseFloat(highRaw, 64)
 	if err != nil {
-		// logger.Logger.Error("parse high error", zap.Error(err))
 		return "", nil, err
 	}
 	low, err := strconv.ParseFloat(lowRaw, 64)
 	if err != nil {
-		// logger.Logger.Error("parse low error", zap.Error(err))
 		return "", nil, err
 	}
 	closeVal, err := strconv.ParseFloat(closeRaw, 64)
 	if err != nil {
-		// logger.Logger.Error("parse close error", zap.Error(err))
 		return "", nil, err
 	}
 	volume, err := strconv.ParseFloat(volumeRaw, 64)
 	if err != nil {
-		// logger.Logger.Error("parse volume error", zap.Error(err))
 		return "", nil, err
 	}
 	adjClose, err := strconv.ParseFloat(adjCloseRaw, 64)
 	if err != nil {
-		// logger.Logger.Error("parse adjClose error", zap.Error(err))
 		adjClose = .0
 	}
-	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, adjClose, int64(volume), frequency)
+	bar := core.NewBasicBar(dateTime, open, high, low, closeVal, adjClose,
+		int64(volume), frequency)
 	if c.haveAdjClose {
 		bar.SetUseAdjustedValue(true)
 	}

@@ -100,7 +100,8 @@ func (b *barFeedGenerator) AppendNewValueToBuffer(t time.Time, v map[string]inte
 		}
 	}
 	if !found {
-		return fmt.Errorf("frequency %d not valid for generator", f)
+		return fmt.Errorf("frequency %d not valid for generator. possible ones are %v",
+			f, b.freq)
 	}
 	if b.eof {
 		return fmt.Errorf("feed generator is closed")

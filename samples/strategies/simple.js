@@ -2,7 +2,7 @@ var c = 0;
 
 addEventListener("onBars", function (bar) {
   c++;
-  console.log("onBars is called " + c + " times. Data: " + bar);
+  console.log("onBars is called " + c + " times. Data: " + JSON.stringify(bar));
 });
 
 addEventListener("onStart", function () {
