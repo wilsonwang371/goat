@@ -100,7 +100,7 @@ func (s *strategyController) onStart(args ...interface{}) error {
 
 func (s *strategyController) onIdle(args ...interface{}) error {
 	// logger.Logger.Info("onIdle")
-	time.Sleep(common.IdelSleepDuration)
+	time.Sleep(common.IdleSleepDuration)
 	return s.listener.OnIdle()
 }
 
