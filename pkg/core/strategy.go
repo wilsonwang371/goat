@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -266,9 +267,14 @@ func NewStrategyController(ctx context.Context, cfg *config.Config, strategyEven
 		dumpWg:            sync.WaitGroup{},
 	}
 
+	var err error
 	if cfg.Dump.BarDumpDB != "" {
-		controller.dumpDB = db.NewSQLiteDataBase(cfg.Dump.BarDumpDB,
+		controller.dumpDB, err = db.NewSQLiteDataBase(cfg.Dump.BarDumpDB,
 			cfg.Dump.RemoveOldBars)
+		if err != nil {
+			logger.Logger.Fatal("failed to create dump db", zap.Error(err))
+			os.Exit(1)
+		}
 	}
 
 	controller.dispatcher.AddSubject(controller.broker)
