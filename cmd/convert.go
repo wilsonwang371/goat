@@ -54,7 +54,11 @@ func ConvertFunction(cmd *cobra.Command, args []string) {
 	}
 
 	dbsource := convert.NewDBSource(convertDataSource, convertFileType)
-	dboutput := db.NewSQLiteDataBase(convertOutput, true)
+	dboutput, err := db.NewSQLiteDataBase(convertOutput, true)
+	if err != nil {
+		logger.Logger.Error("failed to create output database", zap.Error(err))
+		os.Exit(1)
+	}
 	if err := rt.Convert(dbsource, dboutput); err != nil {
 		logger.Logger.Error("failed to convert data", zap.Error(err))
 		os.Exit(1)

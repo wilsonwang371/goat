@@ -374,9 +374,13 @@ func NewGenericDataFeed(ctx context.Context, cfg *config.Config, fg FeedGenerato
 ) DataFeed {
 	var recDB *db.DB
 	var recCount int64
+	var err error
 	if recoveryDB != "" {
 		logger.Logger.Debug("recovery mode is enabled", zap.String("db", recoveryDB))
-		recDB = db.NewSQLiteDataBase(recoveryDB, false)
+		recDB, err = db.NewSQLiteDataBase(recoveryDB, false)
+		if err != nil {
+			panic(err)
+		}
 		recCount = recDB.FetchAll(true)
 	}
 	if hooksCtrl == nil {

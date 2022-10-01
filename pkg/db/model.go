@@ -29,10 +29,11 @@ type BarData struct {
 type DB struct {
 	*gorm.DB
 	dataChan chan *BarData
+	peekData *BarData
 	err      error
 }
 
-func NewSQLiteDataBase(dbpath string, removeOldData bool) *DB {
+func NewSQLiteDataBase(dbpath string, removeOldData bool) (*DB, error) {
 	if _, err := os.Stat(dbpath); err != nil && os.IsNotExist(err) {
 		// file does not exist
 		logger.Logger.Info("using new database file", zap.String("dbpath", dbpath))
@@ -43,14 +44,14 @@ func NewSQLiteDataBase(dbpath string, removeOldData bool) *DB {
 			err = os.Remove(dbpath)
 			if err != nil {
 				logger.Logger.Fatal("failed to remove db file", zap.Error(err))
-				panic(err)
+				return nil, err
 			}
 		}
 	}
 	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
 	if err != nil {
 		logger.Logger.Error("failed to connect database", zap.Error(err))
-		panic(err)
+		return nil, err
 	}
 	db.AutoMigrate(&BarData{})
 
@@ -58,7 +59,8 @@ func NewSQLiteDataBase(dbpath string, removeOldData bool) *DB {
 		db,
 		make(chan *BarData, dataBatchSize),
 		nil,
-	}
+		nil,
+	}, nil
 }
 
 func (db *DB) fetchAll() {
@@ -98,9 +100,28 @@ func (db *DB) FetchAll(bg bool) int64 {
 }
 
 func (db *DB) Next() (*BarData, error) {
+	if db.peekData != nil {
+		defer func() {
+			db.peekData = nil
+		}()
+		return db.peekData, nil
+	}
 	data, ok := <-db.dataChan
 	if !ok {
 		return nil, db.err
 	}
 	return data, nil
+}
+
+func (db *DB) Peek() (*BarData, error) {
+	if db.peekData == nil {
+		data, err := db.Next()
+		if err != nil {
+			return nil, err
+		}
+		db.peekData = data
+		return data, nil
+	} else {
+		return db.peekData, nil
+	}
 }
