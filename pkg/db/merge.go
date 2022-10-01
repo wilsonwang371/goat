@@ -41,7 +41,8 @@ loopNext:
 				sources = append(sources[:idx], sources[idx+1:]...)
 				continue loopNext
 			}
-			if nextData == nil || cmpNextData.DateTime < nextData.DateTime {
+			if nextData == nil || cmpNextData.DateTime < nextData.DateTime ||
+				(cmpNextData.Frequency < nextData.Frequency && cmpNextData.Frequency >= 0) {
 				nextData = cmpNextData
 				nextIdx = idx
 			}
