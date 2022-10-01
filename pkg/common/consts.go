@@ -9,5 +9,5 @@ const (
 	ProfilePort = 6060
 	MetricsPort = 2112
 
-	IdelSleepDuration = 10 * time.Millisecond
+	IdleSleepDuration = 10 * time.Millisecond
 )
