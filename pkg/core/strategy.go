@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"goat/pkg/common"
@@ -91,6 +92,8 @@ type strategyController struct {
 	barProcessedEvent Event
 
 	barDataDumpC chan *db.BarData
+	closeC       chan struct{}
+	dumpWg       sync.WaitGroup
 }
 
 func (s *strategyController) onStart(args ...interface{}) error {
@@ -105,6 +108,7 @@ func (s *strategyController) onIdle(args ...interface{}) error {
 }
 
 func (s *strategyController) barDumpWorkerLoop() {
+	defer s.dumpWg.Done()
 	barDataList := []*db.BarData{}
 	for {
 		select {
@@ -115,10 +119,31 @@ func (s *strategyController) barDumpWorkerLoop() {
 				barDataList = nil
 			}
 		case <-s.ctx.Done():
-			s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
-			barDataList = nil
-			s.dumpDB.Commit()
-			return
+			for {
+				select {
+				case barData := <-s.barDataDumpC:
+					barDataList = append(barDataList, barData)
+				default:
+					s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+					barDataList = nil
+					s.dumpDB.Commit()
+					s.dumpDB = nil
+					return
+				}
+			}
+		case <-s.closeC:
+			for {
+				select {
+				case barData := <-s.barDataDumpC:
+					barDataList = append(barDataList, barData)
+				default:
+					s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
+					barDataList = nil
+					s.dumpDB.Commit()
+					s.dumpDB = nil
+					return
+				}
+			}
 		default:
 			if len(barDataList) > 100 {
 				s.dumpDB.CreateInBatches(barDataList, len(barDataList)).Commit()
@@ -211,6 +236,9 @@ func (s *strategyController) onOrderEvent(args ...interface{}) error {
 func (s *strategyController) Run() {
 	s.dispatcher.Run()
 	s.listener.OnFinish()
+	s.closeC <- struct{}{}
+	close(s.closeC)
+	s.dumpWg.Wait()
 }
 
 func (s *strategyController) Stop() {
@@ -230,6 +258,8 @@ func NewStrategyController(ctx context.Context, cfg *config.Config, strategyEven
 		dispatcher:        NewDispatcher(ctx),
 		barProcessedEvent: NewEvent(),
 		barDataDumpC:      make(chan *db.BarData, 1000),
+		closeC:            make(chan struct{}),
+		dumpWg:            sync.WaitGroup{},
 	}
 
 	if cfg.Dump.BarDumpDB != "" {
@@ -246,6 +276,7 @@ func NewStrategyController(ctx context.Context, cfg *config.Config, strategyEven
 	controller.dataFeed.GetNewValueEvent().Subscribe(controller.onBars)
 	controller.broker.GetOrderUpdatedEvent().Subscribe(controller.onOrderEvent)
 
+	controller.dumpWg.Add(1)
 	go controller.barDumpWorkerLoop()
 
 	return controller
