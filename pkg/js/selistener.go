@@ -3,6 +3,8 @@ package js
 import (
 	"encoding/json"
 
+	"goat/pkg/metrics"
+
 	"goat/pkg/core"
 	"goat/pkg/logger"
 
@@ -31,6 +33,7 @@ func (j *JSStrategyEventListener) OnBars(bars core.Bars) error {
 		logger.Logger.Error("onBars got invalid data to unmarshal", zap.Error(err))
 		return err
 	}
+	metrics.OnBarsCalledCount.Inc()
 	return j.rt.NotifyEvent("onbars", data)
 }
 
@@ -41,6 +44,7 @@ func (j *JSStrategyEventListener) OnFinish(args ...interface{}) error {
 
 // OnIdle implements core.StrategyEventListener
 func (j *JSStrategyEventListener) OnIdle() error {
+	metrics.OnIdleCalledCount.Inc()
 	return j.rt.NotifyEvent("onidle")
 }
 

@@ -24,6 +24,14 @@ var (
 		Name: "goat_out_of_order_bars",
 		Help: "The total number of out of order bars",
 	})
+	OnBarsCalledCount = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "goat_on_bars_called_count",
+		Help: "The total number of onBars() called",
+	})
+	OnIdleCalledCount = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "goat_on_idle_called_count",
+		Help: "The total number of onIdle() called",
+	})
 )
 
 func StartMetricsServer() {
