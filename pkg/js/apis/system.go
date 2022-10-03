@@ -16,10 +16,11 @@ import (
 type StartCallback func() error
 
 type SysObject struct {
-	cfg *config.Config
-	VM  *goja.Runtime
-	Mu  *sync.Mutex
-	Cb  StartCallback
+	cfg            *config.Config
+	VM             *goja.Runtime
+	Mu             *sync.Mutex
+	Cb             StartCallback
+	StrategyStatus string
 }
 
 func NewSysObject(cfg *config.Config, vm *goja.Runtime, runMu *sync.Mutex, startCb StartCallback) (*SysObject, error) {
@@ -38,6 +39,7 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, runMu *sync.Mutex, start
 	sysObj.Set("start", sys.StartCmd)
 	sysObj.Set("now", sys.TimeCmd)
 	sysObj.Set("strftime", sys.StrftimeCmd)
+	sysObj.Set("reportStatus", sys.ReportStatusCmd)
 	sys.VM.Set("system", sysObj)
 
 	consoleObj := sys.VM.NewObject()
@@ -53,6 +55,17 @@ func NewSysObject(cfg *config.Config, vm *goja.Runtime, runMu *sync.Mutex, start
 func (sys *SysObject) registerRequire() {
 	registry := require.Registry{}
 	registry.Enable(sys.VM)
+}
+
+func (sys *SysObject) ReportStatusCmd(call goja.FunctionCall) goja.Value {
+	if len(call.Arguments) != 1 {
+		logger.Logger.Debug("reportStatusCmd needs 1 argument")
+		return sys.VM.ToValue(false)
+	}
+
+	sys.StrategyStatus = call.Argument(0).String()
+
+	return sys.VM.ToValue(true)
 }
 
 func (sys *SysObject) SetIntervalCmd(call goja.FunctionCall) goja.Value {
