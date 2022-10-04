@@ -27,6 +27,8 @@ const (
 	TradingViewSessionStringLength = 12
 	TradingViewSignInUrl           = "https://www.tradingview.com/accounts/signin/"
 	TradingViewWebSocketUrl        = "wss://data.tradingview.com/socket.io/websocket"
+	TradingViewReconnectInterval   = 5 * time.Second
+	TradingViewReconnectMax        = 20
 )
 
 var frequencyTable map[core.Frequency]string
@@ -365,7 +367,7 @@ func (t *tradingViewWSDataProvider) connect() error {
 		"origin":     []string{"https://data.tradingview.com"},
 	}
 	ws := recws.RecConn{
-		KeepAliveTimeout: 10 * time.Second,
+		KeepAliveTimeout: 0,
 		SubscribeHandler: t.setupConnection,
 	}
 	t.ws = ws
@@ -406,9 +408,22 @@ func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
 	r := regexp.MustCompile("~m~\\d+~m~~h~\\d+$")
 	r2 := regexp.MustCompile("~m~\\d+~m~")
 	for {
-		if !t.ws.IsConnected() {
-			return fmt.Errorf("got disconnected")
+		reconnectCount := 0
+		for {
+			if !t.ws.IsConnected() {
+				if reconnectCount > TradingViewReconnectMax {
+					lg.Logger.Fatal("tradingview fetcher reconnect failed")
+					panic("tradingview fetcher reconnect failed")
+				}
+				lg.Logger.Info("tradingview fetcher reconnecting")
+				time.Sleep(TradingViewReconnectInterval) // wait for reconnect
+				t.connect()
+				reconnectCount++
+			} else {
+				break
+			}
 		}
+
 		if msgType, data, err := t.ws.ReadMessage(); err != nil {
 			return err
 		} else {
@@ -435,7 +450,7 @@ func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
 							select {
 							case t.barC <- bar:
 							default:
-								lg.Logger.Warn("bar channel is full, dropping bar")
+								lg.Logger.Info("bar channel is full, dropping bar", zap.Any("bar", bar))
 							}
 						}
 					}
