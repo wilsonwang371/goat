@@ -94,6 +94,7 @@ func (d *dataFeedHook) MayHaveNewValue() *PendingDataFeedValue {
 		d.startTime = nil
 		d.stopTime = nil
 		d.dayBarMap = make(map[string]Bar)
+		// do not generate bar if there is already a bar generated on that day
 		if d.lastGeneratedTime != nil && !d.lastGeneratedTime.Before(newDayBar.t) {
 			return nil
 		}
