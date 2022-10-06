@@ -404,7 +404,16 @@ func (t *tradingViewWSDataProvider) nextBars() (core.Bars, error) {
 	}
 }
 
-func (t *tradingViewWSDataProvider) fetchBarsLoop() error {
+func (t *tradingViewWSDataProvider) fetchBarsLoop() {
+	for {
+		if err := t.fetchBarsLoopInner(); err != nil {
+			lg.Logger.Error("fetch bars loop error", zap.Error(err))
+			time.Sleep(TradingViewReconnectInterval)
+		}
+	}
+}
+
+func (t *tradingViewWSDataProvider) fetchBarsLoopInner() error {
 	r := regexp.MustCompile("~m~\\d+~m~~h~\\d+$")
 	r2 := regexp.MustCompile("~m~\\d+~m~")
 	for {
