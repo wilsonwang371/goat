@@ -16,10 +16,10 @@ import (
 	"github.com/go-gota/gota/series"
 	"go.uber.org/zap"
 
-	"github.com/wilsonwang371/websocket"
+	"github.com/gorilla/websocket"
 
 	"github.com/imroc/req"
-	"github.com/wilsonwang371/recws"
+	"github.com/recws-org/recws"
 )
 
 // TradingViewSessionStringLength ...
