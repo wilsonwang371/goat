@@ -3,11 +3,16 @@ package db
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"goat/pkg/logger"
 
+	progressBar "github.com/schollz/progressbar/v3"
+
 	"go.uber.org/zap"
 )
+
+var dbBatchCreateSize = 2048
 
 func MergeDBs(output *DB, sources []*DB) error {
 	if output == nil {
@@ -24,6 +29,14 @@ func MergeDBs(output *DB, sources []*DB) error {
 	}
 	logger.Logger.Info("total count", zap.Int64("count", totalCount))
 
+	if totalCount > 10000 {
+		dbBatchCreateSize = int(totalCount) / 20
+	}
+	mergeBar := progressBar.Default(totalCount)
+	pendingBars := []*BarData{}
+	lastTime := time.Now().Unix()
+	var currentCount int64
+
 loopNext:
 	for {
 		var nextData *BarData
@@ -36,7 +49,7 @@ loopNext:
 			}
 			if cmpNextData == nil {
 				if len(sources) == 1 {
-					return nil
+					break loopNext
 				}
 				sources = append(sources[:idx], sources[idx+1:]...)
 				continue loopNext
@@ -59,8 +72,21 @@ loopNext:
 			Frequency: nextData.Frequency,
 			Note:      nextData.Note,
 		}
-		output.Create(bar)
+		pendingBars = append(pendingBars, bar)
+		currentCount++
+		if len(pendingBars) >= dbBatchCreateSize {
+			output.Create(pendingBars)
+			pendingBars = []*BarData{}
+		}
+		if time.Now().Unix()-lastTime > 10 {
+			lastTime = time.Now().Unix()
+			mergeBar.Set64(currentCount)
+		}
 		sources[nextIdx].Next()
 	}
-	// we should never reach here
+	if len(pendingBars) > 0 {
+		output.Create(pendingBars)
+	}
+	mergeBar.Finish()
+	return nil
 }
