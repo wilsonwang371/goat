@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var dbBatchCreateSize = 2048
+var dbBatchCreateSize = 1024
 
 func MergeDBs(output *DB, sources []*DB) error {
 	if output == nil {
@@ -29,9 +29,6 @@ func MergeDBs(output *DB, sources []*DB) error {
 	}
 	logger.Logger.Info("total count", zap.Int64("count", totalCount))
 
-	if totalCount > 10000 {
-		dbBatchCreateSize = int(totalCount) / 20
-	}
 	mergeBar := progressBar.Default(totalCount)
 	pendingBars := []*BarData{}
 	lastTime := time.Now().Unix()
